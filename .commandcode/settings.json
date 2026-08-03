@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(node \"%COMMANDCODE_SCRATCHPAD%\\recolor.js\")",
+      "Shell(node \"%COMMANDCODE_SCRATCHPAD%\\recolor2.js\")"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}

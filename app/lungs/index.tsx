@@ -5,7 +5,7 @@ export default function LungsCategory() {
     <CategoryPage
       categoryName="Lungs"
       categoryIcon="leaf"
-      categoryColor="#48dbfb"
+      categoryColor="#44cabf"
     />
   );
 }

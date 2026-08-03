@@ -5,7 +5,7 @@ export default function HeartCategory() {
     <CategoryPage
       categoryName="Heart"
       categoryIcon="heart"
-      categoryColor="#ff6b6b"
+      categoryColor="#d98a8a"
     />
   );
 }

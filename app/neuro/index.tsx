@@ -5,7 +5,7 @@ export default function NeuroCategory() {
     <CategoryPage
       categoryName="Neuro"
       categoryIcon="nutrition"
-      categoryColor="#1dd1a1"
+      categoryColor="#5fb39a"
     />
   );
 }

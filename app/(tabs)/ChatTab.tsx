@@ -1,26 +1,29 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Clipboard,
   Dimensions,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import Animated, {
-  interpolate,
+  FadeIn,
+  FadeInDown,
+  FadeInUp,
   Layout,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSpring,
+  withSequence,
   withTiming,
   ZoomIn,
 } from "react-native-reanimated";
@@ -28,8 +31,12 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { categoryColors, categoryIcons } from "../../components/DrugCard";
-import { aiService } from "../../services/aiService";
+import { aiService, DoctorCategory, Citation } from "../../services/aiService";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const FLOATING_TAB_BAR_HEIGHT = 65;
+const FLOATING_TAB_BAR_BOTTOM_OFFSET = 16;
+const CHAT_BOTTOM_OFFSET = FLOATING_TAB_BAR_HEIGHT + FLOATING_TAB_BAR_BOTTOM_OFFSET + 16;
 
 // Types
 type Message = {
@@ -37,394 +44,160 @@ type Message = {
   text: string;
   isUser: boolean;
   timestamp: string;
-  medicineCard?: MedicineCardData;
+  category?: DoctorCategory;
+  citations?: Citation[];
 };
 
-type MedicineCardData = {
+type CategoryOption = {
+  id: DoctorCategory;
   name: string;
-  dose: string;
-  frequency: string;
-  tag: string;
+  shortName: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  isAvailable: boolean;
 };
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+const CATEGORIES: CategoryOption[] = [
+  { id: "physicians", name: "Physicians", shortName: "Physicians", icon: "medkit-outline" as any, color: "#44cabf", isAvailable: true },
+  { id: "dentists", name: "Dentists", shortName: "Dentists", icon: "happy-outline", color: "#7fb0cf", isAvailable: false },
+  { id: "physiotherapy", name: "Physiotherapy", shortName: "Physio", icon: "body-outline", color: "#b3a8cf", isAvailable: false },
+];
 
-// AI Response Card Component
-const normalizeCategoryKey = (rawCategory: string) =>
-  rawCategory.trim().toLowerCase();
-const getCategoryColor = (rawCategory: string) => {
-  const fallback = "#2dd4bf";
-  if (!rawCategory || rawCategory.trim().length === 0) return fallback;
-
-  const exact = categoryColors[rawCategory];
-  if (exact) return exact;
-
-  const normalized = normalizeCategoryKey(rawCategory);
-  const matched = Object.entries(categoryColors).find(
-    ([key]) => key.toLowerCase() === normalized,
-  );
-  if (matched) return matched[1];
-
-  const looseMatch = Object.entries(categoryColors).find(
-    ([key]) =>
-      key.toLowerCase().includes(normalized) ||
-      normalized.includes(key.toLowerCase()),
-  );
-  if (looseMatch) return looseMatch[1];
-
-  return categoryColors["More"] || fallback;
+type QuickPrompt = {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle: string;
+  prompt: string;
+  color: string;
 };
 
-const AiResponseCard: React.FC<{
-  text: string;
-  delay?: number;
-  isGrid?: boolean;
-}> = ({ text, delay = 0, isGrid = false }) => {
-  const lines = text.split("\n").filter((line) => line.includes("::"));
+const QUICK_PROMPTS: QuickPrompt[] = [
+  {
+    icon: "heart-circle-outline",
+    title: "ACS Protocol",
+    subtitle: "STEMI vs NSTEMI workup & catheterization timing",
+    prompt: "Provide the acute coronary syndrome (ACS) STEMI vs NSTEMI initial emergency workup, diagnostic criteria, and management protocol.",
+    color: "#d98a8a",
+  },
+  {
+    icon: "pulse-outline",
+    title: "Sepsis Bundle",
+    subtitle: "Surviving Sepsis Campaign 1-hour resuscitation",
+    prompt: "Detail the Surviving Sepsis Campaign 1-hour resuscitation bundle, qSOFA scoring, and antibiotic timing.",
+    color: "#7fb8a8",
+  },
+  {
+    icon: "alert-circle-outline",
+    title: "Hypertensive Crisis",
+    subtitle: "Urgency vs Emergency target BP reduction",
+    prompt: "Explain the management of Hypertensive Urgency vs Emergency, including IV drug choices and target blood pressure reduction rates.",
+    color: "#d8b07f",
+  },
+  {
+    icon: "analytics-outline",
+    title: "Liver Scoring",
+    subtitle: "Child-Pugh vs MELD-Na calculation & interpretation",
+    prompt: "Compare Child-Pugh vs MELD-Na scoring systems for chronic liver failure and surgical mortality risk assessment.",
+    color: "#b3a8cf",
+  },
+];
 
-  if (lines.length === 0) return null;
-
-  const data: Record<string, { english: string; arabic: string }> = {};
-  lines.forEach((line) => {
-    const [label, values] = line.replace(/^[●\-\s]+/, "").split("::");
-    if (label && values) {
-      const [english, arabic] = values.split("|").map((v) => v.trim());
-      data[label.trim().toLowerCase()] = { english, arabic };
-    }
-  });
-
-  const category = data["category"]?.english || "More";
-  const icon = categoryIcons[category] || "medkit";
-  const color = getCategoryColor(category);
-  const tradeName = data["trade_name"]?.english || "Unknown Drug";
-
-  const backgroundShade = color.length === 7 ? `${color}25` : color;
-
-  return (
-    <Animated.View
-      entering={ZoomIn.duration(500).delay(delay).springify()}
-      layout={Layout.springify()}
-      style={{
-        width: isGrid ? "48%" : "100%",
-        backgroundColor: backgroundShade,
-        borderColor: color,
-      }}
-      className="rounded-2xl border p-3 shadow-medicine-card mb-2"
-    >
-      <View
-        style={{ backgroundColor: backgroundShade }}
-        className="w-10 h-10 rounded-full items-center justify-center mb-2"
-      >
-        <Ionicons name={icon} size={18} color={color} />
-      </View>
-
-      <View className="gap-2">
-        <Text
-          style={{ color: color }}
-          className="text-sm font-semibold mb-1"
-          numberOfLines={isGrid ? 2 : undefined}
-        >
-          {tradeName}
-        </Text>
-
-        {!isGrid && (
-          <View className="gap-3 mt-1">
-            {Object.entries(data).map(([key, val], idx) => {
-              if (key === "trade_name" || key === "category") return null;
-              const cleanLabel = key.replace(/_/g, " ");
-
-              return (
-                <View key={idx} className="flex-col gap-0.5">
-                  <Text className="text-gray-muted text-[10px] font-bold uppercase tracking-tighter">
-                    {cleanLabel}
-                  </Text>
-                  <View className="flex-col">
-                    <Text className="text-green-400 text-xs font-semibold">
-                      {val.english}
-                    </Text>
-                    {val.arabic && (
-                      <Text className="text-green-300 text-xs font-medium text-right font-arabic">
-                        {val.arabic}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        )}
-
-        {isGrid && data["form"] && (
-          <Text
-            className="text-turquoise text-[10px] font-medium"
-            numberOfLines={1}
-          >
-            {data["form"].english}
-          </Text>
-        )}
-      </View>
-    </Animated.View>
-  );
-};
-
-// Voice Visualizer Component (Orb)
-const VoiceOrb: React.FC<{
-  isRecording: boolean;
-  isProcessing: boolean;
-  level: number;
-}> = ({ isRecording, isProcessing, level }) => {
-  const pulse = useSharedValue(1);
-  const ring1 = useSharedValue(1);
-  const ring2 = useSharedValue(1);
-
-  useEffect(() => {
-    if (isRecording) {
-      pulse.value = withRepeat(
-        withTiming(1.1 + level * 0.4, { duration: 100 }),
-        -1,
-        true,
-      );
-      ring1.value = withRepeat(
-        withTiming(1.6 + level * 0.8, { duration: 1000 }),
-        -1,
-        true,
-      );
-      ring2.value = withRepeat(
-        withTiming(2.2 + level * 1.2, { duration: 1500 }),
-        -1,
-        true,
-      );
-    } else if (isProcessing) {
-      pulse.value = withRepeat(withSpring(1.05), -1, true);
-      ring1.value = withRepeat(withTiming(1.8, { duration: 2000 }), -1, true);
-      ring2.value = withRepeat(withTiming(2.5, { duration: 3000 }), -1, true);
-    } else {
-      pulse.value = withSpring(1);
-      ring1.value = withSpring(1);
-      ring2.value = withSpring(1);
-    }
-  }, [isRecording, isProcessing, level]);
-
-  const animatedStyles = useAnimatedStyle(() => ({
-    transform: [{ scale: pulse.value }],
-  }));
-
-  const ring1Styles = useAnimatedStyle(() => ({
-    transform: [{ scale: ring1.value }],
-    opacity: interpolate(ring1.value, [1, 2], [0.4, 0]),
-  }));
-
-  const ring2Styles = useAnimatedStyle(() => ({
-    transform: [{ scale: ring2.value }],
-    opacity: interpolate(ring2.value, [1, 3], [0.2, 0]),
-  }));
-
-  return (
-    <View className="items-center justify-center">
-      <Animated.View
-        style={ring1Styles}
-        className="absolute w-40 h-40 rounded-full border-2 border-turquoise/30"
-      />
-      <Animated.View
-        style={ring2Styles}
-        className="absolute w-40 h-40 rounded-full border border-turquoise/10"
-      />
-
-      <Animated.View
-        style={animatedStyles}
-        className={`w-36 h-36 rounded-full items-center justify-center shadow-2xl ${isRecording ? "bg-turquoise" : isProcessing ? "bg-deep-teal border-2 border-turquoise" : "bg-teal-medium border border-turquoise/20"}`}
-      >
-        {isProcessing ? (
-          <ActivityIndicator color="#2dd4bf" size="large" />
-        ) : (
-          <Ionicons
-            name={isRecording ? "mic" : "mic-outline"}
-            size={56}
-            color={isRecording ? "#0a1416" : "#2dd4bf"}
-          />
-        )}
-      </Animated.View>
-    </View>
-  );
-};
-
-// Medical section config: each heading gets a unique color + accent
+// Medical section config for structured AI rendering
 const SECTION_CONFIG: Record<
   string,
-  { color: string; border: string; icon: string; label: string }
+  { color: string; border: string; icon: keyof typeof Ionicons.glyphMap; label: string }
 > = {
-  // --- Clinical case / disease ---
   "CLINICAL ASSESSMENT": {
-    color: "#38bdf8",
-    border: "#0ea5e9",
+    color: "#7fb0cf",
+    border: "#5f97b8",
     icon: "clipboard-outline",
     label: "Clinical Assessment",
   },
   "DIFFERENTIAL DIAGNOSIS": {
-    color: "#f472b6",
-    border: "#ec4899",
+    color: "#d8a8b8",
+    border: "#bb8298",
     icon: "git-branch-outline",
     label: "Differential Diagnosis",
   },
   "INVESTIGATIONS / WORKUP": {
-    color: "#34d399",
-    border: "#10b981",
+    color: "#7fb8a8",
+    border: "#5f9c8c",
     icon: "pulse-outline",
     label: "Investigations / Workup",
   },
-  "MANAGEMENT / WORKUP": {
-    color: "#34d399",
-    border: "#10b981",
-    icon: "pulse-outline",
-    label: "Management / Workup",
+  "INVESTIGATIONS": {
+    color: "#7fb8a8",
+    border: "#5f9c8c",
+    icon: "flask-outline",
+    label: "Investigations",
   },
-  "RELEVANT MEDICATIONS": {
-    color: "#fb923c",
-    border: "#f97316",
-    icon: "medkit-outline",
-    label: "Relevant Medications",
+  "MANAGEMENT PROTOCOL": {
+    color: "#d8b07f",
+    border: "#bb9163",
+    icon: "medical-outline",
+    label: "Management Protocol",
   },
-  // --- Scoring systems ---
-  OVERVIEW: {
-    color: "#a78bfa",
-    border: "#7c3aed",
+  "SURGICAL / PROCEDURAL CONSIDERATIONS": {
+    color: "#d9b25a",
+    border: "#b8924a",
+    icon: "cut-outline",
+    label: "Surgical / Procedural",
+  },
+  "OVERVIEW": {
+    color: "#b3a8cf",
+    border: "#9286b8",
     icon: "document-text-outline",
     label: "Overview",
   },
   "SCORING CRITERIA": {
-    color: "#38bdf8",
-    border: "#0ea5e9",
+    color: "#7fb0cf",
+    border: "#5f97b8",
     icon: "list-outline",
     label: "Scoring Criteria",
   },
-  INTERPRETATION: {
-    color: "#34d399",
-    border: "#10b981",
+  "INTERPRETATION": {
+    color: "#7fb8a8",
+    border: "#5f9c8c",
     icon: "analytics-outline",
     label: "Interpretation",
   },
-  "CLINICAL USE": {
-    color: "#fb923c",
-    border: "#f97316",
-    icon: "medical-outline",
-    label: "Clinical Use",
-  },
-  // --- Drug / medication ---
-  "DRUG OVERVIEW": {
-    color: "#a78bfa",
-    border: "#7c3aed",
-    icon: "flask-outline",
-    label: "Drug Overview",
-  },
-  "MECHANISM OF ACTION": {
-    color: "#38bdf8",
-    border: "#0ea5e9",
-    icon: "nuclear-outline",
-    label: "Mechanism of Action",
-  },
-  INDICATIONS: {
-    color: "#34d399",
-    border: "#10b981",
-    icon: "checkmark-circle-outline",
-    label: "Indications",
-  },
-  "DOSAGE AND FORMS": {
-    color: "#fbbf24",
-    border: "#d97706",
-    icon: "calculator-outline",
-    label: "Dosage and Forms",
-  },
-  "SIDE EFFECTS": {
-    color: "#f87171",
-    border: "#ef4444",
-    icon: "warning-outline",
-    label: "Side Effects",
-  },
-  CONTRAINDICATIONS: {
-    color: "#f87171",
-    border: "#dc2626",
-    icon: "ban-outline",
-    label: "Contraindications",
-  },
-  // --- General concept / procedure ---
-  DEFINITION: {
-    color: "#a78bfa",
-    border: "#7c3aed",
+  "DEFINITION": {
+    color: "#b3a8cf",
+    border: "#9286b8",
     icon: "book-outline",
     label: "Definition",
   },
   "KEY POINTS": {
-    color: "#38bdf8",
-    border: "#0ea5e9",
+    color: "#7fb0cf",
+    border: "#5f97b8",
     icon: "key-outline",
     label: "Key Points",
   },
-  "CLINICAL RELEVANCE": {
-    color: "#34d399",
-    border: "#10b981",
-    icon: "heart-outline",
-    label: "Clinical Relevance",
+  "PROFESSIONAL CLINICAL ADVICE": {
+    color: "#44cabf",
+    border: "#358f80",
+    icon: "checkmark-circle-outline",
+    label: "Clinical Advice",
   },
-  "IMPORTANT NOTES": {
-    color: "#fb923c",
-    border: "#f97316",
-    icon: "alert-circle-outline",
-    label: "Important Notes",
-  },
-  // --- Investigation / lab ---
-  "NORMAL VALUES": {
-    color: "#34d399",
-    border: "#10b981",
-    icon: "checkmark-done-outline",
-    label: "Normal Values",
-  },
-  "CLINICAL SIGNIFICANCE": {
-    color: "#fbbf24",
-    border: "#d97706",
-    icon: "star-outline",
-    label: "Clinical Significance",
-  },
-  // --- Fast recap specific ---
   "CLINICAL PICTURE": {
-    color: "#38bdf8",
-    border: "#0ea5e9",
+    color: "#7fb0cf",
+    border: "#5f97b8",
     icon: "eye-outline",
     label: "Clinical Picture",
   },
-  "SIGNS & SYMPTOMS": {
-    color: "#38bdf8",
-    border: "#0ea5e9",
-    icon: "eye-outline",
-    label: "Signs & Symptoms",
-  },
-  INVESTIGATIONS: {
-    color: "#34d399",
-    border: "#10b981",
-    icon: "flask-outline",
-    label: "Investigations",
-  },
   "UPDATED INFO / SCORES": {
-    color: "#a78bfa",
-    border: "#7c3aed",
+    color: "#b3a8cf",
+    border: "#9286b8",
     icon: "trending-up-outline",
     label: "Updated Info / Scores",
   },
-  TREATMENT: {
-    color: "#fb923c",
-    border: "#f97316",
-    icon: "medkit-outline",
-    label: "Treatment",
-  },
 };
 
-// Fallback color palette (cycles by section index for any unknown heading)
 const FALLBACK_PALETTE = [
-  { color: "#a78bfa", border: "#7c3aed", icon: "information-circle-outline" },
-  { color: "#38bdf8", border: "#0ea5e9", icon: "document-text-outline" },
-  { color: "#34d399", border: "#10b981", icon: "list-outline" },
-  { color: "#fb923c", border: "#f97316", icon: "alert-circle-outline" },
-  { color: "#f472b6", border: "#ec4899", icon: "star-outline" },
-  { color: "#fbbf24", border: "#d97706", icon: "bookmark-outline" },
+  { color: "#b3a8cf", border: "#9286b8", icon: "information-circle-outline" as const },
+  { color: "#7fb0cf", border: "#5f97b8", icon: "document-text-outline" as const },
+  { color: "#7fb8a8", border: "#5f9c8c", icon: "list-outline" as const },
+  { color: "#d8b07f", border: "#bb9163", icon: "alert-circle-outline" as const },
 ];
 
 type MedicalSection = { heading: string; content: string };
@@ -434,7 +207,6 @@ function parseMedicalSections(text: string): {
   sections: MedicalSection[];
   plainText: string;
 } {
-  // Split by ##HEADER##, then parse pairs. We expect: [pre-text, HEAD, content, HEAD, content, ...]
   const parts = text.split(/##(.*?)##/);
   const sections: MedicalSection[] = [];
   let plainText = parts[0]?.trim() || "";
@@ -442,8 +214,6 @@ function parseMedicalSections(text: string): {
   for (let i = 1; i < parts.length; i += 2) {
     const heading = parts[i]?.trim();
     let content = parts[i + 1] || "";
-
-    // Clean up ##END## if present in content
     content = content.replace(/##END##/gi, "").trim();
 
     if (heading && heading !== "END") {
@@ -463,7 +233,6 @@ const MedicalSectionBox: React.FC<{
   index: number;
 }> = ({ section, index }) => {
   const upHeading = section.heading.toUpperCase();
-  // Find a match where the config key is inside the heading or vice-versa
   const matchedKey = Object.keys(SECTION_CONFIG).find(
     (key) =>
       upHeading === key || upHeading.includes(key) || key.includes(upHeading),
@@ -482,52 +251,45 @@ const MedicalSectionBox: React.FC<{
 
   return (
     <Animated.View
-      entering={ZoomIn.duration(400)
-        .delay(index * 120)
-        .springify()}
+      entering={ZoomIn.duration(400).delay(index * 90).springify()}
       style={{
         width: "100%",
-        marginBottom: 10,
-        borderRadius: 16,
+        marginBottom: 12,
+        borderRadius: 18,
         borderWidth: 1,
-        borderColor: cfg.border,
-        backgroundColor: "#0d1f22",
+        borderColor: cfg.border + "65",
+        backgroundColor: "#1b1d22",
         overflow: "hidden",
       }}
     >
-      {/* Heading bar */}
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: cfg.border + "28",
-          paddingHorizontal: 14,
-          paddingVertical: 10,
+          backgroundColor: cfg.border + "20",
+          paddingHorizontal: 16,
+          paddingVertical: 11,
           borderBottomWidth: 1,
-          borderBottomColor: cfg.border + "55",
+          borderBottomColor: cfg.border + "40",
         }}
       >
-        <Ionicons
-          name={cfg.icon as any}
-          size={18}
-          color={cfg.color}
-          style={{ marginRight: 8 }}
-        />
+        <View style={{ backgroundColor: cfg.border + "35", padding: 6, borderRadius: 10, marginRight: 10 }}>
+          <Ionicons name={cfg.icon} size={16} color={cfg.color} />
+        </View>
         <Text
           style={{
             color: cfg.color,
             fontWeight: "800",
             fontSize: 13,
-            letterSpacing: 0.5,
+            letterSpacing: 0.6,
             textTransform: "uppercase",
           }}
         >
           {cfg.label}
         </Text>
       </View>
-      {/* Content */}
-      <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
-        <Text style={{ color: "#e2e8f0", fontSize: 14, lineHeight: 22 }}>
+      <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
+        <Text style={{ color: "#e2e8f0", fontSize: 14, lineHeight: 23, fontWeight: "400" }}>
           {section.content}
         </Text>
       </View>
@@ -535,219 +297,175 @@ const MedicalSectionBox: React.FC<{
   );
 };
 
-// Chat Bubble Component
-const ChatBubble: React.FC<{ message: Message }> = ({ message }) => {
+// Animated Pulse Dots for AI Thinking State
+const ThinkingIndicator: React.FC = () => {
+  const dot1 = useSharedValue(0.3);
+  const dot2 = useSharedValue(0.3);
+  const dot3 = useSharedValue(0.3);
+
+  useEffect(() => {
+    dot1.value = withRepeat(withSequence(withTiming(1, { duration: 400 }), withTiming(0.3, { duration: 400 })), -1, true);
+    setTimeout(() => {
+      dot2.value = withRepeat(withSequence(withTiming(1, { duration: 400 }), withTiming(0.3, { duration: 400 })), -1, true);
+    }, 150);
+    setTimeout(() => {
+      dot3.value = withRepeat(withSequence(withTiming(1, { duration: 400 }), withTiming(0.3, { duration: 400 })), -1, true);
+    }, 300);
+  }, []);
+
+  const s1 = useAnimatedStyle(() => ({ opacity: dot1.value }));
+  const s2 = useAnimatedStyle(() => ({ opacity: dot2.value }));
+  const s3 = useAnimatedStyle(() => ({ opacity: dot3.value }));
+
+  return (
+    <Animated.View entering={FadeInDown.duration(300)} className="flex-row items-center gap-3 px-4 py-3 mb-4">
+      <View className="w-8 h-8 rounded-full bg-turquoise/20 items-center justify-center border border-turquoise/40">
+        <Ionicons name="sparkles" size={16} color="#44cabf" />
+      </View>
+      <View className="flex-row items-center gap-1.5 bg-teal-dark border border-white/10 px-4 py-3 rounded-2xl rounded-tl-none">
+        <Text className="text-gray-400 text-xs font-semibold mr-1">Consulting clinical guidelines</Text>
+        <Animated.View style={s1} className="w-2 h-2 rounded-full bg-turquoise" />
+        <Animated.View style={s2} className="w-2 h-2 rounded-full bg-turquoise" />
+        <Animated.View style={s3} className="w-2 h-2 rounded-full bg-turquoise" />
+      </View>
+    </Animated.View>
+  );
+};
+
+const ChatBubble: React.FC<{
+  message: Message;
+  onCopy: (text: string) => void;
+}> = ({ message, onCopy }) => {
   const isAi = !message.isUser;
-  const router = useRouter();
 
   if (isAi) {
-    // --- Medical section detection (new structured format) ---
     const { hasSections, sections, plainText } = parseMedicalSections(
       message.text,
     );
 
-    if (hasSections) {
-      return (
-        <View
-          style={{ marginBottom: 16, paddingHorizontal: 16, width: "100%" }}
-        >
-          {plainText.length > 0 && (
-            <View
-              style={{
-                backgroundColor: "rgba(45,212,191,0.08)",
-                borderColor: "rgba(45,212,191,0.2)",
-                borderWidth: 1,
-                borderRadius: 16,
-                paddingHorizontal: 16,
-                paddingVertical: 12,
-                marginBottom: 10,
-              }}
-            >
-              <Text style={{ color: "#e2e8f0", fontSize: 14, lineHeight: 22 }}>
-                {plainText}
-              </Text>
-            </View>
-          )}
-          {sections.map((section, i) => (
-            <MedicalSectionBox key={`sec-${i}`} section={section} index={i} />
-          ))}
-        </View>
-      );
-    }
-
-    // --- Legacy / drug-card format ---
-    let rawSegments = message.text
-      .split("[[DRUG_BLOCK]]")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    if (
-      rawSegments.length === 1 &&
-      !message.text.includes("[[DRUG_BLOCK]]") &&
-      message.text.includes("::")
-    ) {
-      if (message.text.includes("trade_name::")) {
-        rawSegments = [message.text];
-      }
-    }
-
-    const structuredBlocks = rawSegments.filter((s) =>
-      s.includes("trade_name::"),
-    );
-    const isGrid = structuredBlocks.length > 1;
-
     return (
-      <View className="mb-4 px-4 w-full flex-row flex-wrap justify-between">
-        {rawSegments.map((segment, index) => {
-          const isStructured = segment.includes("trade_name::");
+      <Animated.View entering={FadeInUp.duration(400)} className="mb-6 px-4 w-full">
+        {/* AI Avatar & Header */}
+        <View className="flex-row items-center justify-between mb-2">
+          <View className="flex-row items-center gap-2">
+            <View className="w-7 h-7 rounded-full bg-turquoise/20 items-center justify-center border border-turquoise/40">
+              <Ionicons name="sparkles" size={14} color="#44cabf" />
+            </View>
+            <Text className="text-white text-xs font-bold">Med Arena AI</Text>
+            <View className="px-2 py-0.5 rounded-full bg-teal-medium border border-white/10">
+              <Text className="text-[9px] text-turquoise font-semibold">Clinical RAG</Text>
+            </View>
+          </View>
+          <Text className="text-gray-500 text-[10px]">{message.timestamp}</Text>
+        </View>
 
-          if (!isStructured) {
-            let cleanText = segment.split("disclaimer::")[0].trim();
-            let calculationDrug = "";
-            if (cleanText.includes("[[CALCULATE_DOSAGE]]")) {
-              const calcMatch = cleanText.match(
-                /\[\[CALCULATE_DOSAGE\]\]\s*drug_name::(.*?)\s*\[\[\/CALCULATE_DOSAGE\]\]/,
-              );
-              if (calcMatch) {
-                calculationDrug = calcMatch[1]
-                  .split("|")[0]
-                  .trim()
-                  .replace(/[^\x00-\x7F]/g, "")
-                  .trim();
-                cleanText = cleanText
-                  .replace(
-                    /\[\[CALCULATE_DOSAGE\].*?\[\[\/CALCULATE_DOSAGE\]\]/s,
-                    "",
-                  )
-                  .trim();
-              }
-            }
-
-            if (cleanText.length === 0 && !calculationDrug) return null;
-
-            return (
-              <View
-                key={`text-${index}`}
-                className="w-full flex-row justify-start mb-3"
-              >
-                <View className="bg-teal-medium/50 border border-charcoal/20 px-4 py-3 rounded-2xl rounded-tl-none max-w-[90%]">
-                  <Text className="text-base leading-6 text-gray-200">
-                    {cleanText}
-                  </Text>
-                  {calculationDrug ? (
-                    <TouchableOpacity
-                      onPress={() =>
-                        router.push({
-                          pathname: "/calculator",
-                          params: { drug: calculationDrug },
-                        })
-                      }
-                      className="mt-3 flex-row items-center bg-turquoise px-3 py-2 rounded-xl"
-                    >
-                      <Ionicons
-                        name="calculator"
-                        size={16}
-                        color="#0a1416"
-                        style={{ marginRight: 8 }}
-                      />
-                      <Text className="text-deep-teal font-bold text-sm">
-                        Calculate Dosage for {calculationDrug}
-                      </Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
+        {/* AI Message Content */}
+        {hasSections ? (
+          <View className="pl-1">
+            {plainText.length > 0 && (
+              <View className="bg-teal-dark border border-turquoise/20 rounded-2xl p-4 mb-3">
+                <Text className="text-gray-200 text-sm leading-6">{plainText}</Text>
               </View>
-            );
-          } else {
-            return (
-              <AiResponseCard
-                key={`card-${index}`}
-                text={segment}
-                delay={index * 150}
-                isGrid={isGrid}
-              />
-            );
-          }
-        })}
-
-        {message.text.includes("disclaimer::") && (
-          <View className="w-full mt-2 px-1">
-            <Text className="text-gray-muted text-[10px] italic">
-              {message.text.split("disclaimer::")[1]?.split("|")[0]?.trim()}
+            )}
+            {sections.map((section, i) => (
+              <MedicalSectionBox key={`sec-${i}`} section={section} index={i} />
+            ))}
+          </View>
+        ) : (
+          <View className="bg-teal-dark border border-white/10 rounded-2xl rounded-tl-none p-4 shadow-sm">
+            <Text className="text-gray-200 text-sm leading-6 font-normal">
+              {message.text}
             </Text>
           </View>
         )}
-      </View>
+
+        {/* Citations Block */}
+        {message.citations && message.citations.length > 0 && (
+          <View className="mt-4 mb-2">
+            <Text className="text-gray-400 text-[11px] font-bold uppercase tracking-wider mb-2 ml-1">
+              <Ionicons name="library-outline" size={12} /> Medical References
+            </Text>
+            {message.citations.map((cit) => (
+              <View key={cit.id} className="bg-teal-dark/50 border border-white/5 rounded-xl p-3 mb-2 shadow-sm">
+                <View className="flex-row items-start gap-2.5">
+                  <View className="bg-turquoise/20 px-1.5 py-0.5 rounded mt-0.5">
+                    <Text className="text-turquoise text-[10px] font-bold">[{cit.id}]</Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-gray-200 text-xs font-semibold leading-4 mb-1">{cit.title}</Text>
+                    <Text className="text-gray-400 text-[10px] font-medium">{cit.journal} ({cit.year})</Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Action Toolbar for AI message */}
+        <View className="flex-row items-center gap-4 mt-2 pl-2">
+          <TouchableOpacity onPress={() => onCopy(message.text)} className="flex-row items-center gap-1">
+            <Ionicons name="copy-outline" size={14} color="#9fa3ac" />
+            <Text className="text-gray-400 text-xs font-medium">Copy</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
     );
   }
 
+  // User Message
   return (
-    <View className="flex-row justify-end mb-4 px-4">
-      <View className="max-w-[90%] items-end">
-        <View className="bg-turquoise px-4 py-3 rounded-2xl rounded-tr-none shadow-sm">
-          <Text className="text-base leading-6 text-black font-medium">
+    <Animated.View entering={FadeInDown.duration(300)} className="flex-row justify-end mb-5 px-4">
+      <View className="max-w-[85%] items-end">
+        <View className="flex-row items-center gap-1.5 mb-1 pr-1">
+          <Text className="text-gray-400 text-[10px]">{message.timestamp}</Text>
+          <Text className="text-turquoise text-xs font-bold">Doctor</Text>
+        </View>
+        <View className="bg-gradient-to-r from-teal-600 to-turquoise/80 bg-turquoise px-4 py-3 rounded-2xl rounded-tr-none shadow-md">
+          <Text className="text-black text-sm font-semibold leading-5">
             {message.text}
           </Text>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
 const ChatTab = () => {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Hello! I'm Med Arena AI. I can assist you with medical diagnoses, general health questions, Shall we start",
-      isUser: false,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    },
-  ]);
+  const [selectedCategory, setSelectedCategory] = useState<DoctorCategory>("physicians");
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingLevel, setRecordingLevel] = useState(0);
-  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     const keyboardShowListener = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (e) => {
-        setIsKeyboardVisible(true);
-        // Auto-scroll to bottom when keyboard appears with more offset
+      () => {
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
         }, 200);
       },
     );
-    const keyboardHideListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => setIsKeyboardVisible(false),
-    );
-
     return () => {
       keyboardShowListener.remove();
-      keyboardHideListener.remove();
     };
   }, []);
 
-  const startRecording = async () => {
-    Alert.alert("Notice", "Voice recording is temporarily disabled.");
+  const handleSelectCategory = (cat: CategoryOption) => {
+    if (!cat.isAvailable) {
+      Alert.alert("Coming Soon", `${cat.name} clinical resources will be unlocked in the upcoming release. Currently set to Physicians.`);
+      return;
+    }
+    setSelectedCategory(cat.id);
   };
 
-  const stopRecording = async () => {
-    // Disabled
+  const handleCopyText = (text: string) => {
+    Clipboard.setString(text);
+    Alert.alert("Copied", "Clinical response copied to clipboard.");
   };
 
-  const handleQuery = (text: string, reply: string) => {
+  const handleQuery = (text: string, reply: string, citations?: Citation[]) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       text,
@@ -766,49 +484,22 @@ const ChatTab = () => {
         hour: "2-digit",
         minute: "2-digit",
       }),
+      category: selectedCategory,
+      citations,
     };
 
     setMessages((prev) => [...prev, userMessage, aiMessage]);
-
-    const doseWords = ["calculate", "dose", "dosage", "جرعة", "احسب", "حساب"];
-    const lowerQuery = text.toLowerCase();
-
-    if (doseWords.some((word) => lowerQuery.includes(word))) {
-      let drugNameCandidate = text;
-      doseWords.forEach((word) => {
-        const regex = new RegExp(word, "gi");
-        drugNameCandidate = drugNameCandidate.replace(regex, "");
-      });
-
-      ["of", "for", "من", "لـ", "الـ", "ل"].forEach((word) => {
-        const regex = new RegExp(`\\b${word}\\b`, "gi");
-        drugNameCandidate = drugNameCandidate.replace(regex, "");
-      });
-
-      drugNameCandidate = drugNameCandidate
-        .replace(/[^\w\s\u0600-\u06FF]/gi, "")
-        .trim();
-
-      if (drugNameCandidate.length > 2) {
-        setTimeout(() => {
-          router.push({
-            pathname: "/calculator",
-            params: { drug: drugNameCandidate },
-          });
-        }, 1500);
-      }
-    }
   };
 
-  const handleTextSend = async () => {
-    if (!inputText.trim()) return;
-    const query = inputText.trim();
-    setInputText("");
+  const handleTextSend = async (queryOverride?: string) => {
+    const query = queryOverride || inputText.trim();
+    if (!query) return;
+    if (!queryOverride) setInputText("");
     setIsTyping(true);
 
     try {
-      const aiResponse = await aiService.sendMessageByText(query, "general");
-      handleQuery(query, aiResponse);
+      const { reply, citations } = await aiService.sendMessageByText(query, "general", selectedCategory);
+      handleQuery(query, reply, citations);
     } catch (error) {
       console.error(error);
     } finally {
@@ -816,114 +507,208 @@ const ChatTab = () => {
     }
   };
 
-  const clearHistory = () => {
-    setMessages([messages[0]]);
+  const handleNewChat = () => {
+    setMessages([]);
   };
 
   return (
     <View className="flex-1 bg-background">
-      {/* Header */}
-      <SafeAreaView edges={["top"]} className="bg-deep-teal/40">
-        <View className="flex-row items-center justify-between px-6 py-4 border-b border-charcoal/30">
-          <View className="flex-row items-center">
-            <View className="w-10 h-10 rounded-full bg-turquoise/10 items-center justify-center border border-turquoise/30 mr-3">
-              <Ionicons name="medical" size={20} color="#2dd4bf" />
+      {/* Modern Header Bar */}
+      <SafeAreaView edges={["top"]} className="bg-teal-dark/95 border-b border-white/5">
+        <View className="px-5 py-3 flex-row items-center justify-between">
+          <View className="flex-row items-center gap-3">
+            <View className="w-10 h-10 rounded-full bg-turquoise/15 items-center justify-center border border-turquoise/30 shadow-glow-cyan">
+              <Ionicons name="medical" size={20} color="#44cabf" />
             </View>
             <View>
-              <Text className="text-white font-bold text-lg">Med Arena</Text>
-              <Animated.Text className="text-turquoise text-[10px] font-bold uppercase tracking-widest">
-                {isTyping
-                  ? "Thinking..."
-                  : isRecording
-                    ? "Listening..."
-                    : isProcessingVoice
-                      ? "Processing..."
-                      : "Medical AI"}
-              </Animated.Text>
+              <View className="flex-row items-center gap-1.5">
+                <Text className="text-white font-extrabold text-base tracking-tight">Med Arena</Text>
+                <View className="w-2 h-2 rounded-full bg-emerald-400" />
+              </View>
+              <Text className="text-gray-400 text-[11px] font-medium">Clinical Decision Support</Text>
             </View>
           </View>
 
-          {messages.length > 1 && (
-            <TouchableOpacity
-              onPress={clearHistory}
-              className="w-10 h-10 rounded-full bg-teal-medium/50 items-center justify-center border border-white/5"
-            >
-              <Ionicons name="trash-outline" size={18} color="#ef4444" />
-            </TouchableOpacity>
-          )}
+          <View className="flex-row items-center gap-2">
+            {messages.length > 0 && (
+              <TouchableOpacity
+                onPress={handleNewChat}
+                className="flex-row items-center gap-1 px-3 py-1.5 rounded-full bg-teal-medium border border-white/10"
+              >
+                <Ionicons name="add" size={16} color="#44cabf" />
+                <Text className="text-turquoise text-xs font-bold">New</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Doctor Category Segmented Switcher */}
+        <View className="px-5 pb-3">
+          <View className="flex-row bg-teal-dark/80 p-1 rounded-2xl border border-white/10 gap-1">
+            {CATEGORIES.map((cat) => {
+              const isSelected = selectedCategory === cat.id;
+              return (
+                <TouchableOpacity
+                  key={cat.id}
+                  onPress={() => handleSelectCategory(cat)}
+                  className={`flex-1 flex-row items-center justify-center py-2 rounded-xl transition-all ${
+                    isSelected
+                      ? "bg-turquoise shadow-md"
+                      : "bg-transparent"
+                  }`}
+                >
+                  <Ionicons
+                    name={cat.icon}
+                    size={14}
+                    color={isSelected ? "#141519" : "#9fa3ac"}
+                    style={{ marginRight: 4 }}
+                  />
+                  <Text
+                    className={`text-xs font-bold ${
+                      isSelected ? "text-black" : "text-gray-400"
+                    }`}
+                  >
+                    {cat.shortName}
+                  </Text>
+                  {!cat.isAvailable && !isSelected && (
+                    <View className="ml-1 px-1 bg-white/10 rounded">
+                      <Text className="text-[7px] text-amber-300 font-bold">SOON</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       </SafeAreaView>
 
-      {/* Main Chat Area with Keyboard Handling */}
+      {/* Main Chat Body & Empty State */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         className="flex-1"
-        style={{ flex: 1 }}
       >
-        {/* Chat Messages */}
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ChatBubble message={item} />}
-          contentContainerStyle={{
-            paddingTop: 16,
-            paddingBottom: 16,
-            flexGrow: 1,
-          }}
-          onContentSizeChange={() =>
-            flatListRef.current?.scrollToEnd({ animated: true })
-          }
-          onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          showsVerticalScrollIndicator={false}
-          style={{ flex: 1 }}
-        />
+        {messages.length === 0 ? (
+          <ScrollView
+            contentContainerStyle={{
+              paddingHorizontal: 20,
+              paddingTop: 30,
+              paddingBottom: 40 + CHAT_BOTTOM_OFFSET,
+            }}
+            showsVerticalScrollIndicator={false}
+            className="flex-1"
+          >
+            {/* Empty State Hero Header */}
+            <Animated.View entering={FadeIn.duration(500)} className="items-center mb-8">
+              <View className="w-20 h-20 rounded-full bg-turquoise/10 items-center justify-center border border-turquoise/30 mb-4 shadow-glow-cyan">
+                <Ionicons name="sparkles" size={38} color="#44cabf" />
+              </View>
+              <Text className="text-white text-2xl font-extrabold text-center mb-1">
+                Clinical Consultant AI
+              </Text>
+              <Text className="text-gray-400 text-sm text-center max-w-[280px]">
+                High-yield evidence-based clinical reasoning, differential diagnosis & workup protocols.
+              </Text>
+            </Animated.View>
 
-        {/* Input Area - Gemini/ChatGPT Style */}
-        <View
-          className="bg-background border-t border-charcoal/30"
-          style={{ paddingBottom: Platform.OS === "ios" ? insets.bottom : 8 }}
-        >
-          <View className="px-4 py-3">
-            <View className="flex-row items-end bg-teal-medium/40 rounded-3xl px-4 py-2 border border-charcoal/40">
-              {/* Expandable Text Input */}
-              <TextInput
-                className="flex-1 text-white text-base max-h-32 py-2"
-                placeholder="Ask a medical question..."
-                placeholderTextColor="#6b7280"
-                value={inputText}
-                onChangeText={setInputText}
-                onSubmitEditing={handleTextSend}
-                returnKeyType="send"
-                multiline
-                textAlignVertical="center"
-                style={{ minHeight: 24 }}
-              />
+            {/* Quick Starter List */}
+            <Text className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-3">
+              Suggested Clinical Inquiries
+            </Text>
 
-              {/* Send Button */}
-              <TouchableOpacity
-                onPress={handleTextSend}
-                disabled={!inputText.trim() || isTyping}
-                className={`w-9 h-9 rounded-full items-center justify-center ml-2 ${
-                  inputText.trim() && !isTyping
-                    ? "bg-turquoise"
-                    : "bg-charcoal/60"
-                }`}
-              >
-                {isTyping ? (
-                  <ActivityIndicator size="small" color="#9ca3af" />
-                ) : (
-                  <Ionicons
-                    name="arrow-up"
-                    size={20}
-                    color={inputText.trim() ? "#0a1416" : "#6b7280"}
-                  />
-                )}
-              </TouchableOpacity>
+            <View className="flex-col gap-2.5 mb-6">
+              {QUICK_PROMPTS.map((item, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => handleTextSend(item.prompt)}
+                  className="bg-teal-medium/40 border border-white/10 p-3.5 rounded-2xl flex-row items-center justify-between shadow-sm active:bg-teal-medium/70"
+                >
+                  <View className="flex-row items-center flex-1 mr-3">
+                    <View
+                      className="w-10 h-10 rounded-xl items-center justify-center mr-3"
+                      style={{ backgroundColor: item.color + "25" }}
+                    >
+                      <Ionicons name={item.icon} size={20} color={item.color} />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-white font-bold text-sm mb-0.5">
+                        {item.title}
+                      </Text>
+                      <Text className="text-gray-400 text-xs leading-4" numberOfLines={1}>
+                        {item.subtitle}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View className="w-8 h-8 rounded-full bg-white/5 items-center justify-center">
+                    <Ionicons name="arrow-forward" size={16} color="#44cabf" />
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
+          </ScrollView>
+        ) : (
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <ChatBubble message={item} onCopy={handleCopyText} />}
+            ListFooterComponent={isTyping ? <ThinkingIndicator /> : null}
+            contentContainerStyle={{
+              paddingTop: 20,
+              paddingBottom: 20 + CHAT_BOTTOM_OFFSET,
+              flexGrow: 1,
+            }}
+            onContentSizeChange={() =>
+              flatListRef.current?.scrollToEnd({ animated: true })
+            }
+            onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            style={{ flex: 1 }}
+          />
+        )}
+
+        {/* Floating Composer Bar */}
+        <View
+          className="bg-teal-dark/95 border-t border-white/10 px-4 pt-3"
+          style={{
+            paddingBottom: Platform.OS === "ios" ? insets.bottom + 8 : 12,
+            marginBottom: CHAT_BOTTOM_OFFSET,
+          }}
+        >
+          <View className="flex-row items-end bg-teal-medium/70 rounded-3xl px-4 py-2 border border-white/10 shadow-lg">
+            <TextInput
+              className="flex-1 text-white text-base max-h-32 py-2"
+              placeholder="Ask clinical case, protocol, differential..."
+              placeholderTextColor="#9fa3ac"
+              value={inputText}
+              onChangeText={setInputText}
+              onSubmitEditing={() => handleTextSend()}
+              returnKeyType="send"
+              multiline
+              textAlignVertical="center"
+              style={{ minHeight: 28 }}
+            />
+
+            <TouchableOpacity
+              onPress={() => handleTextSend()}
+              disabled={!inputText.trim() || isTyping}
+              className={`w-10 h-10 rounded-full items-center justify-center ml-2 ${
+                inputText.trim() && !isTyping
+                  ? "bg-turquoise shadow-glow-cyan"
+                  : "bg-white/10"
+              }`}
+            >
+              {isTyping ? (
+                <ActivityIndicator size="small" color="#9fa3ac" />
+              ) : (
+                <Ionicons
+                  name="arrow-up"
+                  size={22}
+                  color={inputText.trim() ? "#141519" : "#8a8e98"}
+                />
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </KeyboardAvoidingView>

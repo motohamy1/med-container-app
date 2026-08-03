@@ -81,7 +81,7 @@ const ProfileHeader = ({ profile, loading }: { profile: any; loading: boolean })
 
         {/* Online/AI Active Indicator */}
         <View className="absolute bottom-1 right-1 w-6 h-6 bg-turquoise rounded-full border-4 border-background items-center justify-center">
-          <Ionicons name="flash" size={10} color="#0a1416" />
+          <Ionicons name="flash" size={10} color="#141519" />
         </View>
       </View>
 
@@ -132,7 +132,7 @@ const StatsSection = () => {
       value: '3',
       subtitle: 'Prescriptions',
       icon: 'medkit',
-      color: '#2dd4bf',
+      color: '#44cabf',
     },
     {
       id: '2',
@@ -140,7 +140,7 @@ const StatsSection = () => {
       value: 'Oct 24',
       subtitle: 'Next Due Date',
       icon: 'calendar',
-      color: '#fb923c',
+      color: '#d8b07f',
     },
     {
       id: '3',
@@ -148,7 +148,7 @@ const StatsSection = () => {
       value: '2',
       subtitle: 'Known Triggers',
       icon: 'warning',
-      color: '#fb7185',
+      color: '#d98a8a',
     },
   ];
 
@@ -192,11 +192,11 @@ const MenuItem = ({
       <Switch
         value={item.toggleValue}
         onValueChange={onToggle}
-        trackColor={{ false: '#1a2f35', true: '#2dd4bf' }}
-        thumbColor={item.toggleValue ? '#0a1416' : '#9ca3af'}
+        trackColor={{ false: '#23262c', true: '#44cabf' }}
+        thumbColor={item.toggleValue ? '#141519' : '#9fa3ac'}
       />
     ) : (
-      <Ionicons name="chevron-forward" size={20} color="#6b7280" />
+      <Ionicons name="chevron-forward" size={20} color="#8a8e98" />
     )}
   </TouchableOpacity>
 );
@@ -216,7 +216,7 @@ const MenuSection = ({
   <View className="flex-col gap-2 px-4 py-2">
     {icon ? (
       <View className="flex-row items-center gap-2 px-2 py-2">
-        <Ionicons name={icon} size={20} color="#2dd4bf" />
+        <Ionicons name={icon} size={20} color="#44cabf" />
         <Text className="text-lg font-bold text-white">{title}</Text>
       </View>
     ) : (
@@ -243,12 +243,12 @@ const BottomNavigation = () => (
   <View className="absolute bottom-0 left-0 right-0 h-[88px] bg-teal-dark/80 backdrop-blur-lg border-t border-charcoal/20 z-50">
     <View className="flex-row items-center justify-around h-16">
       <TouchableOpacity className="flex-col items-center justify-center w-full h-full gap-1">
-        <Ionicons name="home" size={24} color="#9ca3af" />
+        <Ionicons name="home" size={24} color="#9fa3ac" />
         <Text className="text-[10px] font-medium text-gray-muted">Home</Text>
       </TouchableOpacity>
 
       <TouchableOpacity className="flex-col items-center justify-center w-full h-full gap-1">
-        <Ionicons name="medkit" size={24} color="#9ca3af" />
+        <Ionicons name="medkit" size={24} color="#9fa3ac" />
         <Text className="text-[10px] font-medium text-gray-muted">Pharmacy</Text>
       </TouchableOpacity>
 
@@ -258,7 +258,7 @@ const BottomNavigation = () => (
           className="w-14 h-14 bg-turquoise rounded-full items-center justify-center shadow-glow-cyan"
           onPress={() => router.push('/(tabs)/ChatTab')}
         >
-          <Ionicons name="sparkles" size={28} color="#0a1416" />
+          <Ionicons name="sparkles" size={28} color="#141519" />
         </TouchableOpacity>
       </View>
 
@@ -266,12 +266,12 @@ const BottomNavigation = () => (
         className="flex-col items-center justify-center w-full h-full gap-1"
         onPress={() => router.push('/(tabs)/ChatTab')}
       >
-        <Ionicons name="chatbubbles" size={24} color="#9ca3af" />
+        <Ionicons name="chatbubbles" size={24} color="#9fa3ac" />
         <Text className="text-[10px] font-medium text-gray-muted">Chat</Text>
       </TouchableOpacity>
 
       <TouchableOpacity className="flex-col items-center justify-center w-full h-full gap-1">
-        <Ionicons name="person" size={24} color="#2dd4bf" />
+        <Ionicons name="person" size={24} color="#44cabf" />
         <Text className="text-[10px] font-bold text-white">Profile</Text>
       </TouchableOpacity>
     </View>
@@ -290,7 +290,7 @@ const Profile = () => {
       title: 'Medical ID',
       subtitle: 'Blood type, weight, height',
       icon: 'finger-print',
-      iconColor: '#3b82f6',
+      iconColor: '#7baad0',
       bgColor: 'bg-blue-500/10',
     },
     {
@@ -298,14 +298,14 @@ const Profile = () => {
       title: 'Insurance Cards',
       subtitle: 'Primary and secondary',
       icon: 'card',
-      iconColor: '#a855f7',
+      iconColor: '#b3a8cf',
       bgColor: 'bg-purple-500/10',
     },
     {
       id: 'past-orders',
       title: 'Past Orders',
       icon: 'time-outline',
-      iconColor: '#10b981',
+      iconColor: '#7fb8a8',
       bgColor: 'bg-emerald-500/10',
     },
   ];
@@ -317,7 +317,7 @@ const Profile = () => {
       title: 'Voice Output',
       subtitle: 'Hear pharmacist responses',
       icon: 'volume-high',
-      iconColor: '#2dd4bf',
+      iconColor: '#44cabf',
       bgColor: 'bg-turquoise/10',
       hasToggle: true,
       toggleValue: voiceOutput,
@@ -327,7 +327,7 @@ const Profile = () => {
       title: 'Personality',
       subtitle: 'Professional, Friendly, Concise',
       icon: 'happy',
-      iconColor: '#ec4899',
+      iconColor: '#d8a8b8',
       bgColor: 'bg-pink-500/10',
     },
   ];
@@ -338,14 +338,14 @@ const Profile = () => {
       id: 'privacy',
       title: 'Privacy & Security',
       icon: 'lock-closed',
-      iconColor: '#9ca3af',
+      iconColor: '#9fa3ac',
       bgColor: 'bg-charcoal/20',
     },
     {
       id: 'notifications',
       title: 'Notifications',
       icon: 'notifications',
-      iconColor: '#9ca3af',
+      iconColor: '#9fa3ac',
       bgColor: 'bg-charcoal/20',
     },
   ];
@@ -359,7 +359,7 @@ const Profile = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#0a1416" />
+      <StatusBar barStyle="light-content" backgroundColor="#141519" />
 
       <ScrollView
         className="flex-1 pb-40"

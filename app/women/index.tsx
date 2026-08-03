@@ -5,7 +5,7 @@ export default function WomenCategory() {
     <CategoryPage
       categoryName="Women"
       categoryIcon="woman"
-      categoryColor="#ff9ff3"
+      categoryColor="#c98ac0"
     />
   );
 }

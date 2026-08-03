@@ -1,18 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
+  ScrollView,
   StatusBar,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Drug, drugService } from '../services/drugService';
-import { DrugCard } from './DrugCard';
-import { DrugDetailModal } from './DrugDetailModal';
 
 type CategoryPageProps = {
   categoryName: string;
@@ -20,31 +16,43 @@ type CategoryPageProps = {
   categoryColor: string;
 };
 
-type CategoryInfo = {
-  name: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
+type TopicItem = {
+  title: string;
+  subtitle: string;
+  type: string;
 };
 
-const categories: Record<string, CategoryInfo> = {
-  heart: { name: 'Heart', icon: 'heart', color: '#ff6b6b' },
-  git: { name: 'GIT', icon: 'restaurant', color: '#feca57' },
-  fever: { name: 'Fever', icon: 'thermometer', color: '#54a0ff' },
-  neuro: { name: 'Neuro', icon: 'nutrition', color: '#1dd1a1' },
-  skin: { name: 'Skin', icon: 'body', color: '#5f27cd' },
-  women: { name: 'Women', icon: 'woman', color: '#ff9ff3' },
-  lungs: { name: 'Lungs', icon: 'leaf', color: '#48dbfb' },
-};
-
-// Map UI categories to DB categories
-const uiToDbCategoryMap: Record<string, string[]> = {
-  'Heart': ['Painkiller'], // Placeholder mapping
-  'GIT': ['Painkiller'],
-  'Fever': ['Painkiller'],
-  'Neuro': ['Vitamin'],
-  'Skin': ['Antifungal'],
-  'Women': ['Vitamin'],
-  'Lungs': ['Antibiotic'],
+const specialtyTopics: Record<string, TopicItem[]> = {
+  Heart: [
+    { title: 'Acute Myocardial Infarction', subtitle: 'STEMI vs NSTEMI Workup & Management', type: 'Clinical Protocol' },
+    { title: 'Heart Failure Management', subtitle: 'HFrEF vs HFpEF Evidence-based Guidelines', type: 'Guidelines' },
+    { title: 'Atrial Fibrillation Management', subtitle: 'Rate vs Rhythm control & CHA2DS2-VASc', type: 'Scoring & Protocol' },
+  ],
+  GIT: [
+    { title: 'Acute Upper GI Bleeding', subtitle: 'Endoscopy timing, Glasgow-Blatchford Score', type: 'Emergency Workup' },
+    { title: 'Inflammatory Bowel Disease', subtitle: 'Crohn\'s vs Ulcerative Colitis Differential', type: 'Differential' },
+    { title: 'Acute Pancreatitis Evaluation', subtitle: 'Ranson Criteria & Initial Resuscitation', type: 'Criteria' },
+  ],
+  Fever: [
+    { title: 'Sepsis & Septic Shock', subtitle: 'qSOFA & Surviving Sepsis Campaign Guidelines', type: 'Critical Care' },
+    { title: 'Fever of Unknown Origin (FUO)', subtitle: 'Diagnostic Algorithm & Investigation Workflow', type: 'Workup' },
+  ],
+  Neuro: [
+    { title: 'Acute Ischemic Stroke', subtitle: 'tPA Window, NIHSS Score & CT Protocol', type: 'Emergency' },
+    { title: 'Status Epilepticus Management', subtitle: 'First & Second-line Anticonvulsant Protocol', type: 'Protocol' },
+  ],
+  Skin: [
+    { title: 'Severe Cutaneous Adverse Reactions', subtitle: 'SJS/TEN Diagnosis & Burn Unit Transfer', type: 'Dermatology' },
+    { title: 'Common Dermatological Lesions', subtitle: 'Morphology & Differential Diagnosis', type: 'Clinical Guide' },
+  ],
+  Women: [
+    { title: 'Preeclampsia & Eclampsia', subtitle: 'MgSO4 Protocol & Delivery Timing', type: 'OB/GYN Protocol' },
+    { title: 'Abnormal Uterine Bleeding (AUB)', subtitle: 'PALM-COEIN Classification & Workup', type: 'Classification' },
+  ],
+  Lungs: [
+    { title: 'Acute Pulmonary Embolism', subtitle: 'Wells Score, PERC Rule & Anticoagulation', type: 'Clinical Decision' },
+    { title: 'Severe Asthma Exacerbation', subtitle: 'Peak Flow, Steroids & Ventilator Management', type: 'Protocol' },
+  ],
 };
 
 export const CategoryPage: React.FC<CategoryPageProps> = ({
@@ -52,85 +60,19 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
   categoryIcon,
   categoryColor,
 }) => {
-  const [drugs, setDrugs] = useState<Drug[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedDrug, setSelectedDrug] = useState<Drug | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const topics = specialtyTopics[categoryName] || [
+    { title: `${categoryName} Clinical Workup`, subtitle: 'Evidence-based diagnostic and treatment guidelines', type: 'General' }
+  ];
 
-  useEffect(() => {
-    fetchDrugs();
-  }, [categoryName]);
-
-  const fetchDrugs = async () => {
-    setLoading(true);
-    try {
-      const dbCategories = uiToDbCategoryMap[categoryName] || [categoryName];
-      let allDrugs: Drug[] = [];
-
-      for (const dbCat of dbCategories) {
-        const data = await drugService.searchDrugs(dbCat);
-        allDrugs = [...allDrugs, ...data];
-      }
-
-      // Remove duplicates and filter
-      const uniqueDrugs = Array.from(new Set(allDrugs.map(d => d.id)))
-        .map(id => allDrugs.find(d => d.id === id)!);
-
-      setDrugs(uniqueDrugs);
-    } catch (error) {
-      console.error('Error fetching drugs:', error);
-      setDrugs([]);
-    } finally {
-      setLoading(false);
-    }
+  const handleStartConsultation = (query: string) => {
+    router.push({
+      pathname: '/(tabs)/ChatTab',
+    });
   };
-
-  const handleDrugPress = useCallback((drug: Drug) => {
-    setSelectedDrug(drug);
-    setModalVisible(true);
-  }, []);
-
-  const handleCloseModal = useCallback(() => {
-    setModalVisible(false);
-    setSelectedDrug(null);
-  }, []);
-
-  const renderDrugCard = useCallback(({ item }: { item: Drug }) => {
-    return (
-      <DrugCard
-        drug={item}
-        onPress={() => handleDrugPress(item)}
-        accentColor={categoryColor}
-      />
-    );
-  }, [categoryColor, handleDrugPress]);
-
-  const renderEmptyState = () => {
-    if (loading) return null;
-
-    return (
-      <View className="flex-1 items-center justify-center px-12">
-        <View className="w-20 h-20 rounded-full bg-teal-medium items-center justify-center mb-4">
-          <Ionicons name={categoryIcon} size={36} color={categoryColor} />
-        </View>
-        <Text className="text-white text-lg font-semibold mb-2">No Drugs Found</Text>
-        <Text className="text-gray-muted text-sm text-center">
-          No drugs found in the {categoryName} category. Check back later.
-        </Text>
-      </View>
-    );
-  };
-
-  const renderLoadingState = () => (
-    <View className="flex-1 items-center justify-center">
-      <ActivityIndicator size="large" color="#2dd4bf" />
-      <Text className="text-gray-muted text-sm mt-3">Loading drugs...</Text>
-    </View>
-  );
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#0a1416" />
+      <StatusBar barStyle="light-content" backgroundColor="#15161a" />
 
       {/* Header */}
       <View className="flex-row items-center px-6 py-4 border-b border-white/5">
@@ -138,45 +80,51 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <View className="flex-1 ml-3">
-          <Text className="text-white text-xl font-bold">{categoryName}</Text>
-          <Text className="text-gray-muted text-xs">
-            {drugs.length} {drugs.length === 1 ? 'drug' : 'drugs'} found
+          <Text className="text-white text-xl font-bold">{categoryName} Specialty</Text>
+          <Text className="text-turquoise text-xs font-semibold uppercase tracking-wider">
+            Physician Clinical Resources
           </Text>
         </View>
-        <View className="w-10 h-10 rounded-full bg-teal-medium items-center justify-center">
+        <View className="w-10 h-10 rounded-full bg-teal-medium items-center justify-center border border-white/10">
           <Ionicons name={categoryIcon} size={20} color={categoryColor} />
         </View>
       </View>
 
-      {/* Content */}
-      {loading ? (
-        renderLoadingState()
-      ) : drugs.length === 0 ? (
-        renderEmptyState()
-      ) : (
-        <FlatList
-          data={drugs}
-          renderItem={renderDrugCard}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          contentContainerStyle={{
-            padding: 24,
-            paddingBottom: 100,
-            gap: 16,
-          }}
-          columnWrapperStyle={{
-            gap: 16,
-          }}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+      {/* Topic Cards */}
+      <ScrollView contentContainerStyle={{ padding: 24, gap: 16 }} showsVerticalScrollIndicator={false}>
+        <View className="mb-2">
+          <Text className="text-gray-muted text-xs font-bold uppercase tracking-wider mb-1">High-Yield Topics</Text>
+          <Text className="text-white text-lg font-bold">Clinical Cases & Guidelines</Text>
+        </View>
 
-      {/* Drug Detail Modal */}
-      <DrugDetailModal
-        drug={selectedDrug}
-        visible={modalVisible}
-        onClose={handleCloseModal}
-      />
+        {topics.map((item, index) => (
+          <TouchableOpacity
+            key={index}
+            onPress={() => handleStartConsultation(item.title)}
+            className="bg-teal-medium/50 border border-white/10 p-4 rounded-2xl flex-row items-center justify-between"
+          >
+            <View className="flex-1 mr-3">
+              <View className="self-start px-2 py-0.5 rounded bg-turquoise/20 border border-turquoise/30 mb-1.5">
+                <Text className="text-[10px] font-bold text-turquoise uppercase">{item.type}</Text>
+              </View>
+              <Text className="text-white font-bold text-base mb-1">{item.title}</Text>
+              <Text className="text-gray-muted text-xs">{item.subtitle}</Text>
+            </View>
+            <View className="w-9 h-9 rounded-full bg-turquoise/10 items-center justify-center">
+              <Ionicons name="sparkles" size={18} color="#44cabf" />
+            </View>
+          </TouchableOpacity>
+        ))}
+
+        {/* Ask AI CTA */}
+        <TouchableOpacity
+          onPress={() => handleStartConsultation(categoryName)}
+          className="mt-4 bg-turquoise p-4 rounded-2xl flex-row items-center justify-center gap-2"
+        >
+          <Ionicons name="chatbubbles" size={20} color="#15161a" />
+          <Text className="text-black font-bold text-base">Ask Medical AI About {categoryName}</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 };

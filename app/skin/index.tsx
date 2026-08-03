@@ -5,7 +5,7 @@ export default function SkinCategory() {
     <CategoryPage
       categoryName="Skin"
       categoryIcon="body"
-      categoryColor="#5f27cd"
+      categoryColor="#7a6bbf"
     />
   );
 }

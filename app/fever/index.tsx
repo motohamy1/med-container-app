@@ -5,7 +5,7 @@ export default function FeverCategory() {
     <CategoryPage
       categoryName="Fever"
       categoryIcon="thermometer"
-      categoryColor="#54a0ff"
+      categoryColor="#6f97d9"
     />
   );
 }
