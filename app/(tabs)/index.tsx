@@ -25,7 +25,7 @@ const categoryRoutes: Record<string, string> = {
   'Fever': '/fever',
   'Neuro': '/neuro',
   'Skin': '/skin',
-  'Women': '/women',
+  'Gynacology': '/gynacology',
   'Lungs': '/lungs',
 };
 
@@ -57,7 +57,7 @@ const Header = () => {
     <View className="flex-row items-center justify-between px-6 pt-6 pb-2">
       <View>
         <View className="flex-row items-center gap-1.5">
-          <Ionicons name="medical" size={16} color="#44cabf" />
+          <Ionicons name="medical" size={16} color="#6ec2be" />
           <Text className="text-sm text-gray-muted font-medium">{getGreeting()}, Dr.</Text>
         </View>
         <Text className="text-2xl font-bold leading-tight text-white">Alex Doe</Text>
@@ -89,18 +89,18 @@ const SearchBar = () => {
       <View className="relative">
         <View className="absolute -inset-0.5 rounded-full blur-md opacity-75 bg-gradient-to-r from-turquoise/30 to-cyan/30" />
         <View className="relative flex-row items-center h-14 bg-teal-dark rounded-full px-4 border border-white/5 shadow-lg">
-          <Ionicons name="search" size={20} color="#44cabf" style={{ marginRight: 12 }} />
+          <Ionicons name="search" size={20} color="#6ec2be" style={{ marginRight: 12 }} />
           <TextInput
             className="flex-1 text-white text-base font-medium"
             placeholder="Search clinical conditions, workups..."
-            placeholderTextColor="#9fa3ac"
+            placeholderTextColor="#a3a8af"
             value={searchText}
             onChangeText={setSearchText}
             onSubmitEditing={handleSearchSubmit}
             returnKeyType="search"
           />
           <TouchableOpacity onPress={handleSearchSubmit} className="p-2 bg-turquoise/20 rounded-full">
-            <Ionicons name="arrow-forward" size={18} color="#44cabf" />
+            <Ionicons name="arrow-forward" size={18} color="#6ec2be" />
           </TouchableOpacity>
         </View>
       </View>
@@ -142,14 +142,14 @@ const OrbitButton = ({
 // Orbit Navigation Component
 const OrbitNavigation = () => {
   const categories: SpecialtyCategory[] = [
-    { id: '1', name: 'Heart', icon: 'heart', color: '#d98a8a' },
-    { id: '2', name: 'GIT', icon: 'restaurant', color: '#d9b25a' },
-    { id: '3', name: 'Fever', icon: 'thermometer', color: '#6f97d9' },
-    { id: '4', name: 'Neuro', icon: 'nutrition', color: '#5fb39a' },
-    { id: '5', name: 'Skin', icon: 'body', color: '#7a6bbf' },
-    { id: '6', name: 'Women', icon: 'woman', color: '#c98ac0' },
-    { id: '7', name: 'Lungs', icon: 'leaf', color: '#44cabf' },
-    { id: '8', name: 'More', icon: 'grid', color: '#9fa3ac' },
+    { id: '1', name: 'Heart', icon: 'heart', color: '#d18c90' },
+    { id: '2', name: 'GIT', icon: 'restaurant', color: '#d2b689' },
+    { id: '3', name: 'Fever', icon: 'thermometer', color: '#6f9ccb' },
+    { id: '4', name: 'Neuro', icon: 'nutrition', color: '#70b19a' },
+    { id: '5', name: 'Skin', icon: 'body', color: '#8e86c0' },
+    { id: '6', name: 'Gynacology', icon: 'woman', color: '#c08ebb' },
+    { id: '7', name: 'Lungs', icon: 'leaf', color: '#6ec2be' },
+    { id: '8', name: 'More', icon: 'grid', color: '#a3a8af' },
   ];
 
   return (
@@ -158,7 +158,7 @@ const OrbitNavigation = () => {
         <Text className="text-xl font-bold text-white">Physician Specialties</Text>
         <TouchableOpacity className="flex-row items-center gap-1">
           <Text className="text-turquoise text-sm font-semibold">Clinical Hub</Text>
-          <Ionicons name="chevron-forward" size={16} color="#44cabf" />
+          <Ionicons name="chevron-forward" size={16} color="#6ec2be" />
         </TouchableOpacity>
       </View>
 
@@ -182,7 +182,7 @@ const OrbitNavigation = () => {
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-turquoise shadow-glow-cyan rounded-full items-center justify-center border-4 border-background z-20 px-2 text-center"
           style={{ width: CENTER_SIZE, height: CENTER_SIZE }}
         >
-          <Ionicons name="medical" size={26} color="#141519" />
+          <Ionicons name="medical" size={26} color="#101214" />
           <Text className="text-xs font-bold text-black text-center mt-1">Medical Arena AI</Text>
           <Text className="text-[9px] text-black/70 font-semibold">Clinical Advisor</Text>
         </TouchableOpacity>
@@ -218,7 +218,7 @@ const RecentInquiries = () => {
             className="flex-row items-center gap-3 p-3 rounded-2xl bg-teal-medium border border-white/5"
           >
             <View className="w-10 h-10 rounded-full bg-turquoise/10 items-center justify-center">
-              <Ionicons name="pulse-outline" size={18} color="#44cabf" />
+              <Ionicons name="pulse-outline" size={18} color="#6ec2be" />
             </View>
             <View className="flex-1">
               <Text className="text-sm font-medium text-white">{inquiry.topic}</Text>
@@ -226,7 +226,7 @@ const RecentInquiries = () => {
                 {inquiry.category} • {inquiry.timestamp}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#8a8e98" />
+            <Ionicons name="chevron-forward" size={20} color="#a3a8af" />
           </TouchableOpacity>
         ))}
       </View>
@@ -244,7 +244,7 @@ const BackgroundEffects = () => (
 export default function Index() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#141519" />
+      <StatusBar barStyle="light-content" backgroundColor="#101214" />
       <BackgroundEffects />
 
       <ScrollView

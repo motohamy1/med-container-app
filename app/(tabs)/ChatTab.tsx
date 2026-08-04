@@ -1,24 +1,27 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Clipboard,
-  Dimensions,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import Animated, {
+  Easing,
   FadeIn,
   FadeInDown,
   FadeInUp,
+  interpolate,
   Layout,
   useAnimatedStyle,
   useSharedValue,
@@ -27,16 +30,15 @@ import Animated, {
   withTiming,
   ZoomIn,
 } from "react-native-reanimated";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { aiService, DoctorCategory, Citation } from "../../services/aiService";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const FLOATING_TAB_BAR_HEIGHT = 65;
-const FLOATING_TAB_BAR_BOTTOM_OFFSET = 16;
-const CHAT_BOTTOM_OFFSET = FLOATING_TAB_BAR_HEIGHT + FLOATING_TAB_BAR_BOTTOM_OFFSET + 16;
+const FLOATING_TAB_BAR_HEIGHT = 70;
+
+const EASE_HEAVY = Easing.bezier(0.32, 0.72, 0, 1);
+
+const TURQUOISE = "#6ec2be";
+const INK = "#101214";
 
 // Types
 type Message = {
@@ -58,9 +60,9 @@ type CategoryOption = {
 };
 
 const CATEGORIES: CategoryOption[] = [
-  { id: "physicians", name: "Physicians", shortName: "Physicians", icon: "medkit-outline" as any, color: "#44cabf", isAvailable: true },
-  { id: "dentists", name: "Dentists", shortName: "Dentists", icon: "happy-outline", color: "#7fb0cf", isAvailable: false },
-  { id: "physiotherapy", name: "Physiotherapy", shortName: "Physio", icon: "body-outline", color: "#b3a8cf", isAvailable: false },
+  { id: "physicians", name: "Physicians", shortName: "Physicians", icon: "medkit-outline" as any, color: "#6ec2be", isAvailable: true },
+  { id: "dentists", name: "Dentists", shortName: "Dentists", icon: "happy-outline", color: "#86b0d5", isAvailable: false },
+  { id: "physiotherapy", name: "Physiotherapy", shortName: "Physio", icon: "body-outline", color: "#a79ccc", isAvailable: false },
 ];
 
 type QuickPrompt = {
@@ -77,28 +79,28 @@ const QUICK_PROMPTS: QuickPrompt[] = [
     title: "ACS Protocol",
     subtitle: "STEMI vs NSTEMI workup & catheterization timing",
     prompt: "Provide the acute coronary syndrome (ACS) STEMI vs NSTEMI initial emergency workup, diagnostic criteria, and management protocol.",
-    color: "#d98a8a",
+    color: "#d18c90",
   },
   {
     icon: "pulse-outline",
     title: "Sepsis Bundle",
     subtitle: "Surviving Sepsis Campaign 1-hour resuscitation",
     prompt: "Detail the Surviving Sepsis Campaign 1-hour resuscitation bundle, qSOFA scoring, and antibiotic timing.",
-    color: "#7fb8a8",
+    color: "#7eb9a2",
   },
   {
     icon: "alert-circle-outline",
     title: "Hypertensive Crisis",
     subtitle: "Urgency vs Emergency target BP reduction",
     prompt: "Explain the management of Hypertensive Urgency vs Emergency, including IV drug choices and target blood pressure reduction rates.",
-    color: "#d8b07f",
+    color: "#ccab7f",
   },
   {
     icon: "analytics-outline",
     title: "Liver Scoring",
     subtitle: "Child-Pugh vs MELD-Na calculation & interpretation",
     prompt: "Compare Child-Pugh vs MELD-Na scoring systems for chronic liver failure and surgical mortality risk assessment.",
-    color: "#b3a8cf",
+    color: "#a79ccc",
   },
 ];
 
@@ -108,96 +110,96 @@ const SECTION_CONFIG: Record<
   { color: string; border: string; icon: keyof typeof Ionicons.glyphMap; label: string }
 > = {
   "CLINICAL ASSESSMENT": {
-    color: "#7fb0cf",
-    border: "#5f97b8",
+    color: "#86b0d5",
+    border: "#4b7395",
     icon: "clipboard-outline",
     label: "Clinical Assessment",
   },
   "DIFFERENTIAL DIAGNOSIS": {
-    color: "#d8a8b8",
-    border: "#bb8298",
+    color: "#d099ab",
+    border: "#905d6e",
     icon: "git-branch-outline",
     label: "Differential Diagnosis",
   },
   "INVESTIGATIONS / WORKUP": {
-    color: "#7fb8a8",
-    border: "#5f9c8c",
+    color: "#7eb9a2",
+    border: "#427c67",
     icon: "pulse-outline",
     label: "Investigations / Workup",
   },
   "INVESTIGATIONS": {
-    color: "#7fb8a8",
-    border: "#5f9c8c",
+    color: "#7eb9a2",
+    border: "#427c67",
     icon: "flask-outline",
     label: "Investigations",
   },
   "MANAGEMENT PROTOCOL": {
-    color: "#d8b07f",
-    border: "#bb9163",
+    color: "#ccab7f",
+    border: "#8d6f44",
     icon: "medical-outline",
     label: "Management Protocol",
   },
   "SURGICAL / PROCEDURAL CONSIDERATIONS": {
-    color: "#d9b25a",
-    border: "#b8924a",
+    color: "#d2b689",
+    border: "#8d6f44",
     icon: "cut-outline",
     label: "Surgical / Procedural",
   },
   "OVERVIEW": {
-    color: "#b3a8cf",
-    border: "#9286b8",
+    color: "#a79ccc",
+    border: "#6c618d",
     icon: "document-text-outline",
     label: "Overview",
   },
   "SCORING CRITERIA": {
-    color: "#7fb0cf",
-    border: "#5f97b8",
+    color: "#86b0d5",
+    border: "#4b7395",
     icon: "list-outline",
     label: "Scoring Criteria",
   },
   "INTERPRETATION": {
-    color: "#7fb8a8",
-    border: "#5f9c8c",
+    color: "#7eb9a2",
+    border: "#427c67",
     icon: "analytics-outline",
     label: "Interpretation",
   },
   "DEFINITION": {
-    color: "#b3a8cf",
-    border: "#9286b8",
+    color: "#a79ccc",
+    border: "#6c618d",
     icon: "book-outline",
     label: "Definition",
   },
   "KEY POINTS": {
-    color: "#7fb0cf",
-    border: "#5f97b8",
+    color: "#86b0d5",
+    border: "#4b7395",
     icon: "key-outline",
     label: "Key Points",
   },
   "PROFESSIONAL CLINICAL ADVICE": {
-    color: "#44cabf",
-    border: "#358f80",
+    color: "#6ec2be",
+    border: "#2b807e",
     icon: "checkmark-circle-outline",
     label: "Clinical Advice",
   },
   "CLINICAL PICTURE": {
-    color: "#7fb0cf",
-    border: "#5f97b8",
+    color: "#86b0d5",
+    border: "#4b7395",
     icon: "eye-outline",
     label: "Clinical Picture",
   },
   "UPDATED INFO / SCORES": {
-    color: "#b3a8cf",
-    border: "#9286b8",
+    color: "#a79ccc",
+    border: "#6c618d",
     icon: "trending-up-outline",
     label: "Updated Info / Scores",
   },
 };
 
 const FALLBACK_PALETTE = [
-  { color: "#b3a8cf", border: "#9286b8", icon: "information-circle-outline" as const },
-  { color: "#7fb0cf", border: "#5f97b8", icon: "document-text-outline" as const },
-  { color: "#7fb8a8", border: "#5f9c8c", icon: "list-outline" as const },
-  { color: "#d8b07f", border: "#bb9163", icon: "alert-circle-outline" as const },
+  { color: "#a79ccc", border: "#6c618d", icon: "information-circle-outline" as const },
+  { color: "#86b0d5", border: "#4b7395", icon: "document-text-outline" as const },
+  { color: "#7eb9a2", border: "#427c67", icon: "list-outline" as const },
+  { color: "#ccab7f", border: "#8d6f44", icon: "alert-circle-outline" as const },
 ];
 
 type MedicalSection = { heading: string; content: string };
@@ -228,6 +230,76 @@ function parseMedicalSections(text: string): {
   };
 }
 
+// Ambient radial glow field — fixed behind all content, never scrolls
+const AmbientBackground: React.FC = () => (
+  <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+    <View
+      style={{
+        position: "absolute",
+        top: -140,
+        left: -110,
+        width: 360,
+        height: 360,
+        borderRadius: 180,
+        backgroundColor: "rgba(110,194,190,0.09)",
+      }}
+    />
+    <View
+      style={{
+        position: "absolute",
+        top: 60,
+        right: -160,
+        width: 320,
+        height: 320,
+        borderRadius: 160,
+        backgroundColor: "rgba(134,176,213,0.06)",
+      }}
+    />
+    <View
+      style={{
+        position: "absolute",
+        bottom: 80,
+        left: -130,
+        width: 300,
+        height: 300,
+        borderRadius: 150,
+        backgroundColor: "rgba(210,182,137,0.05)",
+      }}
+    />
+  </View>
+);
+
+// Double-Bezel shell: outer tray + inner machined core
+const BezelShell: React.FC<{
+  children: React.ReactNode;
+  outerClassName?: string;
+  innerClassName?: string;
+  innerStyle?: object;
+  radius?: number;
+}> = ({ children, outerClassName = "", innerClassName = "", innerStyle = {}, radius = 30 }) => (
+  <View
+    className={`bg-white/[0.04] border border-white/10 p-1.5 ${outerClassName}`}
+    style={{ borderRadius: radius }}
+  >
+    <View
+      className={`bg-teal-dark border border-white/[0.07] overflow-hidden ${innerClassName}`}
+      style={[
+        {
+          borderRadius: radius - 6,
+          shadowColor: "#000",
+          shadowOpacity: 0.35,
+          shadowRadius: 14,
+          shadowOffset: { width: 0, height: 6 },
+          elevation: 10,
+        },
+        innerStyle,
+      ]}
+    >
+      {children}
+    </View>
+  </View>
+);
+
 const MedicalSectionBox: React.FC<{
   section: MedicalSection;
   index: number;
@@ -251,47 +323,69 @@ const MedicalSectionBox: React.FC<{
 
   return (
     <Animated.View
-      entering={ZoomIn.duration(400).delay(index * 90).springify()}
-      style={{
-        width: "100%",
-        marginBottom: 12,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: cfg.border + "65",
-        backgroundColor: "#1b1d22",
-        overflow: "hidden",
-      }}
+      entering={ZoomIn.duration(500).delay(index * 90).easing(EASE_HEAVY)}
+      style={{ width: "100%", marginBottom: 14 }}
     >
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          backgroundColor: cfg.border + "20",
-          paddingHorizontal: 16,
-          paddingVertical: 11,
-          borderBottomWidth: 1,
-          borderBottomColor: cfg.border + "40",
+          borderRadius: 24,
+          borderWidth: 1,
+          borderColor: cfg.border + "50",
+          backgroundColor: "rgba(255,255,255,0.03)",
+          padding: 5,
         }}
       >
-        <View style={{ backgroundColor: cfg.border + "35", padding: 6, borderRadius: 10, marginRight: 10 }}>
-          <Ionicons name={cfg.icon} size={16} color={cfg.color} />
-        </View>
-        <Text
+        <View
           style={{
-            color: cfg.color,
-            fontWeight: "800",
-            fontSize: 13,
-            letterSpacing: 0.6,
-            textTransform: "uppercase",
+            borderRadius: 19,
+            backgroundColor: "#191c20",
+            overflow: "hidden",
+            borderWidth: 1,
+            borderColor: cfg.border + "28",
           }}
         >
-          {cfg.label}
-        </Text>
-      </View>
-      <View style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
-        <Text style={{ color: "#e2e8f0", fontSize: 14, lineHeight: 23, fontWeight: "400" }}>
-          {section.content}
-        </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: cfg.border + "18",
+              paddingHorizontal: 16,
+              paddingVertical: 12,
+              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomColor: cfg.border + "45",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: cfg.border + "2e",
+                width: 30,
+                height: 30,
+                borderRadius: 15,
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 11,
+              }}
+            >
+              <Ionicons name={cfg.icon} size={15} color={cfg.color} />
+            </View>
+            <Text
+              style={{
+                color: cfg.color,
+                fontWeight: "800",
+                fontSize: 12,
+                letterSpacing: 1.4,
+                textTransform: "uppercase",
+              }}
+            >
+              {cfg.label}
+            </Text>
+          </View>
+          <View style={{ paddingHorizontal: 17, paddingVertical: 15 }}>
+            <Text style={{ color: "#e4e8ed", fontSize: 14, lineHeight: 24, fontWeight: "400" }}>
+              {section.content}
+            </Text>
+          </View>
+        </View>
       </View>
     </Animated.View>
   );
@@ -299,34 +393,46 @@ const MedicalSectionBox: React.FC<{
 
 // Animated Pulse Dots for AI Thinking State
 const ThinkingIndicator: React.FC = () => {
-  const dot1 = useSharedValue(0.3);
-  const dot2 = useSharedValue(0.3);
-  const dot3 = useSharedValue(0.3);
+  const dot1 = useSharedValue(0.25);
+  const dot2 = useSharedValue(0.25);
+  const dot3 = useSharedValue(0.25);
 
   useEffect(() => {
-    dot1.value = withRepeat(withSequence(withTiming(1, { duration: 400 }), withTiming(0.3, { duration: 400 })), -1, true);
-    setTimeout(() => {
-      dot2.value = withRepeat(withSequence(withTiming(1, { duration: 400 }), withTiming(0.3, { duration: 400 })), -1, true);
-    }, 150);
-    setTimeout(() => {
-      dot3.value = withRepeat(withSequence(withTiming(1, { duration: 400 }), withTiming(0.3, { duration: 400 })), -1, true);
-    }, 300);
-  }, []);
+    const wave = () =>
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 420, easing: EASE_HEAVY }),
+          withTiming(0.25, { duration: 420, easing: EASE_HEAVY }),
+        ),
+        -1,
+        true,
+      );
+    dot1.value = wave();
+    const t2 = setTimeout(() => (dot2.value = wave()), 160);
+    const t3 = setTimeout(() => (dot3.value = wave()), 320);
+    return () => {
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [dot1, dot2, dot3]);
 
   const s1 = useAnimatedStyle(() => ({ opacity: dot1.value }));
   const s2 = useAnimatedStyle(() => ({ opacity: dot2.value }));
   const s3 = useAnimatedStyle(() => ({ opacity: dot3.value }));
 
   return (
-    <Animated.View entering={FadeInDown.duration(300)} className="flex-row items-center gap-3 px-4 py-3 mb-4">
-      <View className="w-8 h-8 rounded-full bg-turquoise/20 items-center justify-center border border-turquoise/40">
-        <Ionicons name="sparkles" size={16} color="#44cabf" />
+    <Animated.View
+      entering={FadeInDown.duration(450).easing(EASE_HEAVY)}
+      className="flex-row items-center gap-3 px-4 py-3 mb-4"
+    >
+      <View className="w-8 h-8 rounded-full bg-turquoise/15 items-center justify-center border border-turquoise/30">
+        <Ionicons name="sparkles" size={15} color={TURQUOISE} />
       </View>
-      <View className="flex-row items-center gap-1.5 bg-teal-dark border border-white/10 px-4 py-3 rounded-2xl rounded-tl-none">
+      <View className="flex-row items-center gap-1.5 bg-teal-dark border border-white/10 px-4 py-3 rounded-3xl rounded-tl-md">
         <Text className="text-gray-400 text-xs font-semibold mr-1">Consulting clinical guidelines</Text>
-        <Animated.View style={s1} className="w-2 h-2 rounded-full bg-turquoise" />
-        <Animated.View style={s2} className="w-2 h-2 rounded-full bg-turquoise" />
-        <Animated.View style={s3} className="w-2 h-2 rounded-full bg-turquoise" />
+        <Animated.View style={s1} className="w-1.5 h-1.5 rounded-full bg-turquoise" />
+        <Animated.View style={s2} className="w-1.5 h-1.5 rounded-full bg-turquoise" />
+        <Animated.View style={s3} className="w-1.5 h-1.5 rounded-full bg-turquoise" />
       </View>
     </Animated.View>
   );
@@ -344,16 +450,19 @@ const ChatBubble: React.FC<{
     );
 
     return (
-      <Animated.View entering={FadeInUp.duration(400)} className="mb-6 px-4 w-full">
+      <Animated.View
+        entering={FadeInUp.duration(600).easing(EASE_HEAVY)}
+        className="mb-7 px-4 w-full"
+      >
         {/* AI Avatar & Header */}
-        <View className="flex-row items-center justify-between mb-2">
-          <View className="flex-row items-center gap-2">
-            <View className="w-7 h-7 rounded-full bg-turquoise/20 items-center justify-center border border-turquoise/40">
-              <Ionicons name="sparkles" size={14} color="#44cabf" />
+        <View className="flex-row items-center justify-between mb-2.5">
+          <View className="flex-row items-center gap-2.5">
+            <View className="w-7 h-7 rounded-full bg-turquoise/15 items-center justify-center border border-turquoise/35">
+              <Ionicons name="sparkles" size={13} color={TURQUOISE} />
             </View>
-            <Text className="text-white text-xs font-bold">Med Arena AI</Text>
-            <View className="px-2 py-0.5 rounded-full bg-teal-medium border border-white/10">
-              <Text className="text-[9px] text-turquoise font-semibold">Clinical RAG</Text>
+            <Text className="text-white text-xs font-bold tracking-wide">Med Arena AI</Text>
+            <View className="px-2.5 py-1 rounded-full bg-teal-medium border border-white/10">
+              <Text className="text-[9px] text-turquoise font-semibold tracking-widest uppercase">Clinical RAG</Text>
             </View>
           </View>
           <Text className="text-gray-500 text-[10px]">{message.timestamp}</Text>
@@ -363,7 +472,7 @@ const ChatBubble: React.FC<{
         {hasSections ? (
           <View className="pl-1">
             {plainText.length > 0 && (
-              <View className="bg-teal-dark border border-turquoise/20 rounded-2xl p-4 mb-3">
+              <View className="bg-teal-dark border border-turquoise/20 rounded-3xl p-4 mb-3">
                 <Text className="text-gray-200 text-sm leading-6">{plainText}</Text>
               </View>
             )}
@@ -372,7 +481,7 @@ const ChatBubble: React.FC<{
             ))}
           </View>
         ) : (
-          <View className="bg-teal-dark border border-white/10 rounded-2xl rounded-tl-none p-4 shadow-sm">
+          <View className="bg-teal-dark border border-white/10 rounded-3xl rounded-tl-md p-4 shadow-card">
             <Text className="text-gray-200 text-sm leading-6 font-normal">
               {message.text}
             </Text>
@@ -382,13 +491,13 @@ const ChatBubble: React.FC<{
         {/* Citations Block */}
         {message.citations && message.citations.length > 0 && (
           <View className="mt-4 mb-2">
-            <Text className="text-gray-400 text-[11px] font-bold uppercase tracking-wider mb-2 ml-1">
+            <Text className="text-gray-400 text-[11px] font-bold uppercase tracking-widest mb-2.5 ml-1">
               <Ionicons name="library-outline" size={12} /> Medical References
             </Text>
             {message.citations.map((cit) => (
-              <View key={cit.id} className="bg-teal-dark/50 border border-white/5 rounded-xl p-3 mb-2 shadow-sm">
+              <View key={cit.id} className="bg-white/[0.04] border border-white/[0.07] rounded-2xl p-3.5 mb-2">
                 <View className="flex-row items-start gap-2.5">
-                  <View className="bg-turquoise/20 px-1.5 py-0.5 rounded mt-0.5">
+                  <View className="bg-turquoise/15 border border-turquoise/25 px-2 py-0.5 rounded-full mt-0.5">
                     <Text className="text-turquoise text-[10px] font-bold">[{cit.id}]</Text>
                   </View>
                   <View className="flex-1">
@@ -402,9 +511,12 @@ const ChatBubble: React.FC<{
         )}
 
         {/* Action Toolbar for AI message */}
-        <View className="flex-row items-center gap-4 mt-2 pl-2">
-          <TouchableOpacity onPress={() => onCopy(message.text)} className="flex-row items-center gap-1">
-            <Ionicons name="copy-outline" size={14} color="#9fa3ac" />
+        <View className="flex-row items-center gap-4 mt-2.5 pl-2">
+          <TouchableOpacity
+            onPress={() => onCopy(message.text)}
+            className="flex-row items-center gap-1.5 active:opacity-60"
+          >
+            <Ionicons name="copy-outline" size={14} color="#a3a8af" />
             <Text className="text-gray-400 text-xs font-medium">Copy</Text>
           </TouchableOpacity>
         </View>
@@ -414,16 +526,30 @@ const ChatBubble: React.FC<{
 
   // User Message
   return (
-    <Animated.View entering={FadeInDown.duration(300)} className="flex-row justify-end mb-5 px-4">
+    <Animated.View
+      entering={FadeInDown.duration(450).easing(EASE_HEAVY)}
+      className="flex-row justify-end mb-5 px-4"
+    >
       <View className="max-w-[85%] items-end">
-        <View className="flex-row items-center gap-1.5 mb-1 pr-1">
+        <View className="flex-row items-center gap-1.5 mb-1.5 pr-1">
           <Text className="text-gray-400 text-[10px]">{message.timestamp}</Text>
           <Text className="text-turquoise text-xs font-bold">Doctor</Text>
         </View>
-        <View className="bg-gradient-to-r from-teal-600 to-turquoise/80 bg-turquoise px-4 py-3 rounded-2xl rounded-tr-none shadow-md">
-          <Text className="text-black text-sm font-semibold leading-5">
-            {message.text}
-          </Text>
+        <View
+          className="rounded-3xl rounded-tr-md overflow-hidden shadow-bubble"
+          style={{ maxWidth: "85%" }}
+        >
+          <LinearGradient
+            colors={["#8ad9d5", "#5aa8a4"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <View className="px-4 py-3">
+            <Text className="text-[#0c2321] text-sm font-semibold leading-5">
+              {message.text}
+            </Text>
+          </View>
         </View>
       </View>
     </Animated.View>
@@ -431,12 +557,59 @@ const ChatBubble: React.FC<{
 };
 
 const ChatTab = () => {
-  const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState<DoctorCategory>("physicians");
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+
+  // Header collapses once a conversation starts (question sent or messages present)
+  const chatActive = messages.length > 0 || isTyping;
+  const headerCollapse = useSharedValue(0);
+  const [switcherHeight, setSwitcherHeight] = useState(0);
+  const activeCategory = CATEGORIES.find((c) => c.id === selectedCategory) ?? CATEGORIES[0];
+
+  useEffect(() => {
+    headerCollapse.value = withTiming(chatActive ? 1 : 0, {
+      duration: 380,
+      easing: EASE_HEAVY,
+    });
+  }, [chatActive, headerCollapse]);
+
+  const headerPadStyle = useAnimatedStyle(() => ({
+    paddingVertical: interpolate(headerCollapse.value, [0, 1], [14, 10]),
+  }));
+
+  const markOuterStyle = useAnimatedStyle(() => ({
+    width: interpolate(headerCollapse.value, [0, 1], [44, 34]),
+    height: interpolate(headerCollapse.value, [0, 1], [44, 34]),
+    borderRadius: interpolate(headerCollapse.value, [0, 1], [22, 17]),
+  }));
+
+  const markInnerStyle = useAnimatedStyle(() => ({
+    width: interpolate(headerCollapse.value, [0, 1], [32, 25]),
+    height: interpolate(headerCollapse.value, [0, 1], [32, 25]),
+    borderRadius: interpolate(headerCollapse.value, [0, 1], [16, 12.5]),
+  }));
+
+  const titleStyle = useAnimatedStyle(() => ({
+    fontSize: interpolate(headerCollapse.value, [0, 1], [17, 15]),
+  }));
+
+  const subtitleWrapStyle = useAnimatedStyle(() => ({
+    height: interpolate(headerCollapse.value, [0, 1], [20, 0]),
+    opacity: interpolate(headerCollapse.value, [0, 0.6, 1], [1, 0.4, 0]),
+  }));
+
+  const switcherWrapStyle = useAnimatedStyle(
+    () => ({
+      height: switcherHeight
+        ? interpolate(headerCollapse.value, [0, 1], [switcherHeight + 14, 0])
+        : undefined,
+      opacity: interpolate(headerCollapse.value, [0, 0.7, 1], [1, 0.4, 0]),
+    }),
+    [switcherHeight],
+  );
 
   useEffect(() => {
     const keyboardShowListener = Keyboard.addListener(
@@ -513,73 +686,146 @@ const ChatTab = () => {
 
   return (
     <View className="flex-1 bg-background">
-      {/* Modern Header Bar */}
-      <SafeAreaView edges={["top"]} className="bg-teal-dark/95 border-b border-white/5">
-        <View className="px-5 py-3 flex-row items-center justify-between">
-          <View className="flex-row items-center gap-3">
-            <View className="w-10 h-10 rounded-full bg-turquoise/15 items-center justify-center border border-turquoise/30 shadow-glow-cyan">
-              <Ionicons name="medical" size={20} color="#44cabf" />
-            </View>
-            <View>
-              <View className="flex-row items-center gap-1.5">
-                <Text className="text-white font-extrabold text-base tracking-tight">Med Arena</Text>
-                <View className="w-2 h-2 rounded-full bg-emerald-400" />
-              </View>
-              <Text className="text-gray-400 text-[11px] font-medium">Clinical Decision Support</Text>
-            </View>
-          </View>
+      <AmbientBackground />
 
-          <View className="flex-row items-center gap-2">
-            {messages.length > 0 && (
-              <TouchableOpacity
-                onPress={handleNewChat}
-                className="flex-row items-center gap-1 px-3 py-1.5 rounded-full bg-teal-medium border border-white/10"
-              >
-                <Ionicons name="add" size={16} color="#44cabf" />
-                <Text className="text-turquoise text-xs font-bold">New</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {/* Doctor Category Segmented Switcher */}
-        <View className="px-5 pb-3">
-          <View className="flex-row bg-teal-dark/80 p-1 rounded-2xl border border-white/10 gap-1">
-            {CATEGORIES.map((cat) => {
-              const isSelected = selectedCategory === cat.id;
-              return (
-                <TouchableOpacity
-                  key={cat.id}
-                  onPress={() => handleSelectCategory(cat)}
-                  className={`flex-1 flex-row items-center justify-center py-2 rounded-xl transition-all ${
-                    isSelected
-                      ? "bg-turquoise shadow-md"
-                      : "bg-transparent"
-                  }`}
-                >
-                  <Ionicons
-                    name={cat.icon}
-                    size={14}
-                    color={isSelected ? "#141519" : "#9fa3ac"}
-                    style={{ marginRight: 4 }}
-                  />
-                  <Text
-                    className={`text-xs font-bold ${
-                      isSelected ? "text-black" : "text-gray-400"
-                    }`}
+      {/* Floating Glass Island Header */}
+      <SafeAreaView edges={["top"]}>
+        <Animated.View
+          entering={FadeInDown.duration(700).easing(EASE_HEAVY)}
+          className="mx-4 mt-3"
+        >
+          <BezelShell radius={30}>
+            <Animated.View style={[{ paddingHorizontal: 16 }, headerPadStyle]}>
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center gap-3">
+                  {/* Brand mark — double ring */}
+                  <Animated.View
+                    style={[
+                      {
+                        borderRadius: 22,
+                        borderWidth: 1,
+                        borderColor: "rgba(110,194,190,0.3)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "rgba(110,194,190,0.06)",
+                      },
+                      markOuterStyle,
+                    ]}
                   >
-                    {cat.shortName}
-                  </Text>
-                  {!cat.isAvailable && !isSelected && (
-                    <View className="ml-1 px-1 bg-white/10 rounded">
-                      <Text className="text-[7px] text-amber-300 font-bold">SOON</Text>
+                    <Animated.View
+                      style={[
+                        {
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: "rgba(110,194,190,0.18)",
+                        },
+                        markInnerStyle,
+                      ]}
+                    >
+                      <Ionicons name="medical" size={16} color={TURQUOISE} />
+                    </Animated.View>
+                  </Animated.View>
+                  <View>
+                    <View className="flex-row items-center gap-2">
+                      <Animated.Text
+                        style={[
+                          {
+                            color: "#fff",
+                            fontWeight: "800",
+                            letterSpacing: -0.3,
+                          },
+                          titleStyle,
+                        ]}
+                      >
+                        Med Arena
+                      </Animated.Text>
+                      <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      {/* Compact category chip — visible only when minimized */}
+                      {chatActive && (
+                        <Animated.View
+                          entering={FadeIn.duration(350).delay(220).easing(EASE_HEAVY)}
+                          className="flex-row items-center rounded-full bg-white/[0.06] border border-white/10 px-2 py-0.5 gap-1"
+                        >
+                          <Ionicons name={activeCategory.icon} size={10} color={TURQUOISE} />
+                          <Text className="text-[9px] font-bold text-turquoise">
+                            {activeCategory.shortName}
+                          </Text>
+                        </Animated.View>
+                      )}
                     </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
+                    <Animated.View
+                      style={[{ overflow: "hidden" }, subtitleWrapStyle]}
+                    >
+                      <Text className="text-gray-400 text-[11px] font-medium mt-0.5">Clinical Decision Support</Text>
+                    </Animated.View>
+                  </View>
+                </View>
+
+                {messages.length > 0 && (
+                  <TouchableOpacity
+                    onPress={handleNewChat}
+                    className="flex-row items-center rounded-full bg-white/[0.06] border border-white/10 pl-3 pr-1.5 py-1.5 active:opacity-70"
+                  >
+                    <Text className="text-turquoise text-xs font-bold mr-2">New</Text>
+                    <View className="w-6 h-6 rounded-full bg-turquoise/20 items-center justify-center">
+                      <Ionicons name="add" size={14} color={TURQUOISE} />
+                    </View>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Doctor Category Segmented Switcher — nested island, collapses on chat */}
+              <Animated.View style={[{ overflow: "hidden" }, switcherWrapStyle]}>
+                <View
+                  onLayout={(e) => setSwitcherHeight(e.nativeEvent.layout.height)}
+                  className="mt-3.5 flex-row bg-black/30 p-1 rounded-full border border-white/[0.06] gap-1"
+                >
+                  {CATEGORIES.map((cat) => {
+                    const isSelected = selectedCategory === cat.id;
+                    return (
+                      <TouchableOpacity
+                        key={cat.id}
+                        onPress={() => handleSelectCategory(cat)}
+                        className="flex-1 rounded-full overflow-hidden active:opacity-80"
+                      >
+                        <Animated.View
+                          layout={Layout.springify().damping(26).stiffness(240)}
+                          className="flex-row items-center justify-center rounded-full overflow-hidden"
+                          style={{ paddingHorizontal: 14, paddingVertical: 10 }}
+                        >
+                          {isSelected && (
+                            <LinearGradient
+                              colors={["#8ad9d5", "#5aa8a4"]}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 1 }}
+                              style={StyleSheet.absoluteFill}
+                            />
+                          )}
+                          <Ionicons
+                            name={cat.icon}
+                            size={13}
+                            color={isSelected ? "#0c2321" : "#a3a8af"}
+                            style={{ marginRight: 5 }}
+                          />
+                          <Text
+                            className={`text-xs ${isSelected ? "font-bold text-[#0c2321]" : "font-semibold text-gray-400"}`}
+                          >
+                            {cat.shortName}
+                          </Text>
+                          {!cat.isAvailable && !isSelected && (
+                            <View className="ml-1.5 px-1.5 py-0.5 bg-white/10 rounded-full">
+                              <Text className="text-[7px] text-amber-300 font-bold tracking-widest">SOON</Text>
+                            </View>
+                          )}
+                        </Animated.View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </Animated.View>
+            </Animated.View>
+          </BezelShell>
+        </Animated.View>
       </SafeAreaView>
 
       {/* Main Chat Body & Empty State */}
@@ -591,58 +837,108 @@ const ChatTab = () => {
           <ScrollView
             contentContainerStyle={{
               paddingHorizontal: 20,
-              paddingTop: 30,
-              paddingBottom: 40 + CHAT_BOTTOM_OFFSET,
+              paddingTop: 36,
+              paddingBottom: FLOATING_TAB_BAR_HEIGHT + 88,
             }}
             showsVerticalScrollIndicator={false}
             className="flex-1"
           >
-            {/* Empty State Hero Header */}
-            <Animated.View entering={FadeIn.duration(500)} className="items-center mb-8">
-              <View className="w-20 h-20 rounded-full bg-turquoise/10 items-center justify-center border border-turquoise/30 mb-4 shadow-glow-cyan">
-                <Ionicons name="sparkles" size={38} color="#44cabf" />
+            {/* Empty State Hero */}
+            <Animated.View
+              entering={FadeIn.duration(700).easing(EASE_HEAVY)}
+              className="items-center mb-12"
+            >
+              {/* Double-ring hero emblem */}
+              <View className="w-24 h-24 rounded-full border border-turquoise/25 items-center justify-center bg-turquoise/[0.05] mb-6">
+                <View className="w-[72px] h-[72px] rounded-full items-center justify-center border border-turquoise/30" style={{ backgroundColor: "rgba(110,194,190,0.12)" }}>
+                  <Ionicons name="sparkles" size={30} color={TURQUOISE} />
+                </View>
               </View>
-              <Text className="text-white text-2xl font-extrabold text-center mb-1">
+
+              {/* Eyebrow tag */}
+              <View className="px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/10 mb-4">
+                <Text className="text-[10px] uppercase tracking-[0.25em] font-semibold text-turquoise">
+                  Evidence-Based RAG
+                </Text>
+              </View>
+
+              <Text className="text-white text-[30px] font-extrabold text-center tracking-tight leading-10 mb-3">
                 Clinical Consultant AI
               </Text>
-              <Text className="text-gray-400 text-sm text-center max-w-[280px]">
+              <Text className="text-gray-400 text-sm text-center max-w-[290px] leading-6">
                 High-yield evidence-based clinical reasoning, differential diagnosis & workup protocols.
               </Text>
             </Animated.View>
 
-            {/* Quick Starter List */}
-            <Text className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-3">
-              Suggested Clinical Inquiries
-            </Text>
+            {/* Bento: featured inquiry */}
+            <Animated.View entering={FadeInUp.duration(800).delay(100).easing(EASE_HEAVY)}>
+              <TouchableOpacity
+                onPress={() => handleTextSend(QUICK_PROMPTS[0].prompt)}
+                activeOpacity={0.85}
+                className="mb-3.5"
+              >
+                <View className="rounded-[30px] p-1.5 border border-turquoise/25" style={{ backgroundColor: "rgba(110,194,190,0.07)" }}>
+                  <View className="rounded-3xl bg-teal-dark border border-white/[0.07] p-5">
+                    <View className="flex-row items-center justify-between mb-4">
+                      <View
+                        className="w-12 h-12 rounded-2xl items-center justify-center border"
+                        style={{ backgroundColor: QUICK_PROMPTS[0].color + "1f", borderColor: QUICK_PROMPTS[0].color + "35" }}
+                      >
+                        <Ionicons name={QUICK_PROMPTS[0].icon} size={22} color={QUICK_PROMPTS[0].color} />
+                      </View>
+                      <View className="px-2.5 py-1 rounded-full bg-white/[0.05] border border-white/10">
+                        <Text className="text-[9px] uppercase tracking-[0.2em] font-semibold text-gray-400">Featured</Text>
+                      </View>
+                    </View>
+                    <Text className="text-white font-bold text-lg mb-1.5">{QUICK_PROMPTS[0].title}</Text>
+                    <Text className="text-gray-400 text-[13px] leading-5 mb-4">{QUICK_PROMPTS[0].subtitle}</Text>
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-turquoise text-xs font-bold tracking-wide">Run inquiry</Text>
+                      <View className="w-9 h-9 rounded-full bg-turquoise/15 border border-turquoise/30 items-center justify-center">
+                        <Ionicons name="arrow-up" size={16} color={TURQUOISE} />
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
 
-            <View className="flex-col gap-2.5 mb-6">
-              {QUICK_PROMPTS.map((item, idx) => (
-                <TouchableOpacity
+            {/* Bento: stacked inquiries */}
+            <View className="flex-col gap-3.5">
+              {QUICK_PROMPTS.slice(1).map((item, idx) => (
+                <Animated.View
                   key={idx}
-                  onPress={() => handleTextSend(item.prompt)}
-                  className="bg-teal-medium/40 border border-white/10 p-3.5 rounded-2xl flex-row items-center justify-between shadow-sm active:bg-teal-medium/70"
+                  entering={FadeInUp.duration(800).delay(200 + idx * 90).easing(EASE_HEAVY)}
                 >
-                  <View className="flex-row items-center flex-1 mr-3">
-                    <View
-                      className="w-10 h-10 rounded-xl items-center justify-center mr-3"
-                      style={{ backgroundColor: item.color + "25" }}
-                    >
-                      <Ionicons name={item.icon} size={20} color={item.color} />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-white font-bold text-sm mb-0.5">
-                        {item.title}
-                      </Text>
-                      <Text className="text-gray-400 text-xs leading-4" numberOfLines={1}>
-                        {item.subtitle}
-                      </Text>
-                    </View>
-                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleTextSend(item.prompt)}
+                    activeOpacity={0.85}
+                  >
+                    <View className="rounded-[26px] p-1.5 bg-white/[0.04] border border-white/10">
+                      <View className="rounded-[20px] bg-teal-dark border border-white/[0.06] px-4 py-3.5 flex-row items-center justify-between">
+                        <View className="flex-row items-center flex-1 mr-3">
+                          <View
+                            className="w-10 h-10 rounded-2xl items-center justify-center mr-3.5 border"
+                            style={{ backgroundColor: item.color + "1f", borderColor: item.color + "30" }}
+                          >
+                            <Ionicons name={item.icon} size={19} color={item.color} />
+                          </View>
+                          <View className="flex-1">
+                            <Text className="text-white font-bold text-sm mb-1">{item.title}</Text>
+                            <Text className="text-gray-400 text-xs leading-4" numberOfLines={1}>
+                              {item.subtitle}
+                            </Text>
+                          </View>
+                        </View>
 
-                  <View className="w-8 h-8 rounded-full bg-white/5 items-center justify-center">
-                    <Ionicons name="arrow-forward" size={16} color="#44cabf" />
-                  </View>
-                </TouchableOpacity>
+                        {/* Button-in-button trailing icon */}
+                        <View className="w-9 h-9 rounded-full bg-white/[0.05] border border-white/10 items-center justify-center">
+                          <Ionicons name="arrow-up" size={15} color={TURQUOISE} />
+                        </View>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </Animated.View>
               ))}
             </View>
           </ScrollView>
@@ -654,8 +950,8 @@ const ChatTab = () => {
             renderItem={({ item }) => <ChatBubble message={item} onCopy={handleCopyText} />}
             ListFooterComponent={isTyping ? <ThinkingIndicator /> : null}
             contentContainerStyle={{
-              paddingTop: 20,
-              paddingBottom: 20 + CHAT_BOTTOM_OFFSET,
+              paddingTop: 24,
+              paddingBottom: FLOATING_TAB_BAR_HEIGHT + 88,
               flexGrow: 1,
             }}
             onContentSizeChange={() =>
@@ -668,45 +964,63 @@ const ChatTab = () => {
           />
         )}
 
-        {/* Floating Composer Bar */}
+        {/* Floating Composer Island */}
         <View
-          className="bg-teal-dark/95 border-t border-white/10 px-4 pt-3"
-          style={{
-            paddingBottom: Platform.OS === "ios" ? insets.bottom + 8 : 12,
-            marginBottom: CHAT_BOTTOM_OFFSET,
-          }}
+          className="absolute left-4 right-4"
+          style={{ bottom: FLOATING_TAB_BAR_HEIGHT + 4 }}
         >
-          <View className="flex-row items-end bg-teal-medium/70 rounded-3xl px-4 py-2 border border-white/10 shadow-lg">
+          <View
+            className="flex-row items-center rounded-full px-3 py-4 border border-white/10"
+            style={{ backgroundColor: "#16181c" }}
+          >
             <TextInput
-              className="flex-1 text-white text-base max-h-32 py-2"
+              className="flex-1 text-white text-base max-h-32 py-2 bg-transparent"
               placeholder="Ask clinical case, protocol, differential..."
-              placeholderTextColor="#9fa3ac"
+              placeholderTextColor="#6b7178"
               value={inputText}
               onChangeText={setInputText}
               onSubmitEditing={() => handleTextSend()}
               returnKeyType="send"
               multiline
               textAlignVertical="center"
-              style={{ minHeight: 28 }}
+              style={{ minHeight: 36 }}
             />
 
             <TouchableOpacity
               onPress={() => handleTextSend()}
               disabled={!inputText.trim() || isTyping}
-              className={`w-10 h-10 rounded-full items-center justify-center ml-2 ${
-                inputText.trim() && !isTyping
-                  ? "bg-turquoise shadow-glow-cyan"
-                  : "bg-white/10"
-              }`}
+              activeOpacity={0.8}
+              className="ml-2"
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 21,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: inputText.trim() && !isTyping ? TURQUOISE : "rgba(255,255,255,0.06)",
+                shadowColor: TURQUOISE,
+                shadowOpacity: inputText.trim() && !isTyping ? 0.45 : 0,
+                shadowRadius: 12,
+                shadowOffset: { width: 0, height: 3 },
+              }}
             >
               {isTyping ? (
-                <ActivityIndicator size="small" color="#9fa3ac" />
+                <ActivityIndicator size="small" color="#a3a8af" />
               ) : (
-                <Ionicons
-                  name="arrow-up"
-                  size={22}
-                  color={inputText.trim() ? "#141519" : "#8a8e98"}
-                />
+                <View
+                  className="items-center justify-center rounded-full"
+                  style={{
+                    width: 30,
+                    height: 30,
+                    backgroundColor: inputText.trim() ? "rgba(255,255,255,0.22)" : "transparent",
+                  }}
+                >
+                  <Ionicons
+                    name="arrow-up"
+                    size={18}
+                    color={inputText.trim() ? INK : "#6b7178"}
+                  />
+                </View>
               )}
             </TouchableOpacity>
           </View>

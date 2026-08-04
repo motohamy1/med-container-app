@@ -1,20 +1,27 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const Groq = require('groq-sdk');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3001;
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
-if (!GROQ_API_KEY || GROQ_API_KEY === 'PASTE_YOUR_GROQ_KEY_HERE') {
-    console.error('CRITICAL: GROQ_API_KEY is missing in backend/.env');
+if (!GEMINI_API_KEY || GEMINI_API_KEY === 'PASTE_YOUR_GEMINI_KEY_HERE') {
+    console.error('CRITICAL: GEMINI_API_KEY is missing in backend/.env');
 }
 
-const groq = new Groq({ apiKey: GROQ_API_KEY });
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const aiModel = genAI.getGenerativeModel({ 
+    model: 'gemini-flash-latest',
+    generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 8192,
+    }
+});
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -54,48 +61,84 @@ async function fetchMedicalKnowledge(query) {
     }
 }
 
-async function fetchEuropePMC(query) {
+async function fetchEuropePMC(query, category) {
     try {
-        const url = new URL('https://www.ebi.ac.uk/europepmc/webservices/rest/search');
-        url.searchParams.append('query', query);
-        url.searchParams.append('format', 'json');
-        url.searchParams.append('resultType', 'core');
-        url.searchParams.append('pageSize', '3'); // Top 3 most relevant papers
-
-        const response = await fetch(url.toString());
-        if (!response.ok) return [];
-
-        const data = await response.json();
-        const results = data.resultList?.result || [];
+        let categoryFilter = '';
+        if (category === 'dentists') {
+            categoryFilter = ' AND (dental OR dentistry OR oral OR maxillofacial)';
+        } else if (category === 'physiotherapy') {
+            categoryFilter = ' AND (physiotherapy OR "physical therapy" OR rehabilitation OR biomechanics)';
+        } else if (category === 'physicians') {
+            categoryFilter = ' AND (medicine OR clinical OR surgery OR physician)';
+        }
         
-        return results.map(r => ({
-            id: r.pmid || r.id,
-            title: r.title,
-            author: r.authorString || 'Unknown Authors',
-            journal: r.journalTitle || r.pubType || 'Medical Journal',
-            year: r.pubYear,
-            abstract: r.abstractText ? r.abstractText.replace(/<\/?(?:b|i|p|sup|sub)>/g, '') : '',
-            url: `https://europepmc.org/article/MED/${r.pmid || r.id}`
-        })).filter(r => r.abstract); // Only keep ones with abstracts for context
+        const fetchRefs = async (sortMode) => {
+            const enhancedQuery = `${query}${categoryFilter} ${sortMode}`;
+            const url = new URL('https://www.ebi.ac.uk/europepmc/webservices/rest/search');
+            url.searchParams.append('query', enhancedQuery);
+            url.searchParams.append('format', 'json');
+            url.searchParams.append('resultType', 'core');
+            url.searchParams.append('pageSize', '2'); // Fetch 2 of each
+            
+            const response = await fetch(url.toString());
+            if (!response.ok) return [];
+            const data = await response.json();
+            const results = data.resultList?.result || [];
+            
+            return results.map(r => ({
+                id: r.pmid || r.id,
+                title: r.title,
+                author: r.authorString || 'Unknown Authors',
+                journal: r.journalTitle || r.pubType || 'Medical Journal',
+                year: r.pubYear,
+                abstract: r.abstractText ? r.abstractText.replace(/<\/?(?:b|i|p|sup|sub)>/g, '') : '',
+                url: `https://europepmc.org/article/MED/${r.pmid || r.id}`,
+                type: sortMode.includes('sort_date') ? 'Latest Update' : 'Highly Cited Foundation'
+            })).filter(r => r.abstract);
+        };
+
+        const [latestRefs, citedRefs] = await Promise.all([
+            fetchRefs('sort_date:y'),
+            fetchRefs('sort_cited:y')
+        ]);
+
+        // Deduplicate and combine
+        const allRefs = [...citedRefs, ...latestRefs];
+        const uniqueRefs = [];
+        const seenIds = new Set();
+        for (const ref of allRefs) {
+            if (!seenIds.has(ref.id)) {
+                seenIds.add(ref.id);
+                uniqueRefs.push(ref);
+            }
+        }
+        return uniqueRefs.slice(0, 4);
     } catch {
         return [];
     }
 }
 
+async function extractEnglishKeywords(query) {
+    if (!/[\u0600-\u06FF]/.test(query)) return query;
+    
+    const prompt = `Extract 1-4 core English medical search keywords from this user query for a scientific database search. Translate the core medical concepts to English. Do NOT return sentences, only the keywords separated by spaces. Query: "${query}"`;
+    try {
+        const result = await aiModel.generateContent(prompt);
+        return result.response.text().trim() || query;
+    } catch {
+        return query;
+    }
+}
+
 async function callAI(prompt, retries = 3) {
-    if (!GROQ_API_KEY || GROQ_API_KEY === 'PASTE_YOUR_GROQ_KEY_HERE') {
-        throw new Error('GROQ_API_KEY is not configured');
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === 'PASTE_YOUR_GEMINI_KEY_HERE') {
+        throw new Error('GEMINI_API_KEY is not configured');
     }
 
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
-            const result = await groq.chat.completions.create({
-                messages: [{ role: 'user', content: prompt }],
-                model: 'llama-3.1-8b-instant',
-                temperature: 0.3,
-                max_tokens: 2048,
-            });
-            return result.choices[0]?.message?.content?.trim() || '';
+            const result = await aiModel.generateContent(prompt);
+            return result.response.text().trim() || '';
         } catch (err) {
             console.error(`Attempt ${attempt + 1} failed:`, err.message);
             if (attempt < retries - 1) {
@@ -120,7 +163,14 @@ app.post('/api/chat', async (req, res) => {
     try {
         // Fetch medical knowledge context
         const rawKnowledge = await fetchMedicalKnowledge(message);
-        const literatureRefs = await fetchEuropePMC(message);
+        
+        let searchKeywords = message;
+        if (/[\u0600-\u06FF]/.test(message)) {
+            searchKeywords = await extractEnglishKeywords(message);
+            console.log(`[PMC Search] Translated Arabic query to keywords: "${searchKeywords}"`);
+        }
+        
+        const literatureRefs = await fetchEuropePMC(searchKeywords, category);
         
         let citations = [];
         let literatureContext = '';
@@ -137,10 +187,10 @@ app.post('/api/chat', async (req, res) => {
                     year: ref.year,
                     url: ref.url
                 });
-                literatureContext += `--- REFERENCE [${refNum}] ---\n`;
+                literatureContext += `--- REFERENCE [${refNum}] (${ref.type}) ---\n`;
                 literatureContext += `Title: ${ref.title}\n`;
                 literatureContext += `Journal: ${ref.journal} (${ref.year})\n`;
-                literatureContext += `Abstract: ${ref.abstract.substring(0, 1500)}...\n`;
+                literatureContext += `Abstract: ${ref.abstract.substring(0, 1000)}...\n`;
                 literatureContext += `------------------\n\n`;
             });
         }
@@ -160,6 +210,9 @@ app.post('/api/chat', async (req, res) => {
             // Default: physicians
             personaInstruction = `You are Med Arena AI Clinical Consultant, a Senior Physician & Medical/Surgical Specialist. Focus on human medicine, internal medicine, surgery, pediatrics, cardiology, neurology, gastroenterology, gynecology, pathophysiology, differential diagnosis, laboratory/imaging workup, and evidence-based clinical management guidelines.`;
         }
+
+        const currentYear = new Date().getFullYear();
+        personaInstruction += `\n\nCRITICAL KNOWLEDGE AWARENESS: You are operating in the year ${currentYear}. You are provided with both 'Highly Cited Foundation' literature (most reliable established knowledge) and 'Latest Update' literature (newest cutting-edge research). You MUST explicitly synthesize these in your response: briefly state what the established reliable foundational knowledge says, and then highlight what the absolute latest cutting-edge updates say, ensuring the user is aware of both the reliable foundation and the newest developments.`;
 
         let prompt = '';
 
@@ -208,7 +261,7 @@ STRICT RULES:
 - ZERO asterisks (*) allowed anywhere.
 - ZERO markdown bold (**) allowed anywhere.
 - No conversational text outside of ##SECTION## blocks.
-- LANGUAGE RULE: Match the user's language perfectly. If the query is in English, respond ONLY in English. If the query is in Arabic, respond in Arabic but include medical terms in English in parentheses for clarity (e.g. "التهاب البلعوم (Pharyngitis)").
+- LANGUAGE RULE: Match the user's language perfectly. If the query is in English, respond ONLY in English. If the query is in Arabic, respond intelligently in Arabic but DO NOT force translations of complex medical terms, procedures, or drugs (e.g., write "Obeticholic acid" directly in English, do not translate it to Arabic). Keep medical terms in English unless they have a very common Egyptian Arabic medical equivalent.
       `;
         } else {
             prompt = `
@@ -224,8 +277,9 @@ Deliver a high-yield, accurate, and structured clinical response for doctors.
 
 STRICT OUTPUT RULE:
 - Your response MUST START immediately with the first ##SECTION HEADING##.
-- LANGUAGE RULE: Match the user's language perfectly. If the query is in English, respond ONLY in English. If the query is in Arabic, respond in Arabic with medical terminology in English in parentheses (e.g., "احتشاء عضلة القلب (Myocardial Infarction)").
+- LANGUAGE RULE: Match the user's language perfectly. If the query is in English, respond ONLY in English. If the query is in Arabic, respond intelligently in Arabic but DO NOT force translations of complex medical terms, procedures, or drugs (e.g., write "Obeticholic acid" directly in English, do not translate it to Arabic). Keep medical terms in English unless they have a very common Egyptian Arabic medical equivalent.
 - NEVER use asterisks (*) or markdown bold (**).
+- NEVER use the '#' character anywhere in your text except for the main section headings. Do NOT use it for bullet points.
 - ZERO markdown formatting allowed inside sections.
 - ALL HEADINGS must be in ALL CAPS.
 - CRITICAL CITATION RULE: You MUST cite the provided PEER-REVIEWED MEDICAL LITERATURE using bracketed numbers, e.g., [1] or [2], inline where relevant in the text.
@@ -241,29 +295,36 @@ NOW RESPOND TO THE CLINICAL QUERY (START WITH ##):
 
         const rawReply = await callAI(prompt);
 
-        // --- AGGRESSIVE CLEANER & FAIL-SAFE ---
-        let scrubbed = rawReply;
-        const firstIdx = rawReply.indexOf('##');
-        if (firstIdx !== -1) scrubbed = rawReply.substring(firstIdx);
+        // --- FOOLPROOF MARKDOWN TO SECTIONS NORMALIZER ---
+        let normalized = rawReply;
+        
+        // 1. Convert standard Markdown headings to strict ##HEADING## format
+        // Matches lines like: # HEADING, ## HEADING, ### HEADING
+        normalized = normalized.replace(/^(#{1,4})\s*([^#\n]+?)\s*#*$/gm, (match, hashes, headingText) => {
+            return `##${headingText.trim().toUpperCase()}##`;
+        });
+        
+        // 2. Convert bolded headings to strict ##HEADING## format
+        // Matches lines like: **HEADING**
+        normalized = normalized.replace(/^\*\*\s*([^*\n]+)\s*\*\*$/gm, (match, headingText) => {
+            return `##${headingText.trim().toUpperCase()}##`;
+        });
+        
+        // Remove any existing ##END## to prevent double ends
+        normalized = normalized.replace(/##END##/gi, '');
 
-        const sections = scrubbed.split(/##(.*?)##/);
-        const APPROVED_HEADINGS = [
-            'DEFINITION', 'CLINICAL PICTURE', 'CLINICAL ASSESSMENT', 'DIFFERENTIAL DIAGNOSIS', 
-            'INVESTIGATIONS', 'INVESTIGATIONS / WORKUP', 'MANAGEMENT PROTOCOL', 'SURGICAL / PROCEDURAL CONSIDERATIONS',
-            'OVERVIEW', 'SCORING CRITERIA', 'INTERPRETATION', 'CLINICAL SIGNIFICANCE', 
-            'KEY POINTS', 'PROFESSIONAL CLINICAL ADVICE', 'UPDATED INFO / SCORES'
-        ];
-
+        // Extract sections
+        const sections = normalized.split(/##(.*?)##/);
         let finalReply = '';
         for (let i = 1; i < sections.length; i += 2) {
             const h = sections[i].trim().toUpperCase();
             const content = sections[i + 1] || '';
-            if (APPROVED_HEADINGS.some(app => h.includes(app))) {
-                finalReply += `##${sections[i]}##\n${content}\n##END##\n\n`;
+            if (h && h !== 'END') {
+                finalReply += `##${h}##\n${content.trim()}\n##END##\n\n`;
             }
         }
 
-        const reply = finalReply.trim() || scrubbed.trim();
+        const reply = finalReply.trim() || rawReply.trim();
 
         console.log(`[AI Response Category: ${category}] Citations: ${citations.length} | Scrubbed Start: "${reply.substring(0, 50).replace(/\n/g, ' ')}..."`);
 
@@ -280,9 +341,9 @@ NOW RESPOND TO THE CLINICAL QUERY (START WITH ##):
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Med Arena Clinical Backend running on http://0.0.0.0:${PORT}`);
-    if (GROQ_API_KEY && GROQ_API_KEY !== 'PASTE_YOUR_GROQ_KEY_HERE') {
-        console.log(`   Groq API key active`);
+    if (GEMINI_API_KEY && GEMINI_API_KEY !== 'PASTE_YOUR_GEMINI_KEY_HERE') {
+        console.log(`   Gemini API key active`);
     } else {
-        console.log(`   ⚠️ GROQ_API_KEY is missing in backend/.env`);
+        console.log(`   ⚠️ GEMINI_API_KEY is missing in backend/.env`);
     }
 });

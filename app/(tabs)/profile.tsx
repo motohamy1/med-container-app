@@ -81,7 +81,7 @@ const ProfileHeader = ({ profile, loading }: { profile: any; loading: boolean })
 
         {/* Online/AI Active Indicator */}
         <View className="absolute bottom-1 right-1 w-6 h-6 bg-turquoise rounded-full border-4 border-background items-center justify-center">
-          <Ionicons name="flash" size={10} color="#141519" />
+          <Ionicons name="flash" size={10} color="#101214" />
         </View>
       </View>
 
@@ -132,7 +132,7 @@ const StatsSection = () => {
       value: '3',
       subtitle: 'Prescriptions',
       icon: 'medkit',
-      color: '#44cabf',
+      color: '#6ec2be',
     },
     {
       id: '2',
@@ -140,7 +140,7 @@ const StatsSection = () => {
       value: 'Oct 24',
       subtitle: 'Next Due Date',
       icon: 'calendar',
-      color: '#d8b07f',
+      color: '#ccab7f',
     },
     {
       id: '3',
@@ -148,7 +148,7 @@ const StatsSection = () => {
       value: '2',
       subtitle: 'Known Triggers',
       icon: 'warning',
-      color: '#d98a8a',
+      color: '#d18c90',
     },
   ];
 
@@ -192,11 +192,11 @@ const MenuItem = ({
       <Switch
         value={item.toggleValue}
         onValueChange={onToggle}
-        trackColor={{ false: '#23262c', true: '#44cabf' }}
-        thumbColor={item.toggleValue ? '#141519' : '#9fa3ac'}
+        trackColor={{ false: '#232529', true: '#6ec2be' }}
+        thumbColor={item.toggleValue ? '#101214' : '#a3a8af'}
       />
     ) : (
-      <Ionicons name="chevron-forward" size={20} color="#8a8e98" />
+      <Ionicons name="chevron-forward" size={20} color="#a3a8af" />
     )}
   </TouchableOpacity>
 );
@@ -216,7 +216,7 @@ const MenuSection = ({
   <View className="flex-col gap-2 px-4 py-2">
     {icon ? (
       <View className="flex-row items-center gap-2 px-2 py-2">
-        <Ionicons name={icon} size={20} color="#44cabf" />
+        <Ionicons name={icon} size={20} color="#6ec2be" />
         <Text className="text-lg font-bold text-white">{title}</Text>
       </View>
     ) : (
@@ -238,45 +238,7 @@ const MenuSection = ({
   </View>
 );
 
-// Bottom Navigation Component
-const BottomNavigation = () => (
-  <View className="absolute bottom-0 left-0 right-0 h-[88px] bg-teal-dark/80 backdrop-blur-lg border-t border-charcoal/20 z-50">
-    <View className="flex-row items-center justify-around h-16">
-      <TouchableOpacity className="flex-col items-center justify-center w-full h-full gap-1">
-        <Ionicons name="home" size={24} color="#9fa3ac" />
-        <Text className="text-[10px] font-medium text-gray-muted">Home</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity className="flex-col items-center justify-center w-full h-full gap-1">
-        <Ionicons name="medkit" size={24} color="#9fa3ac" />
-        <Text className="text-[10px] font-medium text-gray-muted">Pharmacy</Text>
-      </TouchableOpacity>
-
-      {/* Floating AI Button */}
-      <View className="relative -top-5">
-        <TouchableOpacity
-          className="w-14 h-14 bg-turquoise rounded-full items-center justify-center shadow-glow-cyan"
-          onPress={() => router.push('/(tabs)/ChatTab')}
-        >
-          <Ionicons name="sparkles" size={28} color="#141519" />
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity
-        className="flex-col items-center justify-center w-full h-full gap-1"
-        onPress={() => router.push('/(tabs)/ChatTab')}
-      >
-        <Ionicons name="chatbubbles" size={24} color="#9fa3ac" />
-        <Text className="text-[10px] font-medium text-gray-muted">Chat</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity className="flex-col items-center justify-center w-full h-full gap-1">
-        <Ionicons name="person" size={24} color="#44cabf" />
-        <Text className="text-[10px] font-bold text-white">Profile</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-);
+// (Removed local BottomNavigation — global Tabs from app/(tabs)/_layout.tsx provide the tab bar)
 
 // Main Profile Component
 const Profile = () => {
@@ -290,7 +252,7 @@ const Profile = () => {
       title: 'Medical ID',
       subtitle: 'Blood type, weight, height',
       icon: 'finger-print',
-      iconColor: '#7baad0',
+      iconColor: '#86b0d5',
       bgColor: 'bg-blue-500/10',
     },
     {
@@ -298,14 +260,14 @@ const Profile = () => {
       title: 'Insurance Cards',
       subtitle: 'Primary and secondary',
       icon: 'card',
-      iconColor: '#b3a8cf',
+      iconColor: '#a79ccc',
       bgColor: 'bg-purple-500/10',
     },
     {
       id: 'past-orders',
       title: 'Past Orders',
       icon: 'time-outline',
-      iconColor: '#7fb8a8',
+      iconColor: '#7eb9a2',
       bgColor: 'bg-emerald-500/10',
     },
   ];
@@ -317,7 +279,7 @@ const Profile = () => {
       title: 'Voice Output',
       subtitle: 'Hear pharmacist responses',
       icon: 'volume-high',
-      iconColor: '#44cabf',
+      iconColor: '#6ec2be',
       bgColor: 'bg-turquoise/10',
       hasToggle: true,
       toggleValue: voiceOutput,
@@ -327,7 +289,7 @@ const Profile = () => {
       title: 'Personality',
       subtitle: 'Professional, Friendly, Concise',
       icon: 'happy',
-      iconColor: '#d8a8b8',
+      iconColor: '#d099ab',
       bgColor: 'bg-pink-500/10',
     },
   ];
@@ -338,14 +300,14 @@ const Profile = () => {
       id: 'privacy',
       title: 'Privacy & Security',
       icon: 'lock-closed',
-      iconColor: '#9fa3ac',
+      iconColor: '#a3a8af',
       bgColor: 'bg-charcoal/20',
     },
     {
       id: 'notifications',
       title: 'Notifications',
       icon: 'notifications',
-      iconColor: '#9fa3ac',
+      iconColor: '#a3a8af',
       bgColor: 'bg-charcoal/20',
     },
   ];
@@ -359,10 +321,11 @@ const Profile = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#141519" />
+      <StatusBar barStyle="light-content" backgroundColor="#101214" />
 
       <ScrollView
-        className="flex-1 pb-40"
+        className="flex-1"
+        contentContainerClassName="pb-[76px]"
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[0]}
       >
@@ -382,7 +345,7 @@ const Profile = () => {
         </View>
       </ScrollView>
 
-      <BottomNavigation />
+      {/* Tab bar is provided by the global tab layout (app/(tabs)/_layout.tsx) */}
     </SafeAreaView>
   );
 };

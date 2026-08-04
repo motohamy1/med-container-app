@@ -5,7 +5,7 @@ export default function GITCategory() {
     <CategoryPage
       categoryName="GIT"
       categoryIcon="restaurant"
-      categoryColor="#d9b25a"
+      categoryColor="#d2b689"
     />
   );
 }

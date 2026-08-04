@@ -16,7 +16,7 @@ export default function RootLayout() {
         <Stack.Screen name="fever/index" options={{ headerShown: false }} />
         <Stack.Screen name="neuro/index" options={{ headerShown: false }} />
         <Stack.Screen name="skin/index" options={{ headerShown: false }} />
-        <Stack.Screen name="women/index" options={{ headerShown: false }} />
+        <Stack.Screen name="gynacology/index" options={{ headerShown: false }} />
         <Stack.Screen name="lungs/index" options={{ headerShown: false }} />
       </Stack>
     </SafeAreaProvider>

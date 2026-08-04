@@ -5,32 +5,32 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Neutral graphite surfaces (cool, low-chroma)
-        background: "#15161a",
-        "deep-teal": "#1a1c21",
-        "teal-dark": "#1b1d22",
-        "teal-medium": "#23262c",
-        "surface-hover": "#2c3036",
-        // Refined teal accent (calmer chroma, hue 182)
-        turquoise: "#44cabf",
-        cyan: "#44cabf",
-        "cyan-bright": "#6fd2c8",
-        "accent-bright": "#6fd2c8",
-        // Muted gold for highlights
-        gold: "#d9b25a",
-        "gold-warm": "#d9b25a",
-        "gold-light": "#d9b25a",
+        // Neutral graphite surfaces — even perceptual lightness ramp, hue 255, very low chroma
+        background: "#101214",
+        "deep-teal": "#14171a",
+        "teal-dark": "#1a1d21",
+        "teal-medium": "#23272c",
+        "surface-hover": "#2d3238",
+        // Signature accent — refined jewel teal, restrained chroma, hue 192
+        turquoise: "#6ec2be",
+        cyan: "#6ec2be",
+        "cyan-bright": "#8ad9d5",
+        "accent-bright": "#8ad9d5",
+        // Champagne gold — muted, lower chroma
+        gold: "#d2b689",
+        "gold-warm": "#d2b689",
+        "gold-light": "#d2b689",
         // Neutral tones
-        charcoal: "#374151",
-        "gray-dark": "#1f2937",
-        "gray-muted": "#a7abb4",
+        charcoal: "#373d44",
+        "gray-dark": "#24282d",
+        "gray-muted": "#9ca3af",
         // Medicine card
-        "medicine-bg": "#22252b",
-        "medicine-card": "#191b20",
+        "medicine-bg": "#22262a",
+        "medicine-card": "#171a1d",
       },
       boxShadow: {
-        "glow-cyan": "0 0 20px rgba(68, 202, 191, 0.28)",
-        "glow-gold": "0 0 20px rgba(217, 178, 90, 0.3)",
+        "glow-cyan": "0 0 20px rgba(110, 194, 190, 0.28)",
+        "glow-gold": "0 0 20px rgba(210, 182, 137, 0.3)",
         "bubble": "0 4px 12px rgba(0, 0, 0, 0.4)",
         "card": "0 8px 32px rgba(0, 0, 0, 0.5)",
       },

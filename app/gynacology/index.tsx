@@ -1,11 +1,11 @@
 import { CategoryPage } from '../../components/CategoryPage';
 
-export default function WomenCategory() {
+export default function GynacologyCategory() {
   return (
     <CategoryPage
-      categoryName="Women"
+      categoryName="Gynacology"
       categoryIcon="woman"
-      categoryColor="#c98ac0"
+      categoryColor="#c08ebb"
     />
   );
 }

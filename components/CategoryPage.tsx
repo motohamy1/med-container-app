@@ -45,7 +45,7 @@ const specialtyTopics: Record<string, TopicItem[]> = {
     { title: 'Severe Cutaneous Adverse Reactions', subtitle: 'SJS/TEN Diagnosis & Burn Unit Transfer', type: 'Dermatology' },
     { title: 'Common Dermatological Lesions', subtitle: 'Morphology & Differential Diagnosis', type: 'Clinical Guide' },
   ],
-  Women: [
+  Gynacology: [
     { title: 'Preeclampsia & Eclampsia', subtitle: 'MgSO4 Protocol & Delivery Timing', type: 'OB/GYN Protocol' },
     { title: 'Abnormal Uterine Bleeding (AUB)', subtitle: 'PALM-COEIN Classification & Workup', type: 'Classification' },
   ],
@@ -72,7 +72,7 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#15161a" />
+      <StatusBar barStyle="light-content" backgroundColor="#111315" />
 
       {/* Header */}
       <View className="flex-row items-center px-6 py-4 border-b border-white/5">
@@ -111,7 +111,7 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
               <Text className="text-gray-muted text-xs">{item.subtitle}</Text>
             </View>
             <View className="w-9 h-9 rounded-full bg-turquoise/10 items-center justify-center">
-              <Ionicons name="sparkles" size={18} color="#44cabf" />
+              <Ionicons name="sparkles" size={18} color="#6ec2be" />
             </View>
           </TouchableOpacity>
         ))}
@@ -121,7 +121,7 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
           onPress={() => handleStartConsultation(categoryName)}
           className="mt-4 bg-turquoise p-4 rounded-2xl flex-row items-center justify-center gap-2"
         >
-          <Ionicons name="chatbubbles" size={20} color="#15161a" />
+          <Ionicons name="chatbubbles" size={20} color="#101214" />
           <Text className="text-black font-bold text-base">Ask Medical AI About {categoryName}</Text>
         </TouchableOpacity>
       </ScrollView>

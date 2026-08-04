@@ -1,12 +1,40 @@
 import { Ionicons } from "@expo/vector-icons";
+import MaskedView from "@react-native-masked-view/masked-view";
 import { Tabs } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { StyleSheet } from "react-native";
+
+const GRADIENT_COLORS = ["#acdcd9", "#6ec2be", "#499592"] as const;
+const INACTIVE_COLOR = "#a3a8af";
+
+function GradientIcon({
+  name,
+  size = 24,
+}: {
+  name: keyof typeof Ionicons.glyphMap;
+  size?: number;
+}) {
+  return (
+    <MaskedView
+      style={{ width: size, height: size }}
+      maskElement={<Ionicons name={name} size={size} color="#fff" />}
+    >
+      <LinearGradient
+        colors={[...GRADIENT_COLORS]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+    </MaskedView>
+  );
+}
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#44cabf",
-        tabBarInactiveTintColor: "#9fa3ac",
+        tabBarActiveTintColor: "#6ec2be",
+        tabBarInactiveTintColor: INACTIVE_COLOR,
         headerShown: false,
         tabBarShowLabel: true,
         tabBarAllowFontScaling: false,
@@ -25,8 +53,9 @@ export default function TabLayout() {
         },
         tabBarStyle: {
           position: "absolute",
-          left: 16,
-          right: 16,
+          left: 0,
+          right: 0,
+          marginHorizontal: 16,
           bottom: 0,
           height: 66,
           paddingHorizontal: 10,
@@ -37,8 +66,8 @@ export default function TabLayout() {
           shadowOpacity: 0.35,
           shadowRadius: 16,
           shadowOffset: { width: 0, height: 8 },
-          backgroundColor: "#15161a",
-          borderRadius: 26,
+          backgroundColor: "#1a1c1f",
+          borderRadius: 33,
           borderTopWidth: 0,
           borderWidth: 1,
           borderColor: "rgba(255,255,255,0.08)",
@@ -50,39 +79,48 @@ export default function TabLayout() {
         name="ChatTab"
         options={{
           title: "Chat",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "chatbubbles" : "chatbubbles-outline"}
-              color={color}
-              size={24}
-            />
-          ),
+          tabBarIcon: ({ focused }) =>
+            focused ? (
+              <GradientIcon name="chatbubble-ellipses" />
+            ) : (
+              <Ionicons
+                name="chatbubble-ellipses-outline"
+                color={INACTIVE_COLOR}
+                size={24}
+              />
+            ),
         }}
       />
       <Tabs.Screen
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "home" : "home-outline"}
-              color={color}
-              size={24}
-            />
-          ),
+          tabBarIcon: ({ focused }) =>
+            focused ? (
+              <GradientIcon name="grid" />
+            ) : (
+              <Ionicons
+                name="grid-outline"
+                color={INACTIVE_COLOR}
+                size={24}
+              />
+            ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? "person" : "person-outline"}
-              color={color}
-              size={24}
-            />
-          ),
+          tabBarIcon: ({ focused }) =>
+            focused ? (
+              <GradientIcon name="person-circle" />
+            ) : (
+              <Ionicons
+                name="person-circle-outline"
+                color={INACTIVE_COLOR}
+                size={24}
+              />
+            ),
         }}
       />
     </Tabs>
