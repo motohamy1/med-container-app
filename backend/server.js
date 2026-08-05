@@ -68,6 +68,20 @@ async function fetchEuropePMC(query, category) {
             categoryFilter = ' AND (dental OR dentistry OR oral OR maxillofacial)';
         } else if (category === 'physiotherapy') {
             categoryFilter = ' AND (physiotherapy OR "physical therapy" OR rehabilitation OR biomechanics)';
+        } else if (category === 'heart') {
+            categoryFilter = ' AND (cardiology OR heart OR cardiovascular OR ECG)';
+        } else if (category === 'git') {
+            categoryFilter = ' AND (gastroenterology OR gastrointestinal OR liver OR pancreas OR endoscopy)';
+        } else if (category === 'fever') {
+            categoryFilter = ' AND (infectious disease OR sepsis OR fever OR antibiotics OR critical care)';
+        } else if (category === 'neuro') {
+            categoryFilter = ' AND (neurology OR central nervous system OR stroke OR seizures OR neuroimaging)';
+        } else if (category === 'skin') {
+            categoryFilter = ' AND (dermatology OR skin OR cutaneous OR hair OR nail)';
+        } else if (category === 'gynacology') {
+            categoryFilter = ' AND (gynecology OR obstetrics OR pregnancy OR female reproductive)';
+        } else if (category === 'lungs') {
+            categoryFilter = ' AND (pulmonology OR respiratory OR lungs OR mechanical ventilation)';
         } else if (category === 'physicians') {
             categoryFilter = ' AND (medicine OR clinical OR surgery OR physician)';
         }
@@ -157,7 +171,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 // POST /api/chat — main AI clinical chat endpoint
 app.post('/api/chat', async (req, res) => {
-    const { message, mode = 'general', category = 'physicians' } = req.body;
+    const { message, mode = 'general', category = 'physicians', topicId } = req.body;
     if (!message) return res.status(400).json({ error: 'message is required' });
 
     try {
@@ -206,6 +220,20 @@ app.post('/api/chat', async (req, res) => {
             personaInstruction = `You are Med Arena AI Dental Specialist, a Senior Oral & Maxillofacial Consultant. Focus exclusively on dentistry, oral surgery, endodontics, periodontics, oral pathology, dental trauma, and maxillofacial resources.`;
         } else if (category === 'physiotherapy') {
             personaInstruction = `You are Med Arena Rehab AI, a Senior Consultant in Physical Therapy & Rehabilitation. Focus exclusively on musculoskeletal rehab, neurological physical therapy, biomechanics, sports medicine, manual therapy, and movement analysis resources.`;
+        } else if (category === 'heart') {
+            personaInstruction = `You are Med Arena AI Cardiology Specialist. Focus exclusively on the cardiovascular system, heart diseases, vascular conditions, ECGs, and cardiac interventions.`;
+        } else if (category === 'git') {
+            personaInstruction = `You are Med Arena AI Gastroenterology Specialist. Focus exclusively on the gastrointestinal tract, liver, pancreas, biliary tree, and related GI pathology and endoscopy.`;
+        } else if (category === 'fever') {
+            personaInstruction = `You are Med Arena AI Infectious Disease & Critical Care Specialist. Focus exclusively on systemic infections, sepsis, febrile illnesses, antibiotics, and critical care resuscitation.`;
+        } else if (category === 'neuro') {
+            personaInstruction = `You are Med Arena AI Neurology Specialist. Focus exclusively on the central and peripheral nervous system, stroke, seizures, and neuroimaging.`;
+        } else if (category === 'skin') {
+            personaInstruction = `You are Med Arena AI Dermatology Specialist. Focus exclusively on skin, hair, nail disorders, dermatologic emergencies, and cutaneous manifestations of systemic disease.`;
+        } else if (category === 'gynacology') {
+            personaInstruction = `You are Med Arena AI Obstetrics & Gynecology Specialist. Focus exclusively on female reproductive system disorders, pregnancy complications, and gynecologic oncology.`;
+        } else if (category === 'lungs') {
+            personaInstruction = `You are Med Arena AI Pulmonology Specialist. Focus exclusively on respiratory diseases, pulmonary mechanics, mechanical ventilation, and chest imaging.`;
         } else {
             // Default: physicians
             personaInstruction = `You are Med Arena AI Clinical Consultant, a Senior Physician & Medical/Surgical Specialist. Focus on human medicine, internal medicine, surgery, pediatrics, cardiology, neurology, gastroenterology, gynecology, pathophysiology, differential diagnosis, laboratory/imaging workup, and evidence-based clinical management guidelines.`;
@@ -275,8 +303,16 @@ ${medicalKnowledgeContext}
 ### INSTRUCTIONS:
 Deliver a high-yield, accurate, and structured clinical response for doctors. 
 
+${topicId && topicId !== 'general' ? `
+CRITICAL TOPIC SCOPE: You are operating strictly within the topic context of ID: "${topicId}". 
+Evaluate the user's query against this specific topic. 
+If the user's query is OUTSIDE the medical scope of this topic, you MUST abort and output EXACTLY:
+##OUT_OF_SCOPE##
+This question is not related to the ${topicId} topic.
+` : ''}
+
 STRICT OUTPUT RULE:
-- Your response MUST START immediately with the first ##SECTION HEADING##.
+- Your response MUST START immediately with the first ##SECTION HEADING## (unless you are triggering the ##OUT_OF_SCOPE## block).
 - LANGUAGE RULE: Match the user's language perfectly. If the query is in English, respond ONLY in English. If the query is in Arabic, respond intelligently in Arabic but DO NOT force translations of complex medical terms, procedures, or drugs (e.g., write "Obeticholic acid" directly in English, do not translate it to Arabic). Keep medical terms in English unless they have a very common Egyptian Arabic medical equivalent.
 - NEVER use asterisks (*) or markdown bold (**).
 - NEVER use the '#' character anywhere in your text except for the main section headings. Do NOT use it for bullet points.

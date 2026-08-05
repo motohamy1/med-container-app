@@ -62,3 +62,6 @@ backend/venv/
 
 /.vscode
 .vscode
+
+/.agents
+.agents

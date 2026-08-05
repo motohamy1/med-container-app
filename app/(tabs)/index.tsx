@@ -20,13 +20,13 @@ const BUTTON_SIZE = ORBIT_SIZE * 0.18;
 
 // Category routes mapping
 const categoryRoutes: Record<string, string> = {
-  'Heart': '/heart',
-  'GIT': '/git',
-  'Fever': '/fever',
-  'Neuro': '/neuro',
-  'Skin': '/skin',
-  'Gynacology': '/gynacology',
-  'Lungs': '/lungs',
+  'Cardiology': '/specialty/heart',
+  'GIT': '/specialty/git',
+  'Infectious Disease': '/specialty/fever',
+  'Neurology': '/specialty/neuro',
+  'Dermatology': '/specialty/skin',
+  'Obstetrics/Gynecology': '/specialty/gynacology',
+  'Pulmonology': '/specialty/lungs',
 };
 
 // Types
@@ -128,27 +128,39 @@ const OrbitButton = ({
   };
 
   return (
-    <TouchableOpacity
-      onPress={handlePress}
-      className="absolute bg-teal-medium border border-white/10 items-center justify-center shadow-lg rounded-full"
-      style={{ width: size, height: size, top, left, marginTop: -size / 2, marginLeft: -size / 2 }}
+    <View 
+      className="absolute items-center justify-start" 
+      style={{ top, left, marginTop: -size / 2, width: 120, marginLeft: -60 }}
+      pointerEvents="box-none"
     >
-      <Ionicons name={category.icon} size={20} color={category.color} />
-      <Text className="text-[9px] font-bold text-gray-300 mt-0.5">{category.name}</Text>
-    </TouchableOpacity>
+      <TouchableOpacity
+        onPress={handlePress}
+        className="items-center justify-center"
+      >
+        <View 
+          className="bg-teal-medium border border-white/10 items-center justify-center shadow-lg rounded-full"
+          style={{ width: size, height: size }}
+        >
+          <Ionicons name={category.icon} size={20} color={category.color} />
+        </View>
+        <Text className="text-[9px] font-bold text-gray-300 mt-1.5 text-center leading-tight" numberOfLines={2}>
+          {category.name}
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 };
 
 // Orbit Navigation Component
 const OrbitNavigation = () => {
   const categories: SpecialtyCategory[] = [
-    { id: '1', name: 'Heart', icon: 'heart', color: '#d18c90' },
+    { id: '1', name: 'Cardiology', icon: 'heart', color: '#d18c90' },
     { id: '2', name: 'GIT', icon: 'restaurant', color: '#d2b689' },
-    { id: '3', name: 'Fever', icon: 'thermometer', color: '#6f9ccb' },
-    { id: '4', name: 'Neuro', icon: 'nutrition', color: '#70b19a' },
-    { id: '5', name: 'Skin', icon: 'body', color: '#8e86c0' },
-    { id: '6', name: 'Gynacology', icon: 'woman', color: '#c08ebb' },
-    { id: '7', name: 'Lungs', icon: 'leaf', color: '#6ec2be' },
+    { id: '3', name: 'Infectious Disease', icon: 'thermometer', color: '#6f9ccb' },
+    { id: '4', name: 'Neurology', icon: 'nutrition', color: '#70b19a' },
+    { id: '5', name: 'Dermatology', icon: 'body', color: '#8e86c0' },
+    { id: '6', name: 'Obstetrics/Gynecology', icon: 'woman', color: '#c08ebb' },
+    { id: '7', name: 'Pulmonology', icon: 'leaf', color: '#6ec2be' },
     { id: '8', name: 'More', icon: 'grid', color: '#a3a8af' },
   ];
 

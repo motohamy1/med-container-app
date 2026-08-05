@@ -31,6 +31,7 @@ import Animated, {
   ZoomIn,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams } from "expo-router";
 import { aiService, DoctorCategory, Citation } from "../../services/aiService";
 
 const FLOATING_TAB_BAR_HEIGHT = 70;
@@ -557,9 +558,10 @@ const ChatBubble: React.FC<{
 };
 
 const ChatTab = () => {
+  const params = useLocalSearchParams<{ query?: string }>();
   const [selectedCategory, setSelectedCategory] = useState<DoctorCategory>("physicians");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState("");
+  const [inputText, setInputText] = useState(params.query || "");
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 

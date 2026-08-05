@@ -94,7 +94,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: "Med Center",
           tabBarIcon: ({ focused }) =>
             focused ? (
               <GradientIcon name="grid" />

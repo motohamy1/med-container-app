@@ -20,13 +20,14 @@ export const aiService = {
   async sendMessageByText(
     message: string,
     mode: 'general' | 'fast_recap' = 'general',
-    category: DoctorCategory = 'physicians',
+    category: DoctorCategory | string = 'physicians',
+    topicId?: string
   ): Promise<{ reply: string; citations?: Citation[] }> {
     try {
       const response = await fetch(`${BACKEND_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, mode, category }),
+        body: JSON.stringify({ message, mode, category, topicId }),
       });
 
       if (!response.ok) {
