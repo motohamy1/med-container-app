@@ -15,15 +15,23 @@ export type TopicItem = {
   clinicalContent?: ClinicalSection[];
 };
 
+export type SpecialtyCategory = {
+  id: string;
+  title: string;
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  topics: TopicItem[];
+};
+
 export type SpecialtyData = {
   id: string;
   name: string;
   scientificName: string;
   icon: keyof typeof Ionicons.glyphMap;
   color: string;
-  illustration: string; // URL or local path to unique illustration
+  illustration: any;
   generalScope: string;
-  topics: TopicItem[];
+  categories: SpecialtyCategory[];
 };
 
 export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
@@ -35,7 +43,13 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     color: '#d18c90',
     illustration: require('../assets/images/specialties/cardiology.jpg'), // we will generate this
     generalScope: 'Focus exclusively on the cardiovascular system, heart diseases, vascular conditions, ECGs, and cardiac interventions.',
-    topics: [
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'Acute conditions and protocols',
+        icon: 'warning',
+        topics: [
       {
         id: 'acs',
         title: 'Acute Coronary Syndrome',
@@ -78,6 +92,29 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
           { title: 'Management', content: '1. Rate Control: First-line for stable patients. Beta-blockers (metoprolol) or non-dihydropyridine CCBs (diltiazem, verapamil).\n2. Rhythm Control: For symptomatic patients despite rate control or young patients. Antiarrhythmics (amiodarone, flecainide) or electrical cardioversion.\n3. Anticoagulation: Assessed via CHA2DS2-VASc score. Score ≥2 in men or ≥3 in women warrants oral anticoagulation (DOACs preferred over Warfarin).' }
         ]
       }
+    ]
+      },
+      {
+        id: 'clinical_topics',
+        title: 'Clinical Topics',
+        description: 'Standard guidelines',
+        icon: 'book',
+        topics: []
+      },
+      {
+        id: 'tools',
+        title: 'Tools & Diagnostics',
+        description: 'Interpretations and procedures',
+        icon: 'construct',
+        topics: []
+      },
+      {
+        id: 'research',
+        title: 'Recent Research',
+        description: 'Latest evidence-based medicine',
+        icon: 'flask',
+        topics: []
+      }
     ],
   },
   git: {
@@ -88,7 +125,13 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     color: '#d2b689',
     illustration: require('../assets/images/specialties/gastroenterology.jpg'),
     generalScope: 'Focus exclusively on the gastrointestinal tract, liver, pancreas, biliary tree, and related GI pathology and endoscopy.',
-    topics: [
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'Acute conditions and protocols',
+        icon: 'warning',
+        topics: [
       {
         id: 'upper_gi_bleed',
         title: 'Acute Upper GI Bleeding',
@@ -118,6 +161,29 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
         ]
       }
     ]
+      },
+      {
+        id: 'clinical_topics',
+        title: 'Clinical Topics',
+        description: 'Standard guidelines',
+        icon: 'book',
+        topics: []
+      },
+      {
+        id: 'tools',
+        title: 'Tools & Diagnostics',
+        description: 'Interpretations and procedures',
+        icon: 'construct',
+        topics: []
+      },
+      {
+        id: 'research',
+        title: 'Recent Research',
+        description: 'Latest evidence-based medicine',
+        icon: 'flask',
+        topics: []
+      }
+    ]
   },
   fever: {
     id: 'fever',
@@ -127,7 +193,13 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     color: '#6f9ccb',
     illustration: require('../assets/images/specialties/infectious.jpg'),
     generalScope: 'Focus exclusively on systemic infections, sepsis, febrile illnesses, antibiotics, and critical care resuscitation.',
-    topics: [
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'Acute conditions and protocols',
+        icon: 'warning',
+        topics: [
       {
         id: 'sepsis',
         title: 'Sepsis & Septic Shock',
@@ -157,6 +229,29 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
         ]
       }
     ]
+      },
+      {
+        id: 'clinical_topics',
+        title: 'Clinical Topics',
+        description: 'Standard guidelines',
+        icon: 'book',
+        topics: []
+      },
+      {
+        id: 'tools',
+        title: 'Tools & Diagnostics',
+        description: 'Interpretations and procedures',
+        icon: 'construct',
+        topics: []
+      },
+      {
+        id: 'research',
+        title: 'Recent Research',
+        description: 'Latest evidence-based medicine',
+        icon: 'flask',
+        topics: []
+      }
+    ]
   },
   neuro: {
     id: 'neuro',
@@ -166,7 +261,13 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     color: '#70b19a',
     illustration: require('../assets/images/specialties/neurology.jpg'),
     generalScope: 'Focus exclusively on the central and peripheral nervous system, stroke, seizures, and neuroimaging.',
-    topics: [
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'Acute conditions and protocols',
+        icon: 'warning',
+        topics: [
       {
         id: 'stroke',
         title: 'Acute Ischemic Stroke',
@@ -195,6 +296,29 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
         ]
       }
     ]
+      },
+      {
+        id: 'clinical_topics',
+        title: 'Clinical Topics',
+        description: 'Standard guidelines',
+        icon: 'book',
+        topics: []
+      },
+      {
+        id: 'tools',
+        title: 'Tools & Diagnostics',
+        description: 'Interpretations and procedures',
+        icon: 'construct',
+        topics: []
+      },
+      {
+        id: 'research',
+        title: 'Recent Research',
+        description: 'Latest evidence-based medicine',
+        icon: 'flask',
+        topics: []
+      }
+    ]
   },
   skin: {
     id: 'skin',
@@ -204,7 +328,13 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     color: '#8e86c0',
     illustration: require('../assets/images/specialties/dermatology.jpg'),
     generalScope: 'Focus exclusively on skin, hair, nail disorders, dermatologic emergencies, and cutaneous manifestations of systemic disease.',
-    topics: [
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'Acute conditions and protocols',
+        icon: 'warning',
+        topics: [
       {
         id: 'scar',
         title: 'Severe Cutaneous Adverse Reactions',
@@ -219,6 +349,29 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
         ]
       }
     ]
+      },
+      {
+        id: 'clinical_topics',
+        title: 'Clinical Topics',
+        description: 'Standard guidelines',
+        icon: 'book',
+        topics: []
+      },
+      {
+        id: 'tools',
+        title: 'Tools & Diagnostics',
+        description: 'Interpretations and procedures',
+        icon: 'construct',
+        topics: []
+      },
+      {
+        id: 'research',
+        title: 'Recent Research',
+        description: 'Latest evidence-based medicine',
+        icon: 'flask',
+        topics: []
+      }
+    ]
   },
   gynacology: {
     id: 'gynacology',
@@ -228,7 +381,13 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     color: '#c08ebb',
     illustration: require('../assets/images/specialties/gynecology.jpg'),
     generalScope: 'Focus exclusively on female reproductive system disorders, pregnancy complications, and gynecologic oncology.',
-    topics: [
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'Acute conditions and protocols',
+        icon: 'warning',
+        topics: [
       {
         id: 'preeclampsia',
         title: 'Preeclampsia & Eclampsia',
@@ -243,6 +402,29 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
         ]
       }
     ]
+      },
+      {
+        id: 'clinical_topics',
+        title: 'Clinical Topics',
+        description: 'Standard guidelines',
+        icon: 'book',
+        topics: []
+      },
+      {
+        id: 'tools',
+        title: 'Tools & Diagnostics',
+        description: 'Interpretations and procedures',
+        icon: 'construct',
+        topics: []
+      },
+      {
+        id: 'research',
+        title: 'Recent Research',
+        description: 'Latest evidence-based medicine',
+        icon: 'flask',
+        topics: []
+      }
+    ]
   },
   lungs: {
     id: 'lungs',
@@ -252,7 +434,13 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     color: '#6ec2be',
     illustration: require('../assets/images/specialties/pulmonology.jpg'),
     generalScope: 'Focus exclusively on respiratory diseases, pulmonary mechanics, mechanical ventilation, and chest imaging.',
-    topics: [
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'Acute conditions and protocols',
+        icon: 'warning',
+        topics: [
       {
         id: 'pe',
         title: 'Acute Pulmonary Embolism',
@@ -278,6 +466,29 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
           { title: 'Adjunct Therapy (Severe/Refractory)', content: '1. IV Magnesium Sulfate: Promotes bronchodilation in patients not responding to initial therapy.\n2. Non-Invasive Ventilation (BiPAP): Can reduce work of breathing and avoid intubation.\n3. Epinephrine/Terbutaline IM: For anaphylaxis-induced asthma or severe refractory cases.' },
           { title: 'Intubation Indications', content: 'Impending respiratory failure, altered mental status, silent chest, severe hypoxemia/hypercapnia refractory to maximal medical therapy and BiPAP.' }
         ]
+      }
+    ]
+      },
+      {
+        id: 'clinical_topics',
+        title: 'Clinical Topics',
+        description: 'Standard guidelines',
+        icon: 'book',
+        topics: []
+      },
+      {
+        id: 'tools',
+        title: 'Tools & Diagnostics',
+        description: 'Interpretations and procedures',
+        icon: 'construct',
+        topics: []
+      },
+      {
+        id: 'research',
+        title: 'Recent Research',
+        description: 'Latest evidence-based medicine',
+        icon: 'flask',
+        topics: []
       }
     ]
   }

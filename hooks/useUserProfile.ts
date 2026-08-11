@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getSupabaseClient } from '../lib/supabase';
+
 import { Database } from '../types/supabase';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];

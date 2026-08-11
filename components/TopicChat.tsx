@@ -45,13 +45,15 @@ export default function TopicChat({
   topicId, 
   topicName, 
   themeColor,
-  initialQuery
+  initialQuery,
+  categoryContext
 }: { 
   specialtyId: string;
   topicId: string;
   topicName: string;
   themeColor: string;
   initialQuery?: string;
+  categoryContext?: string;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState(initialQuery || "");
@@ -59,7 +61,7 @@ export default function TopicChat({
   const flatListRef = useRef<FlatList>(null);
 
   const specialty = SPECIALTY_KNOWLEDGE[specialtyId || 'heart'] || SPECIALTY_KNOWLEDGE['heart'];
-  const topicData = specialty.topics.find((t) => t.id === topicId);
+  const topicData = specialty.categories.flatMap(c => c.topics).find((t) => t.id === topicId);
 
   useEffect(() => {
     const keyboardShowListener = Keyboard.addListener("keyboardDidShow", () => {
@@ -89,7 +91,7 @@ export default function TopicChat({
 
     try {
       // Pass the topicScope along with specialty
-      const { reply, citations } = await aiService.sendMessageByText(query, "general", specialtyId as any, topicId);
+      const { reply, citations } = await aiService.sendMessageByText(query, "general", specialtyId as any, topicId, categoryContext);
       
       // Check for Out-of-Scope flag from the AI
       if (reply.includes("##OUT_OF_SCOPE##")) {

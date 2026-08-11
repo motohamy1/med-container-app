@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "say-a-drug",
-    "slug": "say-a-drug",
+    "name": "med-arena",
+    "slug": "med-arena",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "sayadrug",
+    "scheme": "med-arena",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.sayadrug"
+      "bundleIdentifier": "com.anonymous.medarena"
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +20,7 @@
       },
       "softwareKeyboardLayoutMode": "pan",
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.sayadrug"
+      "package": "com.anonymous.medarena"
     },
     "web": {
       "output": "static",
@@ -46,7 +46,8 @@
       "expo-font",
       "expo-image",
       "expo-web-browser",
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -11,7 +11,12 @@
       "Shell(node -e \"function L(c){c=c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-0.055;return Math.max(0,Math.min(1,c))*255}function o(L,C,H){const hr=H*Math.PI/180,a=C*Math.cos(hr),b=C*Math.sin(hr);const l_=L+0.3963377774*a+0.2158037573*b,m_=L-0.1055613458*a-0.0638541728*b,s_=L-0.0894841775*a-1.2914855480*b;const l=l_**3,m=m_**3,s=s_**3;const lr=4.0767416621*l-3.3077115913*m+0.2309699492*s,lg=-1.2684380128*l+2.6097574011*m-0.3413193965*s,lb=-0.0041960863*l-0.7034186147*m+1.7076147010*s;const c=v=>Math.max(0,Math.min(255,Math.round(v)));return '#'+[lr,lg,lb].map(v=>c(L(v))).map(v=>v.toString(16).padStart(2,'0')).join('')}console.log('grad-start',o(0.86,0.05,192));console.log('grad-mid ',o(0.76,0.082,192));console.log('grad-end ',o(0.62,0.075,192));console.log('muted-2 ',o(0.647,0.016,255));\")",
       "Shell(node -e \"function s(c){c=c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-0.055;return Math.max(0,Math.min(1,c))*255}function o(L,C,H){const hr=H*Math.PI/180,a=C*Math.cos(hr),b=C*Math.sin(hr);const l_=L+0.3963377774*a+0.2158037573*b,m_=L-0.1055613458*a-0.0638541728*b,s_=L-0.0894841775*a-1.2914855480*b;const l=l_**3,m=m_**3,s2=s_**3;const lr=4.0767416621*l-3.3077115913*m+0.2309699492*s2,lg=-1.2684380128*l+2.6097574011*m-0.3413193965*s2,lb=-0.0041960863*l-0.7034186147*m+1.7076147010*s2;const c=v=>Math.max(0,Math.min(255,Math.round(v)));return '#'+[lr,lg,lb].map(v=>c(s(v))).map(v=>v.toString(16).padStart(2,'0')).join('')}console.log('grad-start',o(0.86,0.05,192));console.log('grad-mid ',o(0.76,0.082,192));console.log('grad-end ',o(0.62,0.075,192));console.log('muted-2 ',o(0.647,0.016,255));\")",
       "Shell(npx tsc --noEmit)",
-      "Shell(npx eslint app/(tabs)/ChatTab.tsx app/(tabs)/profile.tsx app/(tabs)/index.tsx app/(tabs)/_layout.tsx components/CategoryPage.tsx tailwind.config.js 2 >& 1)"
+      "Shell(npx eslint app/(tabs)/ChatTab.tsx app/(tabs)/profile.tsx app/(tabs)/index.tsx app/(tabs)/_layout.tsx components/CategoryPage.tsx tailwind.config.js 2 >& 1)",
+      "Shell(which speckit 2>$null; if ($?) { echo \"Found\" } else { echo \"Not in PATH\" })",
+      "Shell(npm list -g speckit 2>$null)",
+      "Shell(where specify 2>$null; if ($?) { specify --version } else { echo \"specify not found\" })",
+      "Shell(specify:*)",
+      "Shell(cmd:*)"
     ],
     "deny": [],
     "defaultMode": "default"

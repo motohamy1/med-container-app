@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Image,
   ScrollView,
@@ -9,33 +9,58 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { dbService } from '../../../services/dbService';
+import { SpecialtyData } from '../../../constants/SpecialtyData';
 import { SPECIALTY_KNOWLEDGE } from '../../../constants/SpecialtyData';
 
 export default function SpecialtyDashboard() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [searchText, setSearchText] = useState('');
+  
+  const [specialty, setSpecialty] = useState<SpecialtyData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const specialty = SPECIALTY_KNOWLEDGE[id || 'heart'] || SPECIALTY_KNOWLEDGE['heart'];
+  useEffect(() => {
+    async function loadData() {
+      const data = await dbService.getSpecialty(id || 'heart');
+      setSpecialty(data);
+      setLoading(false);
+    }
+    loadData();
+  }, [id]);
 
   const handleSearchSubmit = () => {
-    if (searchText.trim()) {
+    if (searchText.trim() && specialty) {
       router.push({
-        pathname: `/specialty/${specialty.id}/general`,
+        pathname: `/specialty/${specialty.id}/general` as any,
         params: { query: searchText }
       });
     }
   };
 
-
-
-  const handleTopicPress = (topicId: string) => {
-    router.push({
-      pathname: '/specialty/[id]/[topic]',
-      params: { id: specialty.id, topic: topicId },
-    });
+  const handleCategoryPress = (categoryId: string) => {
+    if (specialty) {
+      router.push({
+        pathname: `/specialty/${specialty.id}/category/${categoryId}` as any,
+      });
+    }
   };
+
+  if (loading || !specialty) {
+    return (
+      <SafeAreaView className="flex-1 bg-background justify-center items-center">
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator size="large" color="#6ec2be" />
+      </SafeAreaView>
+    );
+  }
+
+  // Fallback to local illustration
+  const localSpec = SPECIALTY_KNOWLEDGE[specialty.id];
+  const illustration = localSpec ? localSpec.illustration : null;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -64,9 +89,9 @@ export default function SpecialtyDashboard() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Dynamic Illustration */}
         <View className="w-full h-56 relative bg-teal-dark">
-          {specialty.illustration && (
+          {illustration && (
             <Image 
-              source={specialty.illustration} 
+              source={illustration} 
               className="w-full h-full opacity-80"
               resizeMode="cover"
             />
@@ -100,38 +125,48 @@ export default function SpecialtyDashboard() {
           </Text>
           <Text className="text-white text-lg font-bold mb-4">Clinical Topics & Protocols</Text>
 
-          <View className="flex flex-col gap-3">
-            {specialty.topics.map((topic) => (
-              <TouchableOpacity
-                key={topic.id}
-                onPress={() => handleTopicPress(topic.id)}
-                className="bg-teal-medium/50 border border-white/10 p-4 rounded-2xl flex-row items-center justify-between active:opacity-70"
-              >
-                <View className="flex-1 mr-3">
+          <View className="flex flex-row flex-wrap justify-between gap-y-4">
+            {specialty.categories.map((category) => {
+              // Determine styles based on category ID for high-contrast "Emergencies"
+              const isEmergency = category.id === 'emergencies';
+              const bgColor = isEmergency ? 'rgba(239, 68, 68, 0.15)' : 'rgba(45, 212, 191, 0.1)';
+              const borderColor = isEmergency ? 'rgba(239, 68, 68, 0.4)' : 'rgba(255, 255, 255, 0.1)';
+              const iconColor = isEmergency ? '#ef4444' : specialty.color;
+
+              return (
+                <TouchableOpacity
+                  key={category.id}
+                  onPress={() => handleCategoryPress(category.id)}
+                  className="w-[48%] p-4 rounded-3xl items-start active:opacity-70 border"
+                  style={{ backgroundColor: bgColor, borderColor: borderColor }}
+                >
                   <View 
-                    className="self-start px-2 py-0.5 rounded border mb-1.5"
-                    style={{ backgroundColor: `${specialty.color}20`, borderColor: `${specialty.color}40` }}
+                    className="w-12 h-12 rounded-full items-center justify-center mb-4 border"
+                    style={{ backgroundColor: `${iconColor}20`, borderColor: `${iconColor}40` }}
                   >
-                    <Text 
-                      className="text-[10px] font-bold uppercase"
-                      style={{ color: specialty.color }}
-                    >
-                      {topic.type}
-                    </Text>
+                    <Ionicons name={category.icon} size={24} color={iconColor} />
                   </View>
-                  <Text className="text-white font-bold text-base mb-1">{topic.title}</Text>
-                  <Text className="text-gray-400 text-xs">{topic.subtitle}</Text>
-                </View>
-                <View className="w-10 h-10 rounded-full bg-white/5 items-center justify-center border border-white/10">
-                  <Ionicons name="chevron-forward" size={18} color={specialty.color} />
-                </View>
-              </TouchableOpacity>
-            ))}
+                  <Text className="text-white font-bold text-base mb-1 leading-5">
+                    {category.title}
+                  </Text>
+                  <Text className="text-gray-400 text-[11px] leading-4">
+                    {category.description}
+                  </Text>
+                  
+                  {/* Topic Count Pill */}
+                  <View className="mt-3 px-2 py-1 rounded-full bg-black/30 border border-white/5">
+                     <Text className="text-[9px] text-gray-300 font-bold uppercase tracking-wider">
+                       {category.topics?.length || 0} topics
+                     </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* Ask General AI Button */}
           <TouchableOpacity 
-            onPress={() => router.push(`/specialty/${specialty.id}/general`)}
+            onPress={() => router.push(`/specialty/${specialty.id}/general` as any)}
             className="flex-row items-center justify-center gap-2 py-4 rounded-xl mx-4 mt-6 mb-8"
             style={{ backgroundColor: specialty.color }}
           >

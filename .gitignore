@@ -58,10 +58,12 @@ backend/venv/
 
 .commandcode
 /.commandcode
-/commandcode
 
 /.vscode
 .vscode
 
 /.agents
 .agents
+
+.specify
+/.specify

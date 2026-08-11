@@ -1,15 +1,35 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
-import React from 'react';
-import { StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StatusBar, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SPECIALTY_KNOWLEDGE } from '../../../constants/SpecialtyData';
+import { dbService } from '../../../services/dbService';
+import { SpecialtyData } from '../../../constants/SpecialtyData';
 import TopicChat from '../../../components/TopicChat';
 
 export default function GeneralSpecialtyChat() {
-  const { id, query } = useLocalSearchParams<{ id: string, query?: string }>();
+  const { id, query, categoryContext } = useLocalSearchParams<{ id: string, query?: string, categoryContext?: string }>();
 
-  const specialty = SPECIALTY_KNOWLEDGE[id || 'heart'] || SPECIALTY_KNOWLEDGE['heart'];
+  const [specialty, setSpecialty] = useState<SpecialtyData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      const data = await dbService.getSpecialty(id || 'heart');
+      setSpecialty(data);
+      setLoading(false);
+    }
+    loadData();
+  }, [id]);
+
+  if (loading || !specialty) {
+    return (
+      <SafeAreaView className="flex-1 bg-background justify-center items-center">
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator size="large" color="#6ec2be" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -38,9 +58,10 @@ export default function GeneralSpecialtyChat() {
       <TopicChat 
         specialtyId={specialty.id} 
         topicId="general" 
-        topicName={`General ${specialty.scientificName}`}
+        topicName={categoryContext ? `${categoryContext.charAt(0).toUpperCase() + categoryContext.slice(1)} AI` : `General ${specialty.scientificName}`}
         themeColor={specialty.color}
         initialQuery={query}
+        categoryContext={categoryContext}
       />
     </SafeAreaView>
   );

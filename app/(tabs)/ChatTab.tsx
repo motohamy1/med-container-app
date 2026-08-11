@@ -51,21 +51,6 @@ type Message = {
   citations?: Citation[];
 };
 
-type CategoryOption = {
-  id: DoctorCategory;
-  name: string;
-  shortName: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  isAvailable: boolean;
-};
-
-const CATEGORIES: CategoryOption[] = [
-  { id: "physicians", name: "Physicians", shortName: "Physicians", icon: "medkit-outline" as any, color: "#6ec2be", isAvailable: true },
-  { id: "dentists", name: "Dentists", shortName: "Dentists", icon: "happy-outline", color: "#86b0d5", isAvailable: false },
-  { id: "physiotherapy", name: "Physiotherapy", shortName: "Physio", icon: "body-outline", color: "#a79ccc", isAvailable: false },
-];
-
 type QuickPrompt = {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
@@ -559,7 +544,6 @@ const ChatBubble: React.FC<{
 
 const ChatTab = () => {
   const params = useLocalSearchParams<{ query?: string }>();
-  const [selectedCategory, setSelectedCategory] = useState<DoctorCategory>("physicians");
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState(params.query || "");
   const [isTyping, setIsTyping] = useState(false);
@@ -568,8 +552,6 @@ const ChatTab = () => {
   // Header collapses once a conversation starts (question sent or messages present)
   const chatActive = messages.length > 0 || isTyping;
   const headerCollapse = useSharedValue(0);
-  const [switcherHeight, setSwitcherHeight] = useState(0);
-  const activeCategory = CATEGORIES.find((c) => c.id === selectedCategory) ?? CATEGORIES[0];
 
   useEffect(() => {
     headerCollapse.value = withTiming(chatActive ? 1 : 0, {
@@ -603,16 +585,6 @@ const ChatTab = () => {
     opacity: interpolate(headerCollapse.value, [0, 0.6, 1], [1, 0.4, 0]),
   }));
 
-  const switcherWrapStyle = useAnimatedStyle(
-    () => ({
-      height: switcherHeight
-        ? interpolate(headerCollapse.value, [0, 1], [switcherHeight + 14, 0])
-        : undefined,
-      opacity: interpolate(headerCollapse.value, [0, 0.7, 1], [1, 0.4, 0]),
-    }),
-    [switcherHeight],
-  );
-
   useEffect(() => {
     const keyboardShowListener = Keyboard.addListener(
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
@@ -626,14 +598,6 @@ const ChatTab = () => {
       keyboardShowListener.remove();
     };
   }, []);
-
-  const handleSelectCategory = (cat: CategoryOption) => {
-    if (!cat.isAvailable) {
-      Alert.alert("Coming Soon", `${cat.name} clinical resources will be unlocked in the upcoming release. Currently set to Physicians.`);
-      return;
-    }
-    setSelectedCategory(cat.id);
-  };
 
   const handleCopyText = (text: string) => {
     Clipboard.setString(text);
@@ -659,7 +623,7 @@ const ChatTab = () => {
         hour: "2-digit",
         minute: "2-digit",
       }),
-      category: selectedCategory,
+      category: "physicians",
       citations,
     };
 
@@ -673,7 +637,7 @@ const ChatTab = () => {
     setIsTyping(true);
 
     try {
-      const { reply, citations } = await aiService.sendMessageByText(query, "general", selectedCategory);
+      const { reply, citations } = await aiService.sendMessageByText(query, "general", "physicians");
       handleQuery(query, reply, citations);
     } catch (error) {
       console.error(error);
@@ -742,18 +706,7 @@ const ChatTab = () => {
                         Med Arena
                       </Animated.Text>
                       <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      {/* Compact category chip — visible only when minimized */}
-                      {chatActive && (
-                        <Animated.View
-                          entering={FadeIn.duration(350).delay(220).easing(EASE_HEAVY)}
-                          className="flex-row items-center rounded-full bg-white/[0.06] border border-white/10 px-2 py-0.5 gap-1"
-                        >
-                          <Ionicons name={activeCategory.icon} size={10} color={TURQUOISE} />
-                          <Text className="text-[9px] font-bold text-turquoise">
-                            {activeCategory.shortName}
-                          </Text>
-                        </Animated.View>
-                      )}
+                      {/* Compact category chip removed */}
                     </View>
                     <Animated.View
                       style={[{ overflow: "hidden" }, subtitleWrapStyle]}
@@ -775,56 +728,6 @@ const ChatTab = () => {
                   </TouchableOpacity>
                 )}
               </View>
-
-              {/* Doctor Category Segmented Switcher — nested island, collapses on chat */}
-              <Animated.View style={[{ overflow: "hidden" }, switcherWrapStyle]}>
-                <View
-                  onLayout={(e) => setSwitcherHeight(e.nativeEvent.layout.height)}
-                  className="mt-3.5 flex-row bg-black/30 p-1 rounded-full border border-white/[0.06] gap-1"
-                >
-                  {CATEGORIES.map((cat) => {
-                    const isSelected = selectedCategory === cat.id;
-                    return (
-                      <TouchableOpacity
-                        key={cat.id}
-                        onPress={() => handleSelectCategory(cat)}
-                        className="flex-1 rounded-full overflow-hidden active:opacity-80"
-                      >
-                        <Animated.View
-                          layout={Layout.springify().damping(26).stiffness(240)}
-                          className="flex-row items-center justify-center rounded-full overflow-hidden"
-                          style={{ paddingHorizontal: 14, paddingVertical: 10 }}
-                        >
-                          {isSelected && (
-                            <LinearGradient
-                              colors={["#8ad9d5", "#5aa8a4"]}
-                              start={{ x: 0, y: 0 }}
-                              end={{ x: 1, y: 1 }}
-                              style={StyleSheet.absoluteFill}
-                            />
-                          )}
-                          <Ionicons
-                            name={cat.icon}
-                            size={13}
-                            color={isSelected ? "#0c2321" : "#a3a8af"}
-                            style={{ marginRight: 5 }}
-                          />
-                          <Text
-                            className={`text-xs ${isSelected ? "font-bold text-[#0c2321]" : "font-semibold text-gray-400"}`}
-                          >
-                            {cat.shortName}
-                          </Text>
-                          {!cat.isAvailable && !isSelected && (
-                            <View className="ml-1.5 px-1.5 py-0.5 bg-white/10 rounded-full">
-                              <Text className="text-[7px] text-amber-300 font-bold tracking-widest">SOON</Text>
-                            </View>
-                          )}
-                        </Animated.View>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </Animated.View>
             </Animated.View>
           </BezelShell>
         </Animated.View>

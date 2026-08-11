@@ -1,0 +1,25 @@
+ACLS 2024 UPDATE: Advanced Cardiovascular Life Support
+
+1. Cardiac Arrest Algorithm
+- Shockable rhythms: Ventricular Fibrillation (VF) and Pulseless Ventricular Tachycardia (pVT).
+- Non-shockable rhythms: Asystole and Pulseless Electrical Activity (PEA).
+- CPR quality is paramount: Push hard (at least 2 inches) and fast (100-120/min) and allow complete chest recoil.
+
+2. Epinephrine Administration
+- For non-shockable rhythms (Asystole/PEA), administer Epinephrine 1 mg as soon as IV/IO access is obtained.
+- For shockable rhythms (VF/pVT), administer Epinephrine 1 mg after the second shock.
+- Repeat every 3 to 5 minutes.
+
+3. Amiodarone or Lidocaine
+- Indicated for VF/pVT unresponsive to CPR, defibrillation, and vasopressor therapy.
+- Amiodarone dose: 300 mg IV/IO first dose, then 150 mg second dose.
+- Lidocaine dose: 1 to 1.5 mg/kg first dose, then 0.5 to 0.75 mg/kg second dose.
+
+4. Post-Cardiac Arrest Care
+- Targeted Temperature Management (TTM) is recommended for comatose patients. Maintain a constant temperature between 32°C and 36°C for at least 24 hours.
+- Maintain SpO2 92% to 98% and avoid hyperoxia.
+- Treat hypotension (SBP < 90 mm Hg or MAP < 65 mm Hg).
+
+5. Reversible Causes (H's and T's)
+- Hypovolemia, Hypoxia, Hydrogen ion (acidosis), Hypo-/Hyperkalemia, Hypothermia.
+- Tension pneumothorax, Tamponade (cardiac), Toxins, Thrombosis (pulmonary), Thrombosis (coronary).

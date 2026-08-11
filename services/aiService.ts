@@ -1,7 +1,7 @@
 const BACKEND_URL =
   process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
-export type DoctorCategory = 'physicians' | 'dentists' | 'physiotherapy';
+export type DoctorCategory = 'physicians';
 
 export type Citation = {
   id: string;
@@ -21,13 +21,14 @@ export const aiService = {
     message: string,
     mode: 'general' | 'fast_recap' = 'general',
     category: DoctorCategory | string = 'physicians',
-    topicId?: string
+    topicId?: string,
+    categoryContext?: string
   ): Promise<{ reply: string; citations?: Citation[] }> {
     try {
       const response = await fetch(`${BACKEND_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, mode, category, topicId }),
+        body: JSON.stringify({ message, mode, category, topicId, categoryContext }),
       });
 
       if (!response.ok) {

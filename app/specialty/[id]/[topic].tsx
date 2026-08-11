@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
-import React, { useState } from 'react';
-import { StatusBar, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StatusBar, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SPECIALTY_KNOWLEDGE } from '../../../constants/SpecialtyData';
+import { dbService } from '../../../services/dbService';
+import { SpecialtyData, TopicItem } from '../../../constants/SpecialtyData';
 import TopicChat from '../../../components/TopicChat';
 import ClinicalGuide from '../../../components/ClinicalGuide';
 
@@ -11,8 +12,30 @@ export default function TopicPage() {
   const { id, topic } = useLocalSearchParams<{ id: string; topic: string }>();
   const [activeTab, setActiveTab] = useState<'guide' | 'chat'>('guide');
 
-  const specialty = SPECIALTY_KNOWLEDGE[id || 'heart'] || SPECIALTY_KNOWLEDGE['heart'];
-  const topicData = specialty.topics.find((t) => t.id === topic) || specialty.topics[0];
+  const [specialty, setSpecialty] = useState<SpecialtyData | null>(null);
+  const [topicData, setTopicData] = useState<TopicItem | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      const specId = id || 'heart';
+      const spec = await dbService.getSpecialty(specId);
+      const data = await dbService.getTopic(specId, topic);
+      setSpecialty(spec);
+      setTopicData(data);
+      setLoading(false);
+    }
+    loadData();
+  }, [id, topic]);
+
+  if (loading || !specialty || !topicData) {
+    return (
+      <SafeAreaView className="flex-1 bg-background justify-center items-center">
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator size="large" color="#6ec2be" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
@@ -58,12 +81,11 @@ export default function TopicPage() {
         <ClinicalGuide 
           topicData={topicData} 
           themeColor={specialty.color} 
-          specialtyIllustration={specialty.illustration} 
         />
       ) : (
         <TopicChat 
-          specialtyId={specialty.id} 
-          topicId={topicData.id} 
+          specialtyId={specialty.id}
+          topicId={topicData.id}
           topicName={topicData.title}
           themeColor={specialty.color}
         />
