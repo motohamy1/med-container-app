@@ -69,8 +69,8 @@ export default function CategoryPage() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <View className="flex-1 ml-3">
-          <Text className="text-white text-xl font-bold">{category.title}</Text>
-          <Text className="text-turquoise text-xs font-semibold uppercase tracking-wider" style={{ color: specialty.color }}>
+          <Text className="text-white text-xl font-sans-bold">{category.title}</Text>
+          <Text className="text-turquoise text-xs font-sans-semibold uppercase tracking-wider" style={{ color: specialty.color }}>
             {specialty.name} Specialty
           </Text>
         </View>
@@ -107,13 +107,13 @@ export default function CategoryPage() {
                       style={{ backgroundColor: `${specialty.color}20`, borderColor: `${specialty.color}40` }}
                     >
                       <Text 
-                        className="text-[10px] font-bold uppercase"
+                        className="text-[10px] font-sans-bold uppercase"
                         style={{ color: specialty.color }}
                       >
                         {topic.type}
                       </Text>
                     </View>
-                    <Text className="text-white font-bold text-base mb-1">{topic.title}</Text>
+                    <Text className="text-white font-sans-bold text-base mb-1">{topic.title}</Text>
                     <Text className="text-gray-400 text-xs">{topic.subtitle}</Text>
                   </View>
                   <View className="w-10 h-10 rounded-full bg-white/5 items-center justify-center border border-white/10">
@@ -134,7 +134,7 @@ export default function CategoryPage() {
           style={{ backgroundColor: specialty.color }}
         >
           <Ionicons name="chatbubbles" size={20} color="#101214" />
-          <Text className="text-[#101214] text-base font-bold">Ask AI about {category.title}</Text>
+          <Text className="text-[#101214] text-base font-sans-bold">Ask AI about {category.title}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

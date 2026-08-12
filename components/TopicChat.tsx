@@ -165,12 +165,12 @@ export default function TopicChat({
             </View>
             <Text className="text-white text-2xl font-black text-center mb-2 px-4">{topicName}</Text>
             {topicData && (
-              <Text className="text-gray-400 text-sm font-medium text-center px-8 mb-8 leading-5">
+              <Text className="text-gray-400 text-sm font-sans-medium text-center px-8 mb-8 leading-5">
                 {topicData.subtitle}
               </Text>
             )}
             {topicId === 'general' && (
-              <Text className="text-gray-400 text-sm font-medium text-center px-8 mb-8 leading-5">
+              <Text className="text-gray-400 text-sm font-sans-medium text-center px-8 mb-8 leading-5">
                 {specialty.generalScope}
               </Text>
             )}

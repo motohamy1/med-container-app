@@ -12,11 +12,12 @@ import {
   type DimensionValue
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '../../constants/Colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const ORBIT_SIZE = Math.min(SCREEN_WIDTH * 0.85, 340);
+const ORBIT_SIZE = Math.min(SCREEN_WIDTH * 0.78, 300);
 const CENTER_SIZE = ORBIT_SIZE * 0.42;
-const BUTTON_SIZE = ORBIT_SIZE * 0.18;
+const BUTTON_SIZE = ORBIT_SIZE * 0.19;
 
 // Category routes mapping
 const categoryRoutes: Record<string, string> = {
@@ -57,16 +58,16 @@ const Header = () => {
     <View className="flex-row items-center justify-between px-6 pt-6 pb-2">
       <View>
         <View className="flex-row items-center gap-1.5">
-          <Ionicons name="medical" size={16} color="#6ec2be" />
-          <Text className="text-sm text-gray-muted font-medium">{getGreeting()}, Dr.</Text>
+          <Ionicons name="medical" size={16} color={Colors.accent} />
+          <Text className="text-[13px] text-gray-muted font-sans-medium">{getGreeting()}, Dr.</Text>
         </View>
-        <Text className="text-2xl font-bold leading-tight text-white">Alex Doe</Text>
+        <Text className="text-[22px] font-sans-bold leading-tight text-white tracking-tight">Alex Doe</Text>
       </View>
-      
+
       {/* Active Role Badge */}
       <View className="px-3 py-1.5 rounded-full bg-turquoise/20 border border-turquoise flex-row items-center gap-1.5">
         <View className="w-2 h-2 rounded-full bg-turquoise" />
-        <Text className="text-turquoise text-xs font-bold uppercase tracking-wider">Physician Mode</Text>
+        <Text className="text-turquoise text-[11px] font-sans-bold uppercase tracking-wider">Physician Mode</Text>
       </View>
     </View>
   );
@@ -86,23 +87,24 @@ const SearchBar = () => {
 
   return (
     <View className="px-6 py-4">
-      <View className="relative">
-        <View className="absolute -inset-0.5 rounded-full blur-md opacity-75 bg-gradient-to-r from-turquoise/30 to-cyan/30" />
-        <View className="relative flex-row items-center h-14 bg-teal-dark rounded-full px-4 border border-white/5 shadow-lg">
-          <Ionicons name="search" size={20} color="#6ec2be" style={{ marginRight: 12 }} />
-          <TextInput
-            className="flex-1 text-white text-base font-medium"
-            placeholder="Search clinical conditions, workups..."
-            placeholderTextColor="#a3a8af"
-            value={searchText}
-            onChangeText={setSearchText}
-            onSubmitEditing={handleSearchSubmit}
-            returnKeyType="search"
-          />
-          <TouchableOpacity onPress={handleSearchSubmit} className="p-2 bg-turquoise/20 rounded-full">
-            <Ionicons name="arrow-forward" size={18} color="#6ec2be" />
-          </TouchableOpacity>
-        </View>
+      <View className="flex-row items-center h-14 bg-teal-dark rounded-full px-4 border border-white/5">
+        <Ionicons name="search" size={20} color={Colors.accent} style={{ marginRight: 12 }} />
+        <TextInput
+          className="flex-1 text-white text-base font-sans"
+          placeholder="Search clinical conditions, workups..."
+          placeholderTextColor={Colors.graySubtle}
+          value={searchText}
+          onChangeText={setSearchText}
+          onSubmitEditing={handleSearchSubmit}
+          returnKeyType="search"
+        />
+        <TouchableOpacity
+          onPress={handleSearchSubmit}
+          className="w-11 h-11 items-center justify-center rounded-full bg-turquoise/15 -mr-2"
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Ionicons name="arrow-forward" size={18} color={Colors.accent} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -128,22 +130,23 @@ const OrbitButton = ({
   };
 
   return (
-    <View 
-      className="absolute items-center justify-start" 
+    <View
+      className="absolute items-center justify-start"
       style={{ top, left, marginTop: -size / 2, width: 120, marginLeft: -60 }}
       pointerEvents="box-none"
     >
       <TouchableOpacity
         onPress={handlePress}
         className="items-center justify-center"
+        hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
       >
-        <View 
-          className="bg-teal-medium border border-white/10 items-center justify-center shadow-lg rounded-full"
+        <View
+          className="bg-teal-medium border border-white/10 items-center justify-center rounded-full"
           style={{ width: size, height: size }}
         >
           <Ionicons name={category.icon} size={20} color={category.color} />
         </View>
-        <Text className="text-[9px] font-bold text-gray-300 mt-1.5 text-center leading-tight" numberOfLines={2}>
+        <Text className="text-[11px] font-sans-semibold text-gray-300 mt-1.5 text-center leading-tight" numberOfLines={2}>
           {category.name}
         </Text>
       </TouchableOpacity>
@@ -154,28 +157,28 @@ const OrbitButton = ({
 // Orbit Navigation Component
 const OrbitNavigation = () => {
   const categories: SpecialtyCategory[] = [
-    { id: '1', name: 'Cardiology', icon: 'heart', color: '#d18c90' },
-    { id: '2', name: 'GIT', icon: 'restaurant', color: '#d2b689' },
-    { id: '3', name: 'Infectious Disease', icon: 'thermometer', color: '#6f9ccb' },
-    { id: '4', name: 'Neurology', icon: 'nutrition', color: '#70b19a' },
-    { id: '5', name: 'Dermatology', icon: 'body', color: '#8e86c0' },
-    { id: '6', name: 'Obstetrics/Gynecology', icon: 'woman', color: '#c08ebb' },
-    { id: '7', name: 'Pulmonology', icon: 'leaf', color: '#6ec2be' },
-    { id: '8', name: 'More', icon: 'grid', color: '#a3a8af' },
+    { id: '1', name: 'Cardiology', icon: 'heart', color: Colors.specialty.cardiology },
+    { id: '2', name: 'GIT', icon: 'restaurant', color: Colors.specialty.git },
+    { id: '3', name: 'Infectious Disease', icon: 'thermometer', color: Colors.specialty.infectious },
+    { id: '4', name: 'Neurology', icon: 'pulse', color: Colors.specialty.neurology },
+    { id: '5', name: 'Dermatology', icon: 'body', color: Colors.specialty.dermatology },
+    { id: '6', name: 'Obstetrics/Gynecology', icon: 'woman', color: Colors.specialty.obgyn },
+    { id: '7', name: 'Pulmonology', icon: 'fitness', color: Colors.specialty.pulmonology },
+    { id: '8', name: 'More', icon: 'grid', color: Colors.specialty.more },
   ];
 
   return (
     <View className="px-6 py-6">
       <View className="flex-row items-center justify-between mb-2">
-        <Text className="text-xl font-bold text-white">Physician Specialties</Text>
-        <TouchableOpacity className="flex-row items-center gap-1">
-          <Text className="text-turquoise text-sm font-semibold">Clinical Hub</Text>
-          <Ionicons name="chevron-forward" size={16} color="#6ec2be" />
+        <Text className="text-[17px] font-sans-bold text-white">Physician Specialties</Text>
+        <TouchableOpacity className="flex-row items-center gap-1" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Text className="text-turquoise text-[13px] font-sans-semibold">Clinical Hub</Text>
+          <Ionicons name="chevron-forward" size={16} color={Colors.accent} />
         </TouchableOpacity>
       </View>
 
       <View
-        className="mx-auto mt-14 mb-8 relative"
+        className="mx-auto mt-12 mb-6 relative"
         style={{ width: ORBIT_SIZE, height: ORBIT_SIZE }}
       >
         <View
@@ -188,15 +191,15 @@ const OrbitNavigation = () => {
           style={{ width: ORBIT_SIZE * 0.98, height: ORBIT_SIZE * 0.98 }}
         />
 
-        {/* Center hub */}
+        {/* Center hub — the one glow on this screen */}
         <TouchableOpacity
           onPress={() => router.push('/(tabs)/ChatTab')}
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-turquoise shadow-glow-cyan rounded-full items-center justify-center border-4 border-background z-20 px-2 text-center"
           style={{ width: CENTER_SIZE, height: CENTER_SIZE }}
         >
-          <Ionicons name="medical" size={26} color="#101214" />
-          <Text className="text-xs font-bold text-black text-center mt-1">Medical Arena AI</Text>
-          <Text className="text-[9px] text-black/70 font-semibold">Clinical Advisor</Text>
+          <Ionicons name="medical" size={26} color={Colors.ink} />
+          <Text className="text-[11px] font-sans-bold text-black text-center mt-1">Medical Arena AI</Text>
+          <Text className="text-[10px] text-black/70 font-sans-semibold">Clinical Advisor</Text>
         </TouchableOpacity>
 
         <OrbitButton category={categories[0]} size={BUTTON_SIZE} top="0%" left="50%" />
@@ -221,7 +224,7 @@ const RecentInquiries = () => {
 
   return (
     <View className="px-6 pb-6">
-      <Text className="text-lg font-bold text-white mb-3">Recent Clinical Consultations</Text>
+      <Text className="text-[17px] font-sans-bold text-white mb-3">Recent Clinical Consultations</Text>
       <View className="flex flex-col gap-2">
         {inquiries.map((inquiry) => (
           <TouchableOpacity
@@ -230,15 +233,15 @@ const RecentInquiries = () => {
             className="flex-row items-center gap-3 p-3 rounded-2xl bg-teal-medium border border-white/5"
           >
             <View className="w-10 h-10 rounded-full bg-turquoise/10 items-center justify-center">
-              <Ionicons name="pulse-outline" size={18} color="#6ec2be" />
+              <Ionicons name="pulse-outline" size={18} color={Colors.accent} />
             </View>
             <View className="flex-1">
-              <Text className="text-sm font-medium text-white">{inquiry.topic}</Text>
-              <Text className="text-xs text-gray-muted">
+              <Text className="text-[15px] font-sans-medium text-white">{inquiry.topic}</Text>
+              <Text className="text-[13px] text-gray-muted">
                 {inquiry.category} • {inquiry.timestamp}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#a3a8af" />
+            <Ionicons name="chevron-forward" size={20} color={Colors.grayMuted} />
           </TouchableOpacity>
         ))}
       </View>
@@ -246,27 +249,19 @@ const RecentInquiries = () => {
   );
 };
 
-const BackgroundEffects = () => (
-  <View className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-    <View className="absolute top-[-10%] right-[-20%] w-[400px] h-[400px] bg-turquoise/5 rounded-full blur-[100px]" />
-    <View className="absolute bottom-[-10%] left-[-10%] w-[300px] h-[300px] bg-cyan/5 rounded-full blur-[80px]" />
-  </View>
-);
-
 export default function Index() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#101214" />
-      <BackgroundEffects />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
       <ScrollView
-        className="flex-1 relative z-10"
+        className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-40"
         stickyHeaderIndices={[1]}
       >
         <Header />
-        <View className="bg-background/95 backdrop-blur-sm">
+        <View className="bg-background/95">
           <SearchBar />
         </View>
         <OrbitNavigation />

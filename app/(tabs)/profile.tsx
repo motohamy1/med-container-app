@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { Colors } from '../../constants/Colors';
 
 // Types
 type StatCard = {
@@ -37,7 +38,7 @@ type MenuItem = {
 // Top App Bar Component
 const TopAppBar = () => (
   <View className="flex-row items-center justify-between px-4 py-4 pb-2 bg-background/95 backdrop-blur-md border-b border-charcoal/20">
-    <Text className="text-xl font-bold tracking-tight flex-1">Profile</Text>
+    <Text className="text-xl font-sans-bold tracking-tight flex-1">Profile</Text>
     <View className="flex-row items-center gap-3">
       <TouchableOpacity className="w-10 h-10 rounded-full items-center justify-center">
         <Ionicons name="notifications-outline" size={22} color="#fff" />
@@ -66,14 +67,14 @@ const ProfileHeader = ({ profile, loading }: { profile: any; loading: boolean })
         {profile?.avatar_url ? (
           <View className="relative w-32 h-32 rounded-full border-4 border-teal-medium shadow-xl overflow-hidden bg-teal-medium">
             <View className="w-full h-full bg-teal-medium flex items-center justify-center">
-              <Text className="text-white text-4xl font-bold">
+              <Text className="text-white text-4xl font-sans-bold">
                 {displayName.charAt(0).toUpperCase()}
               </Text>
             </View>
           </View>
         ) : (
           <View className="relative w-32 h-32 rounded-full border-4 border-teal-medium shadow-xl items-center justify-center bg-teal-medium">
-            <Text className="text-white text-4xl font-bold">
+            <Text className="text-white text-4xl font-sans-bold">
               {loading ? '?' : displayName.charAt(0).toUpperCase()}
             </Text>
           </View>
@@ -87,21 +88,21 @@ const ProfileHeader = ({ profile, loading }: { profile: any; loading: boolean })
 
       <View className="flex-col items-center gap-1">
         <View className="flex-row items-center gap-2">
-          <Text className="text-2xl font-bold leading-tight text-white">
+          <Text className="text-2xl font-sans-bold leading-tight text-white">
             {loading ? 'Loading...' : displayName}
           </Text>
           <View className="px-2 py-0.5 rounded-full bg-turquoise/20 border border-turquoise/20">
-            <Text className="text-turquoise text-[10px] font-bold">PRO</Text>
+            <Text className="text-turquoise text-[10px] font-sans-bold">PRO</Text>
           </View>
         </View>
-        <Text className="text-gray-muted text-sm font-medium">
+        <Text className="text-gray-muted text-sm font-sans-medium">
           {loading ? '' : `Member since ${memberSince}`}
         </Text>
       </View>
 
       <TouchableOpacity className="w-full max-w-[200px] h-11 rounded-full bg-teal-medium border border-white/10 flex-row items-center justify-center shadow-sm">
         <Ionicons name="create-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
-        <Text className="text-sm font-bold text-white">Edit Profile</Text>
+        <Text className="text-sm font-sans-bold text-white">Edit Profile</Text>
       </TouchableOpacity>
     </View>
   );
@@ -112,12 +113,12 @@ const StatCard = ({ stat }: { stat: StatCard }) => (
   <View className="w-[45%] flex-col gap-3 rounded-2xl p-5 bg-teal-medium border border-charcoal/20 shadow-sm">
     <View className="flex-row items-center gap-2">
       <Ionicons name={stat.icon} size={18} color={stat.color} />
-      <Text className="text-[10px] font-bold uppercase tracking-wider opacity-80" style={{ color: stat.color }}>
+      <Text className="text-[10px] font-sans-bold uppercase tracking-wider opacity-80" style={{ color: stat.color }}>
         {stat.title}
       </Text>
     </View>
     <View>
-      <Text className="text-3xl font-bold tracking-tight text-white">{stat.value}</Text>
+      <Text className="text-3xl font-sans-bold tracking-tight text-white" style={{ fontVariant: ['tabular-nums'] }}>{stat.value}</Text>
       <Text className="text-[10px] text-gray-muted mt-1">{stat.subtitle}</Text>
     </View>
   </View>
@@ -132,7 +133,7 @@ const StatsSection = () => {
       value: '3',
       subtitle: 'Prescriptions',
       icon: 'medkit',
-      color: '#6ec2be',
+      color: Colors.accent,
     },
     {
       id: '2',
@@ -140,7 +141,7 @@ const StatsSection = () => {
       value: 'Oct 24',
       subtitle: 'Next Due Date',
       icon: 'calendar',
-      color: '#ccab7f',
+      color: Colors.gold,
     },
     {
       id: '3',
@@ -148,7 +149,7 @@ const StatsSection = () => {
       value: '2',
       subtitle: 'Known Triggers',
       icon: 'warning',
-      color: '#d18c90',
+      color: Colors.specialty.cardiology,
     },
   ];
 
@@ -183,7 +184,7 @@ const MenuItem = ({
       <Ionicons name={item.icon} size={20} color={item.iconColor} />
     </View>
     <View className="flex-1">
-      <Text className="text-base font-semibold text-white">{item.title}</Text>
+      <Text className="text-base font-sans-semibold text-white">{item.title}</Text>
       {item.subtitle && (
         <Text className="text-[10px] text-gray-muted">{item.subtitle}</Text>
       )}
@@ -192,11 +193,11 @@ const MenuItem = ({
       <Switch
         value={item.toggleValue}
         onValueChange={onToggle}
-        trackColor={{ false: '#232529', true: '#6ec2be' }}
-        thumbColor={item.toggleValue ? '#101214' : '#a3a8af'}
+        trackColor={{ false: Colors.tealMedium, true: Colors.accent }}
+        thumbColor={item.toggleValue ? Colors.ink : Colors.grayMuted}
       />
     ) : (
-      <Ionicons name="chevron-forward" size={20} color="#a3a8af" />
+      <Ionicons name="chevron-forward" size={20} color={Colors.grayMuted} />
     )}
   </TouchableOpacity>
 );
@@ -217,10 +218,10 @@ const MenuSection = ({
     {icon ? (
       <View className="flex-row items-center gap-2 px-2 py-2">
         <Ionicons name={icon} size={20} color="#6ec2be" />
-        <Text className="text-lg font-bold text-white">{title}</Text>
+        <Text className="text-lg font-sans-bold text-white">{title}</Text>
       </View>
     ) : (
-      <Text className="text-lg font-bold px-2 py-2 text-white">{title}</Text>
+      <Text className="text-lg font-sans-bold px-2 py-2 text-white">{title}</Text>
     )}
     <View className="flex-col bg-teal-medium rounded-2xl overflow-hidden shadow-sm">
       {items.map((item, index) => (
@@ -252,7 +253,7 @@ const Profile = () => {
       title: 'Medical ID',
       subtitle: 'Blood type, weight, height',
       icon: 'finger-print',
-      iconColor: '#86b0d5',
+      iconColor: Colors.specialty.infectious,
       bgColor: 'bg-blue-500/10',
     },
     {
@@ -260,14 +261,14 @@ const Profile = () => {
       title: 'Insurance Cards',
       subtitle: 'Primary and secondary',
       icon: 'card',
-      iconColor: '#a79ccc',
+      iconColor: Colors.specialty.dermatology,
       bgColor: 'bg-purple-500/10',
     },
     {
       id: 'past-orders',
       title: 'Past Orders',
       icon: 'time-outline',
-      iconColor: '#7eb9a2',
+      iconColor: Colors.specialty.neurology,
       bgColor: 'bg-emerald-500/10',
     },
   ];
@@ -279,7 +280,7 @@ const Profile = () => {
       title: 'Voice Output',
       subtitle: 'Hear pharmacist responses',
       icon: 'volume-high',
-      iconColor: '#6ec2be',
+      iconColor: Colors.accent,
       bgColor: 'bg-turquoise/10',
       hasToggle: true,
       toggleValue: voiceOutput,
@@ -289,7 +290,7 @@ const Profile = () => {
       title: 'Personality',
       subtitle: 'Professional, Friendly, Concise',
       icon: 'happy',
-      iconColor: '#d099ab',
+      iconColor: Colors.specialty.obgyn,
       bgColor: 'bg-pink-500/10',
     },
   ];
@@ -300,14 +301,14 @@ const Profile = () => {
       id: 'privacy',
       title: 'Privacy & Security',
       icon: 'lock-closed',
-      iconColor: '#a3a8af',
+      iconColor: Colors.grayMuted,
       bgColor: 'bg-charcoal/20',
     },
     {
       id: 'notifications',
       title: 'Notifications',
       icon: 'notifications',
-      iconColor: '#a3a8af',
+      iconColor: Colors.grayMuted,
       bgColor: 'bg-charcoal/20',
     },
   ];
@@ -321,7 +322,7 @@ const Profile = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#101214" />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
       <ScrollView
         className="flex-1"
@@ -339,7 +340,7 @@ const Profile = () => {
         {/* Danger Zone */}
         <View className="p-6 flex-col items-center gap-4 mt-4">
           <TouchableOpacity className="w-full py-3 rounded-full bg-red-900/10">
-            <Text className="text-red-500 text-sm font-bold text-center">Log Out</Text>
+            <Text className="text-red-500 text-sm font-sans-bold text-center">Log Out</Text>
           </TouchableOpacity>
           <Text className="text-[10px] text-gray-muted">Version 2.4.0</Text>
         </View>

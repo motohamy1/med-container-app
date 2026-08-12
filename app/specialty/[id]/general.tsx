@@ -42,8 +42,8 @@ export default function GeneralSpecialtyChat() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <View className="flex-1 ml-2">
-          <Text className="text-white text-lg font-bold" numberOfLines={1}>General AI ({specialty.name})</Text>
-          <Text className="text-xs font-medium" style={{ color: specialty.color }}>
+          <Text className="text-white text-lg font-sans-bold" numberOfLines={1}>General AI ({specialty.name})</Text>
+          <Text className="text-xs font-sans-medium" style={{ color: specialty.color }}>
             {specialty.scientificName} • Specialty Scope Active
           </Text>
         </View>

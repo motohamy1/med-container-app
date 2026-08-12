@@ -1,3 +1,5 @@
+const { Colors } = require("./constants/Colors");
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
@@ -5,28 +7,35 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Neutral graphite surfaces — even perceptual lightness ramp, hue 255, very low chroma
-        background: "#101214",
-        "deep-teal": "#14171a",
-        "teal-dark": "#1a1d21",
-        "teal-medium": "#23272c",
-        "surface-hover": "#2d3238",
-        // Signature accent — refined jewel teal, restrained chroma, hue 192
-        turquoise: "#6ec2be",
-        cyan: "#6ec2be",
-        "cyan-bright": "#8ad9d5",
-        "accent-bright": "#8ad9d5",
-        // Champagne gold — muted, lower chroma
-        gold: "#d2b689",
-        "gold-warm": "#d2b689",
-        "gold-light": "#d2b689",
+        // Neutral graphite surfaces — even perceptual lightness ramp
+        background: Colors.background,
+        "deep-teal": Colors.deepTeal,
+        "teal-dark": Colors.tealDark,
+        "teal-medium": Colors.tealMedium,
+        "surface-hover": Colors.surfaceHover,
+        // Signature accent — refined jewel teal
+        turquoise: Colors.accent,
+        "accent-bright": Colors.accentBright,
+        // Champagne gold — muted signal
+        gold: Colors.gold,
         // Neutral tones
-        charcoal: "#373d44",
-        "gray-dark": "#24282d",
-        "gray-muted": "#9ca3af",
+        charcoal: Colors.charcoal,
+        "gray-dark": Colors.grayDark,
+        "gray-muted": Colors.grayMuted,
+        "gray-subtle": Colors.graySubtle,
         // Medicine card
-        "medicine-bg": "#22262a",
-        "medicine-card": "#171a1d",
+        "medicine-bg": Colors.medicineBg,
+        "medicine-card": Colors.medicineCard,
+        // Floating islands (composer, tab bar)
+        island: Colors.islandBg,
+      },
+      fontFamily: {
+        sans: ["PlexSans_400Regular"],
+        "sans-medium": ["PlexSans_500Medium"],
+        "sans-semibold": ["PlexSans_600SemiBold"],
+        "sans-bold": ["PlexSans_700Bold"],
+        mono: ["PlexMono_400Regular"],
+        "mono-medium": ["PlexMono_500Medium"],
       },
       boxShadow: {
         "glow-cyan": "0 0 20px rgba(110, 194, 190, 0.28)",

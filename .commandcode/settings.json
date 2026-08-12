@@ -16,7 +16,8 @@
       "Shell(npm list -g speckit 2>$null)",
       "Shell(where specify 2>$null; if ($?) { specify --version } else { echo \"specify not found\" })",
       "Shell(specify:*)",
-      "Shell(cmd:*)"
+      "Shell(cmd:*)",
+      "Shell(node oklch2hex.mjs)"
     ],
     "deny": [],
     "defaultMode": "default"

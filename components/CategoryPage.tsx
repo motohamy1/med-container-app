@@ -80,8 +80,8 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <View className="flex-1 ml-3">
-          <Text className="text-white text-xl font-bold">{categoryName} Specialty</Text>
-          <Text className="text-turquoise text-xs font-semibold uppercase tracking-wider">
+          <Text className="text-white text-xl font-sans-bold">{categoryName} Specialty</Text>
+          <Text className="text-turquoise text-xs font-sans-semibold uppercase tracking-wider">
             Physician Clinical Resources
           </Text>
         </View>
@@ -93,8 +93,8 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
       {/* Topic Cards */}
       <ScrollView contentContainerStyle={{ padding: 24, gap: 16 }} showsVerticalScrollIndicator={false}>
         <View className="mb-2">
-          <Text className="text-gray-muted text-xs font-bold uppercase tracking-wider mb-1">High-Yield Topics</Text>
-          <Text className="text-white text-lg font-bold">Clinical Cases & Guidelines</Text>
+          <Text className="text-gray-muted text-xs font-sans-bold uppercase tracking-wider mb-1">High-Yield Topics</Text>
+          <Text className="text-white text-lg font-sans-bold">Clinical Cases & Guidelines</Text>
         </View>
 
         {topics.map((item, index) => (
@@ -105,9 +105,9 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
           >
             <View className="flex-1 mr-3">
               <View className="self-start px-2 py-0.5 rounded bg-turquoise/20 border border-turquoise/30 mb-1.5">
-                <Text className="text-[10px] font-bold text-turquoise uppercase">{item.type}</Text>
+                <Text className="text-[10px] font-sans-bold text-turquoise uppercase">{item.type}</Text>
               </View>
-              <Text className="text-white font-bold text-base mb-1">{item.title}</Text>
+              <Text className="text-white font-sans-bold text-base mb-1">{item.title}</Text>
               <Text className="text-gray-muted text-xs">{item.subtitle}</Text>
             </View>
             <View className="w-9 h-9 rounded-full bg-turquoise/10 items-center justify-center">
@@ -122,7 +122,7 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
           className="mt-4 bg-turquoise p-4 rounded-2xl flex-row items-center justify-center gap-2"
         >
           <Ionicons name="chatbubbles" size={20} color="#101214" />
-          <Text className="text-black font-bold text-base">Ask Medical AI About {categoryName}</Text>
+          <Text className="text-black font-sans-bold text-base">Ask Medical AI About {categoryName}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

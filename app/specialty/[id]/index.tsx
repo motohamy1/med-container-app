@@ -73,8 +73,8 @@ export default function SpecialtyDashboard() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <View className="flex-1 ml-3">
-          <Text className="text-white text-xl font-bold">{specialty.scientificName}</Text>
-          <Text className="text-turquoise text-xs font-semibold uppercase tracking-wider">
+          <Text className="text-white text-xl font-sans-bold">{specialty.scientificName}</Text>
+          <Text className="text-turquoise text-xs font-sans-semibold uppercase tracking-wider">
             {specialty.name} Specialty
           </Text>
         </View>
@@ -108,7 +108,7 @@ export default function SpecialtyDashboard() {
         <View className="bg-[#181a1d] rounded-2xl flex-row items-center px-4 py-3 border border-white/5 mx-4 mt-6">
             <Ionicons name="search" size={20} color="#a3a8af" />
             <TextInput
-              className="flex-1 text-white ml-3 font-medium text-sm"
+              className="flex-1 text-white ml-3 font-sans-medium text-sm"
               placeholder={`Search ${specialty.id} topics...`}
               placeholderTextColor="#a3a8af"
               value={searchText}
@@ -120,10 +120,10 @@ export default function SpecialtyDashboard() {
 
         {/* Specialized Topics Database */}
         <View className="px-6 pb-12 mt-6">
-          <Text className="text-gray-muted text-xs font-bold uppercase tracking-wider mb-1">
+          <Text className="text-gray-muted text-xs font-sans-bold uppercase tracking-wider mb-1">
             Specialized Database
           </Text>
-          <Text className="text-white text-lg font-bold mb-4">Clinical Topics & Protocols</Text>
+          <Text className="text-white text-lg font-sans-bold mb-4">Clinical Topics & Protocols</Text>
 
           <View className="flex flex-row flex-wrap justify-between gap-y-4">
             {specialty.categories.map((category) => {
@@ -146,7 +146,7 @@ export default function SpecialtyDashboard() {
                   >
                     <Ionicons name={category.icon} size={24} color={iconColor} />
                   </View>
-                  <Text className="text-white font-bold text-base mb-1 leading-5">
+                  <Text className="text-white font-sans-bold text-base mb-1 leading-5">
                     {category.title}
                   </Text>
                   <Text className="text-gray-400 text-[11px] leading-4">
@@ -155,7 +155,7 @@ export default function SpecialtyDashboard() {
                   
                   {/* Topic Count Pill */}
                   <View className="mt-3 px-2 py-1 rounded-full bg-black/30 border border-white/5">
-                     <Text className="text-[9px] text-gray-300 font-bold uppercase tracking-wider">
+                     <Text className="text-[9px] text-gray-300 font-sans-bold uppercase tracking-wider">
                        {category.topics?.length || 0} topics
                      </Text>
                   </View>
@@ -171,7 +171,7 @@ export default function SpecialtyDashboard() {
             style={{ backgroundColor: specialty.color }}
           >
             <Ionicons name="chatbubbles" size={20} color="#101214" />
-            <Text className="text-[#101214] text-base font-bold">Ask General AI About {specialty.name}</Text>
+            <Text className="text-[#101214] text-base font-sans-bold">Ask General AI About {specialty.name}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

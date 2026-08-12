@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   Clipboard,
@@ -22,24 +24,25 @@ import Animated, {
   FadeInDown,
   FadeInUp,
   interpolate,
-  Layout,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withSequence,
   withTiming,
-  ZoomIn,
 } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 import { aiService, DoctorCategory, Citation } from "../../services/aiService";
+import { Colors } from "../../constants/Colors";
 
 const FLOATING_TAB_BAR_HEIGHT = 70;
 
+// Motion discipline (PRODUCT.md): state-changing feedback only, 150-250ms.
 const EASE_HEAVY = Easing.bezier(0.32, 0.72, 0, 1);
+const MOTION = { enter: 250, stagger: 60 } as const;
 
-const TURQUOISE = "#6ec2be";
-const INK = "#101214";
+const TURQUOISE = Colors.accent;
+const INK = Colors.ink;
 
 // Types
 type Message = {
@@ -49,6 +52,8 @@ type Message = {
   timestamp: string;
   category?: DoctorCategory;
   citations?: Citation[];
+  isError?: boolean;
+  failedQuery?: string;
 };
 
 type QuickPrompt = {
@@ -65,28 +70,28 @@ const QUICK_PROMPTS: QuickPrompt[] = [
     title: "ACS Protocol",
     subtitle: "STEMI vs NSTEMI workup & catheterization timing",
     prompt: "Provide the acute coronary syndrome (ACS) STEMI vs NSTEMI initial emergency workup, diagnostic criteria, and management protocol.",
-    color: "#d18c90",
+    color: Colors.specialty.cardiology,
   },
   {
     icon: "pulse-outline",
     title: "Sepsis Bundle",
     subtitle: "Surviving Sepsis Campaign 1-hour resuscitation",
     prompt: "Detail the Surviving Sepsis Campaign 1-hour resuscitation bundle, qSOFA scoring, and antibiotic timing.",
-    color: "#7eb9a2",
+    color: Colors.specialty.neurology,
   },
   {
     icon: "alert-circle-outline",
     title: "Hypertensive Crisis",
     subtitle: "Urgency vs Emergency target BP reduction",
     prompt: "Explain the management of Hypertensive Urgency vs Emergency, including IV drug choices and target blood pressure reduction rates.",
-    color: "#ccab7f",
+    color: Colors.gold,
   },
   {
     icon: "analytics-outline",
     title: "Liver Scoring",
     subtitle: "Child-Pugh vs MELD-Na calculation & interpretation",
     prompt: "Compare Child-Pugh vs MELD-Na scoring systems for chronic liver failure and surgical mortality risk assessment.",
-    color: "#a79ccc",
+    color: Colors.specialty.dermatology,
   },
 ];
 
@@ -286,10 +291,28 @@ const BezelShell: React.FC<{
   </View>
 );
 
+// Reduced-motion preference (PRODUCT.md: respect system reduced-motion)
+function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => {
+      if (mounted) setReduced(v);
+    });
+    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced);
+    return () => {
+      mounted = false;
+      sub.remove();
+    };
+  }, []);
+  return reduced;
+}
+
 const MedicalSectionBox: React.FC<{
   section: MedicalSection;
   index: number;
 }> = ({ section, index }) => {
+  const reducedMotion = useReducedMotion();
   const upHeading = section.heading.toUpperCase();
   const matchedKey = Object.keys(SECTION_CONFIG).find(
     (key) =>
@@ -309,7 +332,11 @@ const MedicalSectionBox: React.FC<{
 
   return (
     <Animated.View
-      entering={ZoomIn.duration(500).delay(index * 90).easing(EASE_HEAVY)}
+      entering={
+        reducedMotion
+          ? undefined
+          : FadeInUp.duration(MOTION.enter).delay(index * MOTION.stagger).easing(EASE_HEAVY)
+      }
       style={{ width: "100%", marginBottom: 14 }}
     >
       <View
@@ -357,7 +384,7 @@ const MedicalSectionBox: React.FC<{
             <Text
               style={{
                 color: cfg.color,
-                fontWeight: "800",
+                fontFamily: "PlexSans_700Bold",
                 fontSize: 12,
                 letterSpacing: 1.4,
                 textTransform: "uppercase",
@@ -367,7 +394,14 @@ const MedicalSectionBox: React.FC<{
             </Text>
           </View>
           <View style={{ paddingHorizontal: 17, paddingVertical: 15 }}>
-            <Text style={{ color: "#e4e8ed", fontSize: 14, lineHeight: 24, fontWeight: "400" }}>
+            <Text
+              style={{
+                color: Colors.textBody,
+                fontSize: 14,
+                lineHeight: 22,
+                fontFamily: "PlexSans_400Regular",
+              }}
+            >
               {section.content}
             </Text>
           </View>
@@ -379,11 +413,18 @@ const MedicalSectionBox: React.FC<{
 
 // Animated Pulse Dots for AI Thinking State
 const ThinkingIndicator: React.FC = () => {
+  const reducedMotion = useReducedMotion();
   const dot1 = useSharedValue(0.25);
   const dot2 = useSharedValue(0.25);
   const dot3 = useSharedValue(0.25);
 
   useEffect(() => {
+    if (reducedMotion) {
+      dot1.value = 0.7;
+      dot2.value = 0.7;
+      dot3.value = 0.7;
+      return;
+    }
     const wave = () =>
       withRepeat(
         withSequence(
@@ -400,7 +441,7 @@ const ThinkingIndicator: React.FC = () => {
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [dot1, dot2, dot3]);
+  }, [dot1, dot2, dot3, reducedMotion]);
 
   const s1 = useAnimatedStyle(() => ({ opacity: dot1.value }));
   const s2 = useAnimatedStyle(() => ({ opacity: dot2.value }));
@@ -408,14 +449,14 @@ const ThinkingIndicator: React.FC = () => {
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(450).easing(EASE_HEAVY)}
+      entering={reducedMotion ? undefined : FadeInDown.duration(MOTION.enter).easing(EASE_HEAVY)}
       className="flex-row items-center gap-3 px-4 py-3 mb-4"
     >
       <View className="w-8 h-8 rounded-full bg-turquoise/15 items-center justify-center border border-turquoise/30">
         <Ionicons name="sparkles" size={15} color={TURQUOISE} />
       </View>
       <View className="flex-row items-center gap-1.5 bg-teal-dark border border-white/10 px-4 py-3 rounded-3xl rounded-tl-md">
-        <Text className="text-gray-400 text-xs font-semibold mr-1">Consulting clinical guidelines</Text>
+        <Text className="text-gray-400 text-xs font-sans-semibold mr-1">Consulting clinical guidelines</Text>
         <Animated.View style={s1} className="w-1.5 h-1.5 rounded-full bg-turquoise" />
         <Animated.View style={s2} className="w-1.5 h-1.5 rounded-full bg-turquoise" />
         <Animated.View style={s3} className="w-1.5 h-1.5 rounded-full bg-turquoise" />
@@ -427,8 +468,45 @@ const ThinkingIndicator: React.FC = () => {
 const ChatBubble: React.FC<{
   message: Message;
   onCopy: (text: string) => void;
-}> = ({ message, onCopy }) => {
+  onRetry?: (query: string) => void;
+}> = ({ message, onCopy, onRetry }) => {
+  const reducedMotion = useReducedMotion();
   const isAi = !message.isUser;
+
+  // Error bubble — a clinical tool must fail visibly, never silently
+  if (message.isError) {
+    return (
+      <View className="mb-7 px-4 w-full">
+        <View className="flex-row items-center gap-2.5 mb-2.5">
+          <View className="w-7 h-7 rounded-full bg-turquoise/15 items-center justify-center border border-turquoise/35">
+            <Ionicons name="sparkles" size={13} color={TURQUOISE} />
+          </View>
+          <Text className="text-white text-xs font-sans-bold tracking-wide">Med Arena AI</Text>
+        </View>
+        <View className="bg-teal-dark border border-gold/30 rounded-3xl rounded-tl-md p-4">
+          <View className="flex-row items-center gap-2 mb-2">
+            <Ionicons name="alert-circle-outline" size={16} color={Colors.gold} />
+            <Text className="text-gold text-xs font-sans-bold uppercase tracking-wider">
+              Consultation interrupted
+            </Text>
+          </View>
+          <Text className="text-gray-200 text-sm leading-6 font-sans">
+            The clinical service did not respond. Your question was not processed — check your
+            connection and try again.
+          </Text>
+          {message.failedQuery && onRetry && (
+            <TouchableOpacity
+              onPress={() => onRetry(message.failedQuery!)}
+              className="mt-3 self-start flex-row items-center gap-2 px-4 py-2.5 rounded-full bg-turquoise/15 border border-turquoise/30 active:opacity-70"
+            >
+              <Ionicons name="refresh" size={14} color={TURQUOISE} />
+              <Text className="text-turquoise text-xs font-sans-bold">Retry inquiry</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
+  }
 
   if (isAi) {
     const { hasSections, sections, plainText } = parseMedicalSections(
@@ -437,7 +515,7 @@ const ChatBubble: React.FC<{
 
     return (
       <Animated.View
-        entering={FadeInUp.duration(600).easing(EASE_HEAVY)}
+        entering={reducedMotion ? undefined : FadeInUp.duration(MOTION.enter).easing(EASE_HEAVY)}
         className="mb-7 px-4 w-full"
       >
         {/* AI Avatar & Header */}
@@ -446,9 +524,9 @@ const ChatBubble: React.FC<{
             <View className="w-7 h-7 rounded-full bg-turquoise/15 items-center justify-center border border-turquoise/35">
               <Ionicons name="sparkles" size={13} color={TURQUOISE} />
             </View>
-            <Text className="text-white text-xs font-bold tracking-wide">Med Arena AI</Text>
+            <Text className="text-white text-xs font-sans-bold tracking-wide">Med Arena AI</Text>
             <View className="px-2.5 py-1 rounded-full bg-teal-medium border border-white/10">
-              <Text className="text-[9px] text-turquoise font-semibold tracking-widest uppercase">Clinical RAG</Text>
+              <Text className="text-[10px] text-turquoise font-sans-semibold tracking-widest uppercase">Clinical RAG</Text>
             </View>
           </View>
           <Text className="text-gray-500 text-[10px]">{message.timestamp}</Text>
@@ -459,7 +537,7 @@ const ChatBubble: React.FC<{
           <View className="pl-1">
             {plainText.length > 0 && (
               <View className="bg-teal-dark border border-turquoise/20 rounded-3xl p-4 mb-3">
-                <Text className="text-gray-200 text-sm leading-6">{plainText}</Text>
+                <Text className="text-gray-200 text-sm leading-6 font-sans">{plainText}</Text>
               </View>
             )}
             {sections.map((section, i) => (
@@ -468,7 +546,7 @@ const ChatBubble: React.FC<{
           </View>
         ) : (
           <View className="bg-teal-dark border border-white/10 rounded-3xl rounded-tl-md p-4 shadow-card">
-            <Text className="text-gray-200 text-sm leading-6 font-normal">
+            <Text className="text-gray-200 text-sm leading-6 font-sans">
               {message.text}
             </Text>
           </View>
@@ -477,18 +555,18 @@ const ChatBubble: React.FC<{
         {/* Citations Block */}
         {message.citations && message.citations.length > 0 && (
           <View className="mt-4 mb-2">
-            <Text className="text-gray-400 text-[11px] font-bold uppercase tracking-widest mb-2.5 ml-1">
+            <Text className="text-gray-400 text-[11px] font-sans-bold uppercase tracking-widest mb-2.5 ml-1">
               <Ionicons name="library-outline" size={12} /> Medical References
             </Text>
             {message.citations.map((cit) => (
               <View key={cit.id} className="bg-white/[0.04] border border-white/[0.07] rounded-2xl p-3.5 mb-2">
                 <View className="flex-row items-start gap-2.5">
                   <View className="bg-turquoise/15 border border-turquoise/25 px-2 py-0.5 rounded-full mt-0.5">
-                    <Text className="text-turquoise text-[10px] font-bold">[{cit.id}]</Text>
+                    <Text className="text-turquoise text-[10px] font-sans-bold">[{cit.id}]</Text>
                   </View>
                   <View className="flex-1">
-                    <Text className="text-gray-200 text-xs font-semibold leading-4 mb-1">{cit.title}</Text>
-                    <Text className="text-gray-400 text-[10px] font-medium">{cit.journal} ({cit.year})</Text>
+                    <Text className="text-gray-200 text-xs font-sans-semibold leading-4 mb-1">{cit.title}</Text>
+                    <Text className="text-gray-400 text-[10px] font-sans-medium">{cit.journal} ({cit.year})</Text>
                   </View>
                 </View>
               </View>
@@ -503,7 +581,7 @@ const ChatBubble: React.FC<{
             className="flex-row items-center gap-1.5 active:opacity-60"
           >
             <Ionicons name="copy-outline" size={14} color="#a3a8af" />
-            <Text className="text-gray-400 text-xs font-medium">Copy</Text>
+            <Text className="text-gray-400 text-xs font-sans-medium">Copy</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -513,26 +591,26 @@ const ChatBubble: React.FC<{
   // User Message
   return (
     <Animated.View
-      entering={FadeInDown.duration(450).easing(EASE_HEAVY)}
+      entering={reducedMotion ? undefined : FadeInDown.duration(MOTION.enter).easing(EASE_HEAVY)}
       className="flex-row justify-end mb-5 px-4"
     >
       <View className="max-w-[85%] items-end">
         <View className="flex-row items-center gap-1.5 mb-1.5 pr-1">
-          <Text className="text-gray-400 text-[10px]">{message.timestamp}</Text>
-          <Text className="text-turquoise text-xs font-bold">Doctor</Text>
+          <Text className="text-gray-400 text-[10px] font-mono">{message.timestamp}</Text>
+          <Text className="text-turquoise text-xs font-sans-bold">Doctor</Text>
         </View>
         <View
           className="rounded-3xl rounded-tr-md overflow-hidden shadow-bubble"
           style={{ maxWidth: "85%" }}
         >
           <LinearGradient
-            colors={["#8ad9d5", "#5aa8a4"]}
+            colors={[Colors.accentBright, Colors.accentDeep]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
           <View className="px-4 py-3">
-            <Text className="text-[#0c2321] text-sm font-semibold leading-5">
+            <Text className="text-[#0c2321] text-sm font-sans-semibold leading-5">
               {message.text}
             </Text>
           </View>
@@ -548,6 +626,7 @@ const ChatTab = () => {
   const [inputText, setInputText] = useState(params.query || "");
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const reducedMotion = useReducedMotion();
 
   // Header collapses once a conversation starts (question sent or messages present)
   const chatActive = messages.length > 0 || isTyping;
@@ -555,10 +634,10 @@ const ChatTab = () => {
 
   useEffect(() => {
     headerCollapse.value = withTiming(chatActive ? 1 : 0, {
-      duration: 380,
+      duration: reducedMotion ? 0 : MOTION.enter,
       easing: EASE_HEAVY,
     });
-  }, [chatActive, headerCollapse]);
+  }, [chatActive, headerCollapse, reducedMotion]);
 
   const headerPadStyle = useAnimatedStyle(() => ({
     paddingVertical: interpolate(headerCollapse.value, [0, 1], [14, 10]),
@@ -604,46 +683,63 @@ const ChatTab = () => {
     Alert.alert("Copied", "Clinical response copied to clipboard.");
   };
 
-  const handleQuery = (text: string, reply: string, citations?: Citation[]) => {
+  const handleTextSend = async (queryOverride?: string) => {
+    const query = queryOverride || inputText.trim();
+    if (!query) return;
+    if (!queryOverride) setInputText("");
+    setIsTyping(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     const userMessage: Message = {
       id: Date.now().toString(),
-      text,
+      text: query,
       isUser: true,
       timestamp: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       }),
     };
-
-    const aiMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      text: reply,
-      isUser: false,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      category: "physicians",
-      citations,
-    };
-
-    setMessages((prev) => [...prev, userMessage, aiMessage]);
-  };
-
-  const handleTextSend = async (queryOverride?: string) => {
-    const query = queryOverride || inputText.trim();
-    if (!query) return;
-    if (!queryOverride) setInputText("");
-    setIsTyping(true);
+    setMessages((prev) => [...prev, userMessage]);
 
     try {
       const { reply, citations } = await aiService.sendMessageByText(query, "general", "physicians");
-      handleQuery(query, reply, citations);
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: reply,
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        category: "physicians",
+        citations,
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error(error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "",
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        isError: true,
+        failedQuery: query,
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
     }
+  };
+
+  const handleRetry = (failedQuery: string) => {
+    // Remove the failed error bubble, then resend
+    setMessages((prev) => prev.filter((m) => !(m.isError && m.failedQuery === failedQuery)));
+    handleTextSend(failedQuery);
   };
 
   const handleNewChat = () => {
@@ -657,7 +753,7 @@ const ChatTab = () => {
       {/* Floating Glass Island Header */}
       <SafeAreaView edges={["top"]}>
         <Animated.View
-          entering={FadeInDown.duration(700).easing(EASE_HEAVY)}
+          entering={reducedMotion ? undefined : FadeInDown.duration(MOTION.enter).easing(EASE_HEAVY)}
           className="mx-4 mt-3"
         >
           <BezelShell radius={30}>
@@ -697,7 +793,7 @@ const ChatTab = () => {
                         style={[
                           {
                             color: "#fff",
-                            fontWeight: "800",
+                            fontFamily: "PlexSans_700Bold",
                             letterSpacing: -0.3,
                           },
                           titleStyle,
@@ -711,7 +807,7 @@ const ChatTab = () => {
                     <Animated.View
                       style={[{ overflow: "hidden" }, subtitleWrapStyle]}
                     >
-                      <Text className="text-gray-400 text-[11px] font-medium mt-0.5">Clinical Decision Support</Text>
+                      <Text className="text-gray-400 text-[11px] font-sans-medium mt-0.5">Clinical Decision Support</Text>
                     </Animated.View>
                   </View>
                 </View>
@@ -721,7 +817,7 @@ const ChatTab = () => {
                     onPress={handleNewChat}
                     className="flex-row items-center rounded-full bg-white/[0.06] border border-white/10 pl-3 pr-1.5 py-1.5 active:opacity-70"
                   >
-                    <Text className="text-turquoise text-xs font-bold mr-2">New</Text>
+                    <Text className="text-turquoise text-xs font-sans-bold mr-2">New</Text>
                     <View className="w-6 h-6 rounded-full bg-turquoise/20 items-center justify-center">
                       <Ionicons name="add" size={14} color={TURQUOISE} />
                     </View>
@@ -750,7 +846,7 @@ const ChatTab = () => {
           >
             {/* Empty State Hero */}
             <Animated.View
-              entering={FadeIn.duration(700).easing(EASE_HEAVY)}
+              entering={reducedMotion ? undefined : FadeIn.duration(MOTION.enter).easing(EASE_HEAVY)}
               className="items-center mb-12"
             >
               {/* Double-ring hero emblem */}
@@ -762,21 +858,21 @@ const ChatTab = () => {
 
               {/* Eyebrow tag */}
               <View className="px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/10 mb-4">
-                <Text className="text-[10px] uppercase tracking-[0.25em] font-semibold text-turquoise">
+                <Text className="text-[10px] uppercase tracking-[0.25em] font-sans-semibold text-turquoise">
                   Evidence-Based RAG
                 </Text>
               </View>
 
-              <Text className="text-white text-[30px] font-extrabold text-center tracking-tight leading-10 mb-3">
+              <Text className="text-white text-[28px] font-sans-bold text-center tracking-tight leading-9 mb-3">
                 Clinical Consultant AI
               </Text>
-              <Text className="text-gray-400 text-sm text-center max-w-[290px] leading-6">
+              <Text className="text-gray-400 text-sm text-center max-w-[290px] leading-6 font-sans">
                 High-yield evidence-based clinical reasoning, differential diagnosis & workup protocols.
               </Text>
             </Animated.View>
 
             {/* Bento: featured inquiry */}
-            <Animated.View entering={FadeInUp.duration(800).delay(100).easing(EASE_HEAVY)}>
+            <Animated.View entering={reducedMotion ? undefined : FadeInUp.duration(MOTION.enter).delay(MOTION.stagger).easing(EASE_HEAVY)}>
               <TouchableOpacity
                 onPress={() => handleTextSend(QUICK_PROMPTS[0].prompt)}
                 activeOpacity={0.85}
@@ -792,13 +888,13 @@ const ChatTab = () => {
                         <Ionicons name={QUICK_PROMPTS[0].icon} size={22} color={QUICK_PROMPTS[0].color} />
                       </View>
                       <View className="px-2.5 py-1 rounded-full bg-white/[0.05] border border-white/10">
-                        <Text className="text-[9px] uppercase tracking-[0.2em] font-semibold text-gray-400">Featured</Text>
+                        <Text className="text-[10px] uppercase tracking-[0.2em] font-sans-semibold text-gray-400">Featured</Text>
                       </View>
                     </View>
-                    <Text className="text-white font-bold text-lg mb-1.5">{QUICK_PROMPTS[0].title}</Text>
-                    <Text className="text-gray-400 text-[13px] leading-5 mb-4">{QUICK_PROMPTS[0].subtitle}</Text>
+                    <Text className="text-white font-sans-bold text-[17px] mb-1.5">{QUICK_PROMPTS[0].title}</Text>
+                    <Text className="text-gray-400 text-[13px] leading-5 mb-4 font-sans">{QUICK_PROMPTS[0].subtitle}</Text>
                     <View className="flex-row items-center justify-between">
-                      <Text className="text-turquoise text-xs font-bold tracking-wide">Run inquiry</Text>
+                      <Text className="text-turquoise text-xs font-sans-bold tracking-wide">Run inquiry</Text>
                       <View className="w-9 h-9 rounded-full bg-turquoise/15 border border-turquoise/30 items-center justify-center">
                         <Ionicons name="arrow-up" size={16} color={TURQUOISE} />
                       </View>
@@ -813,7 +909,7 @@ const ChatTab = () => {
               {QUICK_PROMPTS.slice(1).map((item, idx) => (
                 <Animated.View
                   key={idx}
-                  entering={FadeInUp.duration(800).delay(200 + idx * 90).easing(EASE_HEAVY)}
+                  entering={reducedMotion ? undefined : FadeInUp.duration(MOTION.enter).delay(MOTION.stagger * (2 + idx)).easing(EASE_HEAVY)}
                 >
                   <TouchableOpacity
                     onPress={() => handleTextSend(item.prompt)}
@@ -829,8 +925,8 @@ const ChatTab = () => {
                             <Ionicons name={item.icon} size={19} color={item.color} />
                           </View>
                           <View className="flex-1">
-                            <Text className="text-white font-bold text-sm mb-1">{item.title}</Text>
-                            <Text className="text-gray-400 text-xs leading-4" numberOfLines={1}>
+                            <Text className="text-white font-sans-bold text-sm mb-1">{item.title}</Text>
+                            <Text className="text-gray-400 text-xs leading-4 font-sans" numberOfLines={1}>
                               {item.subtitle}
                             </Text>
                           </View>
@@ -852,7 +948,7 @@ const ChatTab = () => {
             ref={flatListRef}
             data={messages}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ChatBubble message={item} onCopy={handleCopyText} />}
+            renderItem={({ item }) => <ChatBubble message={item} onCopy={handleCopyText} onRetry={handleRetry} />}
             ListFooterComponent={isTyping ? <ThinkingIndicator /> : null}
             contentContainerStyle={{
               paddingTop: 24,
@@ -876,12 +972,12 @@ const ChatTab = () => {
         >
           <View
             className="flex-row items-center rounded-full px-3 py-4 border border-white/10"
-            style={{ backgroundColor: "#16181c" }}
+            style={{ backgroundColor: Colors.islandBg }}
           >
             <TextInput
-              className="flex-1 text-white text-base max-h-32 py-2 bg-transparent"
+              className="flex-1 text-white text-base max-h-32 py-2 bg-transparent font-sans"
               placeholder="Ask clinical case, protocol, differential..."
-              placeholderTextColor="#6b7178"
+              placeholderTextColor={Colors.graySubtle}
               value={inputText}
               onChangeText={setInputText}
               onSubmitEditing={() => handleTextSend()}
@@ -903,29 +999,16 @@ const ChatTab = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: inputText.trim() && !isTyping ? TURQUOISE : "rgba(255,255,255,0.06)",
-                shadowColor: TURQUOISE,
-                shadowOpacity: inputText.trim() && !isTyping ? 0.45 : 0,
-                shadowRadius: 12,
-                shadowOffset: { width: 0, height: 3 },
               }}
             >
               {isTyping ? (
-                <ActivityIndicator size="small" color="#a3a8af" />
+                <ActivityIndicator size="small" color={Colors.grayMuted} />
               ) : (
-                <View
-                  className="items-center justify-center rounded-full"
-                  style={{
-                    width: 30,
-                    height: 30,
-                    backgroundColor: inputText.trim() ? "rgba(255,255,255,0.22)" : "transparent",
-                  }}
-                >
-                  <Ionicons
-                    name="arrow-up"
-                    size={18}
-                    color={inputText.trim() ? INK : "#6b7178"}
-                  />
-                </View>
+                <Ionicons
+                  name="arrow-up"
+                  size={18}
+                  color={inputText.trim() ? INK : Colors.graySubtle}
+                />
               )}
             </TouchableOpacity>
           </View>

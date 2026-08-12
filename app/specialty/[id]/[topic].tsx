@@ -48,8 +48,8 @@ export default function TopicPage() {
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <View className="flex-1 ml-2">
-          <Text className="text-white text-lg font-bold" numberOfLines={1}>{topicData.title}</Text>
-          <Text className="text-xs font-medium" style={{ color: specialty.color }}>
+          <Text className="text-white text-lg font-sans-bold" numberOfLines={1}>{topicData.title}</Text>
+          <Text className="text-xs font-sans-medium" style={{ color: specialty.color }}>
             {specialty.scientificName} • Strict Scope Active
           </Text>
         </View>
@@ -67,13 +67,13 @@ export default function TopicPage() {
           className={`flex-1 py-2 items-center rounded-lg ${activeTab === 'guide' ? 'bg-[#2b2e33]' : 'bg-transparent'}`}
           onPress={() => setActiveTab('guide')}
         >
-          <Text className={`font-bold ${activeTab === 'guide' ? 'text-white' : 'text-gray-500'}`}>Clinical Guide</Text>
+          <Text className={`font-sans-bold ${activeTab === 'guide' ? 'text-white' : 'text-gray-500'}`}>Clinical Guide</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           className={`flex-1 py-2 items-center rounded-lg ${activeTab === 'chat' ? 'bg-[#2b2e33]' : 'bg-transparent'}`}
           onPress={() => setActiveTab('chat')}
         >
-          <Text className={`font-bold ${activeTab === 'chat' ? 'text-white' : 'text-gray-500'}`}>AI Assistant</Text>
+          <Text className={`font-sans-bold ${activeTab === 'chat' ? 'text-white' : 'text-gray-500'}`}>AI Assistant</Text>
         </TouchableOpacity>
       </View>
 

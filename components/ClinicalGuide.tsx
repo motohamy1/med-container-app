@@ -37,7 +37,7 @@ export default function ClinicalGuide({ topicData, themeColor, specialtyIllustra
           )}
         </View>
         <Text className="text-white text-3xl font-black text-center mb-2">{topicData.title}</Text>
-        <Text className="text-gray-400 text-base font-medium text-center leading-6">
+        <Text className="text-gray-400 text-base font-sans-medium text-center leading-6">
           {topicData.subtitle}
         </Text>
       </View>
@@ -58,7 +58,7 @@ export default function ClinicalGuide({ topicData, themeColor, specialtyIllustra
                     color={themeColor} 
                   />
                 </View>
-                <Text className="text-white text-xl font-bold">{section.title}</Text>
+                <Text className="text-white text-xl font-sans-bold">{section.title}</Text>
               </View>
               <View className="bg-[#181a1d] rounded-2xl p-5 border border-white/5">
                 <Text className="text-gray-300 text-sm leading-6">

@@ -4,6 +4,7 @@ const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const cheerio = require('cheerio');
 const { ingestKnowledge } = require('../services/knowledgeService');
+const { autoReviewAndUpdateTopics } = require('../services/knowledgeUpdateService');
 
 // Configure multer for PDF uploads (store in memory for immediate processing)
 const upload = multer({ storage: multer.memoryStorage() });
@@ -96,6 +97,12 @@ router.post('/ingest', upload.single('file'), async (req, res) => {
 
         // Notify client that job is complete
         sendProgress(jobId, 1, 1, 'complete');
+
+        // 4. Trigger Auto-Update Pipeline (Background task to review and critique existing specialty topics)
+        console.log(`[Admin] Kicking off Auto-Update Pipeline for resource: ${title || sourceUrl}`);
+        autoReviewAndUpdateTopics(textToIngest, title || sourceUrl).catch(err => {
+            console.error("[Admin] Auto-Update Pipeline failed:", err);
+        });
 
     } catch (error) {
         console.error("[Admin Ingest Error]", error);
