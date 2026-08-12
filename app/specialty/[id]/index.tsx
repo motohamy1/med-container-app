@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { dbService } from '../../../services/dbService';
 import { SpecialtyData } from '../../../constants/SpecialtyData';
 import { SPECIALTY_KNOWLEDGE } from '../../../constants/SpecialtyData';
+import { Colors } from '../../../constants/Colors';
 
 export default function SpecialtyDashboard() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -129,9 +130,9 @@ export default function SpecialtyDashboard() {
             {specialty.categories.map((category) => {
               // Determine styles based on category ID for high-contrast "Emergencies"
               const isEmergency = category.id === 'emergencies';
-              const bgColor = isEmergency ? 'rgba(239, 68, 68, 0.15)' : 'rgba(45, 212, 191, 0.1)';
-              const borderColor = isEmergency ? 'rgba(239, 68, 68, 0.4)' : 'rgba(255, 255, 255, 0.1)';
-              const iconColor = isEmergency ? '#ef4444' : specialty.color;
+              const bgColor = isEmergency ? 'rgba(194, 122, 78, 0.13)' : 'rgba(110, 194, 190, 0.1)';
+              const borderColor = isEmergency ? 'rgba(194, 122, 78, 0.4)' : 'rgba(255, 255, 255, 0.1)';
+              const iconColor = isEmergency ? Colors.terracotta : specialty.color;
 
               return (
                 <TouchableOpacity

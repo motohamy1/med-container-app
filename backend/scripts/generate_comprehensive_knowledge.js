@@ -42,16 +42,17 @@ const CATEGORIES = [
     { id: 'research', name: 'Recent Research', desc: 'Latest evidence-based medicine and landmark trials' }
 ];
 
-async function callGeminiDirect(prompt) {
-    const result = await geminiModel.generateContent(prompt);
-    return result.response.text();
-}
-
-async function callOpenRouter(prompt) {
+async function callOpenRouter(systemPrompt, userPrompt) {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: { "Authorization": `Bearer ${OPENROUTER_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "openrouter/free", messages: [{ role: "user", content: prompt }] })
+        body: JSON.stringify({ 
+            model: "openrouter/free", 
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+            ] 
+        })
     });
     if (!response.ok) {
         const errText = await response.text();
@@ -61,13 +62,16 @@ async function callOpenRouter(prompt) {
     return data.choices[0].message.content;
 }
 
-async function callNvidia(prompt) {
+async function callNvidia(systemPrompt, userPrompt) {
     const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: { "Authorization": `Bearer ${NVIDIA_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify({ 
             model: "meta/llama-3.1-70b-instruct", 
-            messages: [{ role: "user", content: prompt }],
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt }
+            ],
             max_tokens: 4000
         })
     });
@@ -76,42 +80,43 @@ async function callNvidia(prompt) {
     return data.choices[0].message.content;
 }
 
-async function callAI(prompt, retries = 5) {
+async function callGemini(systemPrompt, userPrompt) {
+    const genAI = new GoogleGenerativeAI(GEMINI_KEY);
+    const model = genAI.getGenerativeModel({ 
+        model: 'gemini-1.5-flash', 
+        generationConfig: { responseMimeType: "application/json" },
+        systemInstruction: systemPrompt 
+    });
+    const result = await model.generateContent(userPrompt);
+    return result.response.text();
+}
+
+async function callAI(systemPrompt, userPrompt, retries = 5) {
     for (let attempt = 1; attempt <= retries; attempt++) {
         const providerName = providers[currentProviderIndex];
         try {
             let text = "";
             if (providerName === 'gemini') {
-                text = await callGeminiDirect(prompt);
+                text = await callGemini(systemPrompt, userPrompt);
             } else if (providerName === 'openrouter') {
-                text = await callOpenRouter(prompt);
+                text = await callOpenRouter(systemPrompt, userPrompt);
             } else if (providerName === 'nvidia') {
-                text = await callNvidia(prompt);
+                text = await callNvidia(systemPrompt, userPrompt);
             }
 
-            text = text.replace(/^```json\s*/i, '').replace(/```\s*$/, '');
-            text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, " "); // Clean control chars
+            text = text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+            text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, " "); 
             
             return JSON.parse(text);
-
         } catch (error) {
             console.error(`   ⚠️ [${providerName.toUpperCase()}] Attempt ${attempt} failed: ${error.message.substring(0, 150)}...`);
             
-            // Check for Rate Limit or Quota
-            if (error.message.includes('429') || error.message.includes('Quota') || error.message.includes('quota') || error.message.includes('Too Many Requests')) {
-                console.log(`   🔄 Quota exhausted for ${providerName.toUpperCase()}. Routing to next provider...`);
+            if (error.message.includes('429') || error.message.includes('Quota') || error.message.includes('Too Many Requests')) {
                 currentProviderIndex = (currentProviderIndex + 1) % providers.length;
                 console.log(`   ➡️ Switched AI Engine to: ${providers[currentProviderIndex].toUpperCase()}`);
-                
-                // If we've looped through all providers and they ALL rate limit, sleep for 30s
-                if (currentProviderIndex === 0) {
-                    console.log(`   ⏳ All providers exhausted! Sleeping 30 seconds...`);
-                    await new Promise(r => setTimeout(r, 30000));
-                }
-                
-                continue; // Immediately try the next provider without incrementing standard retry wait
+                if (currentProviderIndex === 0) await new Promise(r => setTimeout(r, 30000));
+                continue;
             }
-            
             if (attempt === retries) return null;
             await new Promise(r => setTimeout(r, 5000));
         }
@@ -120,51 +125,28 @@ async function callAI(prompt, retries = 5) {
 }
 
 async function getExhaustiveTopicList(specialty, category) {
-    console.log(`\n🔍 Fetching exhaustive topic blueprint for ${specialty.name} - ${category.name} (Using ${providers[currentProviderIndex].toUpperCase()})...`);
+    console.log(`\n🔍 Fetching exhaustive topic blueprint for ${specialty.name} - ${category.name}...`);
     
-    const prompt = `
-    You are a Chief Medical Officer building an exhaustive medical encyclopedia.
-    List absolutely EVERY major and minor topic for the specialty "${specialty.name}" in the category "${category.name}" (${category.desc}).
-    This must be an exhaustive, completely comprehensive list. Include everything a doctor would ever need to look up.
+    const systemPrompt = `You are a Chief of Medicine. Output ONLY a pure JSON array of objects. No markdown.
+Schema: {"id": "string", "title": "string", "subtitle": "string", "type": "string", "ai_scope_description": "string"}`;
     
-    Return a JSON array of objects with this exact schema:
-    {
-      "id": "string (unique identifier, e.g., 'acs_stemi', lowercase, underscores)",
-      "title": "string (e.g., 'Acute Coronary Syndrome')",
-      "subtitle": "string (e.g., 'STEMI vs NSTEMI Workup & Management')",
-      "type": "string (e.g., 'Clinical Protocol', 'Guidelines')",
-      "ai_scope_description": "string (A detailed instruction of what clinical content should be written for this topic)"
-    }
-    `;
+    const userPrompt = `List exhaustive topics for specialty: ${specialty.name}, category: ${category.name} (${category.desc}).`;
 
-    const topicList = await callAI(prompt);
+    const topicList = await callAI(systemPrompt, userPrompt);
     if (!topicList) return [];
     
-    console.log(`📋 Discovered ${topicList.length} exhaustive topics for ${specialty.name} - ${category.name}`);
+    console.log(`📋 Discovered ${topicList.length} exhaustive topics.`);
     return topicList;
 }
 
 async function generateTopicContent(specialty, category, topic) {
-    console.log(`   ✍️ Generating deep clinical content for topic: ${topic.title} (Using ${providers[currentProviderIndex].toUpperCase()})...`);
+    console.log(`   ✍️ Generating deep clinical content for topic: ${topic.title}...`);
     
-    const prompt = `
-    You are an expert physician writing content for a medical encyclopedia.
-    Write the deep clinical content for the topic "${topic.title}" (${topic.subtitle}) in the specialty "${specialty.name}".
-    Scope of what to write: ${topic.ai_scope_description}.
-    Use high-yield references (e.g., AHA, IDSA, UpToDate).
-    
-    Return a JSON array of objects representing the sections of the content.
-    Schema:
-    [
-      { "title": "string (e.g., 'Definition')", "content": "string (The detailed medical text)" },
-      { "title": "string (e.g., 'Clinical Presentation')", "content": "string" },
-      { "title": "string (e.g., 'Management Guidelines')", "content": "string" }
-    ]
-    Include as many sections as needed for extreme comprehensiveness.
-    `;
+    const systemPrompt = `You are a medical textbook author. Generate a JSON object with a key "sections" which is an array of objects: {"title": "string", "content": "string"}. Output ONLY JSON. No markdown.`;
+    const userPrompt = `Write clinical content for topic: ${topic.title}. Scope: ${topic.ai_scope_description}.`;
 
-    const content = await callAI(prompt, 3);
-    return content || [];
+    const content = await callAI(systemPrompt, userPrompt, 3);
+    return content?.sections || [];
 }
 
 async function generateTopicsForCategory(specialty, category) {

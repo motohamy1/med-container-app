@@ -18,6 +18,9 @@ module.exports = {
         "accent-bright": Colors.accentBright,
         // Champagne gold — muted signal
         gold: Colors.gold,
+        // Burnt terracotta — clinical caution / warning / destructive
+        terracotta: Colors.terracotta,
+        "terracotta-deep": Colors.terracottaDeep,
         // Neutral tones
         charcoal: Colors.charcoal,
         "gray-dark": Colors.grayDark,

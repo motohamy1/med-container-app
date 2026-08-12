@@ -84,7 +84,7 @@ const QUICK_PROMPTS: QuickPrompt[] = [
     title: "Hypertensive Crisis",
     subtitle: "Urgency vs Emergency target BP reduction",
     prompt: "Explain the management of Hypertensive Urgency vs Emergency, including IV drug choices and target blood pressure reduction rates.",
-    color: Colors.gold,
+    color: Colors.terracotta,
   },
   {
     icon: "analytics-outline",
@@ -483,10 +483,10 @@ const ChatBubble: React.FC<{
           </View>
           <Text className="text-white text-xs font-sans-bold tracking-wide">Med Arena AI</Text>
         </View>
-        <View className="bg-teal-dark border border-gold/30 rounded-3xl rounded-tl-md p-4">
+        <View className="bg-teal-dark border border-terracotta/30 rounded-3xl rounded-tl-md p-4">
           <View className="flex-row items-center gap-2 mb-2">
-            <Ionicons name="alert-circle-outline" size={16} color={Colors.gold} />
-            <Text className="text-gold text-xs font-sans-bold uppercase tracking-wider">
+            <Ionicons name="alert-circle-outline" size={16} color={Colors.terracotta} />
+            <Text className="text-terracotta text-xs font-sans-bold uppercase tracking-wider">
               Consultation interrupted
             </Text>
           </View>
@@ -878,7 +878,7 @@ const ChatTab = () => {
                 activeOpacity={0.85}
                 className="mb-3.5"
               >
-                <View className="rounded-[30px] p-1.5 border border-turquoise/25" style={{ backgroundColor: "rgba(110,194,190,0.07)" }}>
+                <View className="rounded-[30px] p-1.5 border border-gold/30" style={{ backgroundColor: "rgba(210,182,137,0.06)" }}>
                   <View className="rounded-3xl bg-teal-dark border border-white/[0.07] p-5">
                     <View className="flex-row items-center justify-between mb-4">
                       <View
@@ -887,8 +887,9 @@ const ChatTab = () => {
                       >
                         <Ionicons name={QUICK_PROMPTS[0].icon} size={22} color={QUICK_PROMPTS[0].color} />
                       </View>
-                      <View className="px-2.5 py-1 rounded-full bg-white/[0.05] border border-white/10">
-                        <Text className="text-[10px] uppercase tracking-[0.2em] font-sans-semibold text-gray-400">Featured</Text>
+                      <View className="px-2.5 py-1 rounded-full bg-gold/10 border border-gold/30 flex-row items-center gap-1">
+                        <Ionicons name="star" size={9} color={Colors.gold} />
+                        <Text className="text-[10px] uppercase tracking-[0.2em] font-sans-semibold text-gold">Featured</Text>
                       </View>
                     </View>
                     <Text className="text-white font-sans-bold text-[17px] mb-1.5">{QUICK_PROMPTS[0].title}</Text>

@@ -7,6 +7,7 @@
  * - Ink on a quiet surface: graphite neutrals carry the app.
  * - Turquoise = current state / primary action only.
  * - Gold = signal/premium marker, used sparingly.
+ * - Terracotta = clinical caution / warning / destructive, one job only.
  * - Specialty hues share one lightness & chroma (OKLCH L≈0.70, C≈0.075);
  *   only hue rotates, so no specialty feels louder than another.
  * - Filled accent surfaces always use ink text (#101214), never white.
@@ -25,8 +26,15 @@ export const Colors = {
   accentBright: '#8ad9d5',
   accentDeep: '#5aa8a4', // gradient endpoint for filled bubbles
 
-  // Champagne gold — muted signal
+  // Champagne gold — muted signal (premium / featured)
   gold: '#d2b689',
+
+  // Burnt terracotta — clinical caution / warning / destructive.
+  // Muted chroma sibling of a "fabric orange": same warm hue family,
+  // pulled down to L≈0.62 C≈0.10 so it harmonizes with the teal (split-
+  // complementary ~145° away) instead of shouting over dark chrome.
+  terracotta: '#c27a4e',
+  terracottaDeep: '#96522c', // borders / fills at low alpha
 
   // Text & utility neutrals
   charcoal: '#373d44',

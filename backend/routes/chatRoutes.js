@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const { getSpecialtyScope, getTopicAiScope } = require('../services/supabaseService');
-const { callAI, extractEnglishKeywords, analyzeIntent } = require('../services/geminiService');
-const { fetchMedicalKnowledge, fetchEuropePMC } = require('../services/europePmcService');
+const { callAI, extractEnglishKeywords, analyzeIntent } = require('../services/aiService');
+const { fetchMedicalKnowledge, fetchClinicalLiterature } = require('../services/medicalSearchService');
 const { searchCustomKnowledge } = require('../services/knowledgeService');
 
 router.post('/', async (req, res) => {
@@ -39,7 +39,7 @@ Reply warmly, professionally, and briefly. Do NOT use any markdown bold (**) or 
             console.log(`[PMC Search] Translated Arabic query to keywords: "${searchKeywords}"`);
         }
         
-        const literatureRefs = await fetchEuropePMC(searchKeywords, category);
+        const literatureRefs = await fetchClinicalLiterature(searchKeywords, category);
         
         let citations = [];
         let literatureContext = '';
@@ -110,13 +110,13 @@ Reply warmly, professionally, and briefly. Do NOT use any markdown bold (**) or 
         const currentYear = new Date().getFullYear();
         personaInstruction += `\n\nCRITICAL KNOWLEDGE AWARENESS: You are operating in the year ${currentYear}. You are provided with both 'Highly Cited Foundation' literature (most reliable established knowledge) and 'Latest Update' literature (newest cutting-edge research). You MUST explicitly synthesize these in your response: briefly state what the established reliable foundational knowledge says, and then highlight what the absolute latest cutting-edge updates say, ensuring the user is aware of both the reliable foundation and the newest developments.`;
 
-        let prompt = '';
+        let systemPrompt = '';
 
         if (mode === 'fast_recap') {
-            prompt = `
+            systemPrompt = `
 ${personaInstruction}
 
-YOUR TASK: Provide a FAST but COMPREHENSIVE CLINICAL RECAP for the topic: "${message}".
+YOUR TASK: Provide a FAST but COMPREHENSIVE CLINICAL RECAP.
 
 KNOWLEDGE RESOURCES:
 ${medicalKnowledgeContext}
@@ -160,13 +160,11 @@ STRICT RULES:
 - LANGUAGE RULE: Match the user's language perfectly. If the query is in English, respond ONLY in English. If the query is in Arabic, respond intelligently in Arabic but DO NOT force translations of complex medical terms, procedures, or drugs (e.g., write "Obeticholic acid" directly in English, do not translate it to Arabic). Keep medical terms in English unless they have a very common Egyptian Arabic medical equivalent.
       `;
         } else {
-            prompt = `
+            systemPrompt = `
 ${personaInstruction}
 
 KNOWLEDGE RESOURCES:
 ${medicalKnowledgeContext}
-
-### USER CLINICAL QUERY: "${message}"
 
 ### INSTRUCTIONS:
 Deliver a high-yield, accurate, and structured clinical response for doctors. 
@@ -194,11 +192,11 @@ HEADING CATEGORIES (Pick the most relevant sections):
 - GENERAL DOCTOR ADVICE: ##KEY POINTS##, ##PROFESSIONAL CLINICAL ADVICE##
 - CONVERSATIONAL: ##GREETING## (Use this ONLY if the user is saying hello, thanks, or engaging in small talk without a medical question. Do NOT use other sections).
 
-NOW RESPOND TO THE CLINICAL QUERY (START WITH ##):
+NOW RESPOND TO THE CLINICAL QUERY:
       `;
         }
 
-        const rawReply = await callAI(prompt);
+        const rawReply = await callAI(systemPrompt, message);
 
         let normalized = rawReply;
         

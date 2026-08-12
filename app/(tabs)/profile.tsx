@@ -91,8 +91,9 @@ const ProfileHeader = ({ profile, loading }: { profile: any; loading: boolean })
           <Text className="text-2xl font-sans-bold leading-tight text-white">
             {loading ? 'Loading...' : displayName}
           </Text>
-          <View className="px-2 py-0.5 rounded-full bg-turquoise/20 border border-turquoise/20">
-            <Text className="text-turquoise text-[10px] font-sans-bold">PRO</Text>
+          <View className="px-2 py-0.5 rounded-full bg-gold/15 border border-gold/30 flex-row items-center gap-1">
+            <Ionicons name="star" size={8} color={Colors.gold} />
+            <Text className="text-gold text-[10px] font-sans-bold">PRO</Text>
           </View>
         </View>
         <Text className="text-gray-muted text-sm font-sans-medium">
@@ -149,7 +150,7 @@ const StatsSection = () => {
       value: '2',
       subtitle: 'Known Triggers',
       icon: 'warning',
-      color: Colors.specialty.cardiology,
+      color: Colors.terracotta,
     },
   ];
 
@@ -339,8 +340,8 @@ const Profile = () => {
 
         {/* Danger Zone */}
         <View className="p-6 flex-col items-center gap-4 mt-4">
-          <TouchableOpacity className="w-full py-3 rounded-full bg-red-900/10">
-            <Text className="text-red-500 text-sm font-sans-bold text-center">Log Out</Text>
+          <TouchableOpacity className="w-full py-3 rounded-full bg-terracotta/10 border border-terracotta/25">
+            <Text className="text-terracotta text-sm font-sans-bold text-center">Log Out</Text>
           </TouchableOpacity>
           <Text className="text-[10px] text-gray-muted">Version 2.4.0</Text>
         </View>

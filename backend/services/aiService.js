@@ -13,13 +13,15 @@ const aiModel = genAI ? genAI.getGenerativeModel({
     }
 }) : null;
 
-async function executeAI(prompt) {
+async function executeAI(systemPrompt, userPrompt) {
     let lastError = null;
 
     // 1. Try Native Gemini API first
     if (aiModel) {
         try {
-            const result = await aiModel.generateContent(prompt);
+            // Gemini supports systemInstruction in config, or we can just prepend it.
+            const fullPrompt = `${systemPrompt}\n\nUSER QUERY:\n${userPrompt}`;
+            const result = await aiModel.generateContent(fullPrompt);
             return result.response.text().trim() || '';
         } catch (err) {
             lastError = err;
@@ -43,7 +45,10 @@ async function executeAI(prompt) {
                 },
                 body: JSON.stringify({ 
                     model: "openrouter/free", 
-                    messages: [{ role: "user", content: prompt }] 
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ] 
                 })
             });
 
@@ -72,7 +77,10 @@ async function executeAI(prompt) {
                 },
                 body: JSON.stringify({ 
                     model: "meta/llama-3.1-70b-instruct", 
-                    messages: [{ role: "user", content: prompt }],
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ],
                     max_tokens: 4000
                 })
             });
@@ -96,33 +104,35 @@ async function executeAI(prompt) {
 async function extractEnglishKeywords(query) {
     if (!/[\u0600-\u06FF]/.test(query)) return query;
     
-    const prompt = `Extract 1-4 core English medical search keywords from this user query for a scientific database search. Translate the core medical concepts to English. Do NOT return sentences, only the keywords separated by spaces. Query: "${query}"`;
+    const systemPrompt = `You are a medical keyword extractor. Extract 1-4 core English medical search keywords from the query for a scientific database search. Translate concepts to English. Output a pure JSON array of strings ONLY. No markdown, no conversational text. Example: ["typhoid fever", "treatment"]`;
     try {
-        const result = await executeAI(prompt);
-        return result || query;
+        const result = await executeAI(systemPrompt, query);
+        
+        let cleaned = result.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const keywords = JSON.parse(cleaned);
+        return keywords.join(' AND ');
     } catch {
         return query;
     }
 }
 
 async function analyzeIntent(query) {
-    const prompt = `Classify the following user message into exactly one of two categories: 'MEDICAL' or 'CONVERSATIONAL'. 
+    const systemPrompt = `Classify the following user message into exactly one of two categories: 'MEDICAL' or 'CONVERSATIONAL'. 
 'MEDICAL' means the user is asking a clinical question, asking about a drug, symptom, disease, or medical scenario.
 'CONVERSATIONAL' means the user is just saying hello, asking how you are, making small talk, or thanking you, without any actual medical inquiry.
-Output ONLY the category name in all caps.
-Message: "${query}"`;
+Output ONLY the category name in all caps.`;
     try {
-         const text = await executeAI(prompt);
+         const text = await executeAI(systemPrompt, query);
          return text.toUpperCase().includes('CONVERSATIONAL') ? 'CONVERSATIONAL' : 'MEDICAL';
     } catch {
          return 'MEDICAL'; // default to medical on error
     }
 }
 
-async function callAI(prompt, retries = 3) {
+async function callAI(systemPrompt, userPrompt, retries = 3) {
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
-            return await executeAI(prompt);
+            return await executeAI(systemPrompt, userPrompt);
         } catch (err) {
             console.error(`Attempt ${attempt + 1} failed:`, err.message.substring(0, 100));
             if (attempt < retries - 1) {

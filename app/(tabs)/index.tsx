@@ -201,7 +201,6 @@ const OrbitNavigation = () => {
           <Text className="text-[11px] font-sans-bold text-black text-center mt-1">Medical Arena AI</Text>
           <Text className="text-[10px] text-black/70 font-sans-semibold">Clinical Advisor</Text>
         </TouchableOpacity>
-
         <OrbitButton category={categories[0]} size={BUTTON_SIZE} top="0%" left="50%" />
         <OrbitButton category={categories[1]} size={BUTTON_SIZE} top="14.6%" left="82%" />
         <OrbitButton category={categories[2]} size={BUTTON_SIZE} top="50%" left="95%" />
@@ -224,7 +223,10 @@ const RecentInquiries = () => {
 
   return (
     <View className="px-6 pb-6">
-      <Text className="text-[17px] font-sans-bold text-white mb-3">Recent Clinical Consultations</Text>
+      <View className="flex-row items-center gap-2 mb-3">
+        <Ionicons name="time-outline" size={15} color={Colors.gold} />
+        <Text className="text-[17px] font-sans-bold text-white">Recent Clinical Consultations</Text>
+      </View>
       <View className="flex flex-col gap-2">
         {inquiries.map((inquiry) => (
           <TouchableOpacity
