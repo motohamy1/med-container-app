@@ -10,7 +10,7 @@ content = content.replace(/import .*?;\n/g, '');
 content = content.replace(/export type .*? = \{[\s\S]*?\};\n/g, '');
 
 // Strip requires
-content = content.replace(/require\((.*?)\)/g, '$1');
+content = content.replace(/require\([^)]*\)/g, 'null');
 
 // Extract the SPECIALTY_KNOWLEDGE object
 const objectMatch = content.match(/export const SPECIALTY_KNOWLEDGE.* = (\{[\s\S]*\});/);

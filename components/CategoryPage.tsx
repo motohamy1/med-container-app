@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '../constants/Colors';
 
 type CategoryPageProps = {
   categoryName: string;
@@ -111,7 +112,7 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
               <Text className="text-gray-muted text-xs">{item.subtitle}</Text>
             </View>
             <View className="w-9 h-9 rounded-full bg-turquoise/10 items-center justify-center">
-              <Ionicons name="sparkles" size={18} color="#6ec2be" />
+              <Ionicons name="sparkles" size={18} color={Colors.accent} />
             </View>
           </TouchableOpacity>
         ))}
@@ -121,8 +122,8 @@ export const CategoryPage: React.FC<CategoryPageProps> = ({
           onPress={() => handleStartConsultation(categoryName)}
           className="mt-4 bg-turquoise p-4 rounded-2xl flex-row items-center justify-center gap-2"
         >
-          <Ionicons name="chatbubbles" size={20} color="#101214" />
-          <Text className="text-black font-sans-bold text-base">Ask Medical AI About {categoryName}</Text>
+          <Ionicons name="chatbubbles" size={20} color={Colors.ink} />
+          <Text className="text-ink font-sans-bold text-base">Ask Medical AI About {categoryName}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

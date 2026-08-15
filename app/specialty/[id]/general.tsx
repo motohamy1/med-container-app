@@ -5,6 +5,7 @@ import { StatusBar, Text, TouchableOpacity, View, ActivityIndicator } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { dbService } from '../../../services/dbService';
 import { SpecialtyData } from '../../../constants/SpecialtyData';
+import { Colors } from '../../../constants/Colors';
 import TopicChat from '../../../components/TopicChat';
 
 export default function GeneralSpecialtyChat() {
@@ -34,7 +35,7 @@ export default function GeneralSpecialtyChat() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar barStyle="light-content" backgroundColor="#101214" />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
       
       {/* Header */}
       <View className="flex-row items-center px-4 py-4 border-b border-white/5 bg-background z-20">

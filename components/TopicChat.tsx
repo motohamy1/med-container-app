@@ -28,6 +28,7 @@ import Animated, {
 import { router } from "expo-router";
 import { aiService, Citation } from "../services/aiService";
 import { SPECIALTY_KNOWLEDGE } from "../constants/SpecialtyData";
+import { Colors } from "../constants/Colors";
 
 const EASE_HEAVY = Easing.bezier(0.32, 0.72, 0, 1);
 const TURQUOISE = "#6ec2be";
@@ -145,7 +146,7 @@ export default function TopicChat({
                 className={`px-4 py-3 rounded-3xl ${item.isUser ? "rounded-tr-md" : "rounded-tl-md"}`}
                 style={{ backgroundColor: item.isUser ? themeColor : "#191c20" }}
               >
-                <Text style={{ color: item.isUser ? "#101214" : "#e4e8ed", fontSize: 14, fontWeight: item.isUser ? "600" : "400" }}>
+                <Text style={{ color: item.isUser ? Colors.ink : Colors.textBody, fontSize: 14, fontWeight: item.isUser ? "600" : "400" }}>
                   {item.text.replace(/##(.*?)##/g, "$1:")}
                 </Text>
               </View>
@@ -191,7 +192,7 @@ export default function TopicChat({
           <TextInput
             className="flex-1 text-white text-base max-h-24 pt-2 pb-2"
             placeholder={`Ask about ${topicName}...`}
-            placeholderTextColor="#6c737f"
+            placeholderTextColor={Colors.graySubtle}
             multiline
             value={inputText}
             onChangeText={setInputText}
@@ -200,9 +201,9 @@ export default function TopicChat({
             onPress={handleTextSend}
             disabled={!inputText.trim() || isTyping}
             className="w-9 h-9 rounded-full items-center justify-center mb-0.5 ml-2"
-            style={{ backgroundColor: inputText.trim() ? themeColor : "#313843" }}
+            style={{ backgroundColor: inputText.trim() ? themeColor : Colors.charcoal }}
           >
-            <Ionicons name="arrow-up" size={18} color="#101214" />
+            <Ionicons name="arrow-up" size={18} color={Colors.ink} />
           </TouchableOpacity>
         </View>
       </View>

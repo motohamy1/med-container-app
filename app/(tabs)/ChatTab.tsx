@@ -131,7 +131,7 @@ const SECTION_CONFIG: Record<
     label: "Management Protocol",
   },
   "SURGICAL / PROCEDURAL CONSIDERATIONS": {
-    color: "#d2b689",
+    color: Colors.clinicalGold,
     border: "#8d6f44",
     icon: "cut-outline",
     label: "Surgical / Procedural",
@@ -580,7 +580,7 @@ const ChatBubble: React.FC<{
             onPress={() => onCopy(message.text)}
             className="flex-row items-center gap-1.5 active:opacity-60"
           >
-            <Ionicons name="copy-outline" size={14} color="#a3a8af" />
+            <Ionicons name="copy-outline" size={14} color={Colors.grayMuted} />
             <Text className="text-gray-400 text-xs font-sans-medium">Copy</Text>
           </TouchableOpacity>
         </View>

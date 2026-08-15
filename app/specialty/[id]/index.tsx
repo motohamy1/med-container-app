@@ -66,7 +66,7 @@ export default function SpecialtyDashboard() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar barStyle="light-content" backgroundColor="#101214" />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
       
       {/* Header */}
       <View className="flex-row items-center px-6 py-4 border-b border-white/5 bg-background z-20">
@@ -107,11 +107,11 @@ export default function SpecialtyDashboard() {
 
         {/* Search Bar */}
         <View className="bg-[#181a1d] rounded-2xl flex-row items-center px-4 py-3 border border-white/5 mx-4 mt-6">
-            <Ionicons name="search" size={20} color="#a3a8af" />
+            <Ionicons name="search" size={20} color={Colors.grayMuted} />
             <TextInput
               className="flex-1 text-white ml-3 font-sans-medium text-sm"
               placeholder={`Search ${specialty.id} topics...`}
-              placeholderTextColor="#a3a8af"
+              placeholderTextColor={Colors.grayMuted}
               value={searchText}
               onChangeText={setSearchText}
               onSubmitEditing={handleSearchSubmit}
@@ -171,8 +171,8 @@ export default function SpecialtyDashboard() {
             className="flex-row items-center justify-center gap-2 py-4 rounded-xl mx-4 mt-6 mb-8"
             style={{ backgroundColor: specialty.color }}
           >
-            <Ionicons name="chatbubbles" size={20} color="#101214" />
-            <Text className="text-[#101214] text-base font-sans-bold">Ask General AI About {specialty.name}</Text>
+            <Ionicons name="chatbubbles" size={20} color={Colors.ink} />
+            <Text className="text-ink text-base font-sans-bold">Ask General AI About {specialty.name}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

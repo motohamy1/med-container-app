@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Colors } from '../constants/Colors';
 
 export type Section = {
   id: string;
@@ -74,23 +75,23 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   title: {
-    color: '#e4e8ed',
+    color: Colors.textBody,
     fontWeight: '700',
     textTransform: 'uppercase',
     fontSize: 12,
   },
   copy: {
-    color: '#a3a8af',
+    color: Colors.grayMuted,
     fontSize: 12,
     padding: 6,
   },
   body: {
-    color: '#e4e8ed',
+    color: Colors.textBody,
     fontSize: 14,
     lineHeight: 20,
   },
   showMore: {
-    color: '#6ec2be',
+    color: Colors.accent,
     marginTop: 6,
     fontWeight: '600',
   }

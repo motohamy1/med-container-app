@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { dbService } from '../../../../services/dbService';
 import { SpecialtyData, SpecialtyCategory } from '../../../../constants/SpecialtyData';
+import { Colors } from '../../../../constants/Colors';
 
 export default function CategoryPage() {
   const { id, categoryId } = useLocalSearchParams<{ id: string; categoryId: string }>();
@@ -61,7 +62,7 @@ export default function CategoryPage() {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar barStyle="light-content" backgroundColor="#101214" />
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
       
       {/* Header */}
       <View className="flex-row items-center px-6 py-4 border-b border-white/5 bg-background z-20">
@@ -90,7 +91,7 @@ export default function CategoryPage() {
 
           {!category.topics || category.topics.length === 0 ? (
             <View className="items-center justify-center py-10 opacity-60">
-               <Ionicons name="folder-open-outline" size={48} color="#a3a8af" />
+               <Ionicons name="folder-open-outline" size={48} color={Colors.grayMuted} />
                <Text className="text-gray-400 mt-4 text-center">No curated topics yet.{'\n'}Use the AI Assistant to explore.</Text>
             </View>
           ) : (
@@ -127,14 +128,14 @@ export default function CategoryPage() {
       </ScrollView>
 
       {/* Floating Ask AI Button */}
-      <View className="absolute bottom-8 left-0 right-0 items-center px-6 pointer-events-none">
+      <View className="absolute bottom-8 left-0 right-0 items-center px-6" pointerEvents="box-none">
         <TouchableOpacity 
           onPress={handleAskAI}
-          className="flex-row items-center justify-center gap-2 py-4 px-6 rounded-full shadow-lg shadow-black/50 pointer-events-auto"
+          className="flex-row items-center justify-center gap-2 py-4 px-6 rounded-full shadow-lg shadow-black/50"
           style={{ backgroundColor: specialty.color }}
         >
-          <Ionicons name="chatbubbles" size={20} color="#101214" />
-          <Text className="text-[#101214] text-base font-sans-bold">Ask AI about {category.title}</Text>
+          <Ionicons name="chatbubbles" size={20} color={Colors.ink} />
+          <Text className="text-ink text-base font-sans-bold">Ask AI about {category.title}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

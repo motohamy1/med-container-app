@@ -82,7 +82,7 @@ const ProfileHeader = ({ profile, loading }: { profile: any; loading: boolean })
 
         {/* Online/AI Active Indicator */}
         <View className="absolute bottom-1 right-1 w-6 h-6 bg-turquoise rounded-full border-4 border-background items-center justify-center">
-          <Ionicons name="flash" size={10} color="#101214" />
+          <Ionicons name="flash" size={10} color={Colors.ink} />
         </View>
       </View>
 

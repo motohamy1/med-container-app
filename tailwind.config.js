@@ -23,6 +23,7 @@ module.exports = {
         "terracotta-deep": Colors.terracottaDeep,
         // Neutral tones
         charcoal: Colors.charcoal,
+        ink: Colors.ink,
         "gray-dark": Colors.grayDark,
         "gray-muted": Colors.grayMuted,
         "gray-subtle": Colors.graySubtle,
