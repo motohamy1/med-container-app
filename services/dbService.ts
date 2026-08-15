@@ -1,5 +1,47 @@
 import { supabase } from '../lib/supabase';
-import { SpecialtyData, SpecialtyCategory, TopicItem, SPECIALTY_KNOWLEDGE } from '../constants/SpecialtyData';
+import { SpecialtyData, SpecialtyCategory, TopicItem, TopicSearchResult, SPECIALTY_KNOWLEDGE } from '../constants/SpecialtyData';
+
+const BACKEND_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
+
+const ALL_SPECIALTY_IDS = Object.keys(SPECIALTY_KNOWLEDGE);
+
+function buildLocalSearchIndex(): TopicSearchResult[] {
+  const index: TopicSearchResult[] = [];
+  for (const specId of ALL_SPECIALTY_IDS) {
+    const spec = SPECIALTY_KNOWLEDGE[specId];
+    if (!spec) continue;
+    for (const cat of spec.categories || []) {
+      for (const topic of cat.topics || []) {
+        index.push({
+          ...topic,
+          specialtyId: spec.id,
+          specialtyName: spec.name,
+          specialtyScientificName: spec.scientificName,
+          specialtyColor: spec.color,
+          specialtyIcon: spec.icon,
+          categoryId: cat.id,
+          categoryTitle: cat.title,
+        });
+      }
+    }
+  }
+  return index;
+}
+
+const LOCAL_SEARCH_INDEX = buildLocalSearchIndex();
+
+function scoreResult(q: string, r: TopicSearchResult): number {
+  const title = r.title.toLowerCase();
+  const subtitle = r.subtitle.toLowerCase();
+  const type = (r.type || '').toLowerCase();
+  const cat = (r.categoryTitle || '').toLowerCase();
+  const spec = (r.specialtyScientificName || '').toLowerCase();
+  if (title === q) return 100;
+  if (title.startsWith(q)) return 80;
+  if (title.includes(q)) return 60;
+  if (subtitle.includes(q) || cat.includes(q) || type.includes(q) || spec.includes(q)) return 30;
+  return 10;
+}
 
 export const dbService = {
   async getSpecialty(specialtyId: string): Promise<SpecialtyData | null> {
@@ -28,28 +70,30 @@ export const dbService = {
         return localSpec;
       }
 
-      // Map categories and fallback empty categories to local knowledge
+      // Map categories and merge remote + local topics
       const mappedCategories = categories.map((cat: any) => {
         const localCat = localSpec?.categories?.find((c) => c.id === cat.id);
-        const remoteTopics = cat.topics && cat.topics.length > 0 ? cat.topics : null;
+        const remoteTopics: TopicItem[] = (cat.topics || []).map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          subtitle: t.subtitle,
+          type: t.type,
+          aiScopeDescription: t.ai_scope_description,
+          clinicalContent: t.clinical_content,
+        }));
 
-        const finalTopics: TopicItem[] = remoteTopics
-          ? remoteTopics.map((t: any) => ({
-              id: t.id,
-              title: t.title,
-              subtitle: t.subtitle,
-              type: t.type,
-              aiScopeDescription: t.ai_scope_description,
-              clinicalContent: t.clinical_content,
-            }))
-          : localCat?.topics || [];
+        const topicMap = new Map<string, TopicItem>();
+        // Add local topics first
+        localCat?.topics?.forEach((t) => topicMap.set(t.id, t));
+        // Overwrite or add remote topics
+        remoteTopics.forEach((t) => topicMap.set(t.id, t));
 
         return {
           id: cat.id,
           title: cat.title || localCat?.title || '',
           description: cat.description || localCat?.description || '',
           icon: (cat.icon as any) || localCat?.icon || 'book',
-          topics: finalTopics,
+          topics: Array.from(topicMap.values()),
         };
       });
 
@@ -96,24 +140,25 @@ export const dbService = {
         return localCat;
       }
 
-      const remoteTopics = cat.topics && cat.topics.length > 0 ? cat.topics : null;
-      const finalTopics: TopicItem[] = remoteTopics
-        ? remoteTopics.map((t: any) => ({
-            id: t.id,
-            title: t.title,
-            subtitle: t.subtitle,
-            type: t.type,
-            aiScopeDescription: t.ai_scope_description,
-            clinicalContent: t.clinical_content,
-          }))
-        : localCat?.topics || [];
+      const remoteTopics: TopicItem[] = (cat.topics || []).map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        subtitle: t.subtitle,
+        type: t.type,
+        aiScopeDescription: t.ai_scope_description,
+        clinicalContent: t.clinical_content,
+      }));
+
+      const topicMap = new Map<string, TopicItem>();
+      localCat?.topics?.forEach((t) => topicMap.set(t.id, t));
+      remoteTopics.forEach((t) => topicMap.set(t.id, t));
 
       return {
         id: cat.id,
         title: cat.title || localCat?.title || '',
         description: cat.description || localCat?.description || '',
         icon: (cat.icon as any) || localCat?.icon || 'book',
-        topics: finalTopics,
+        topics: Array.from(topicMap.values()),
       };
     } catch (e) {
       console.warn('[dbService] getCategory network error, using local fallback:', e);
@@ -150,5 +195,133 @@ export const dbService = {
       console.warn('[dbService] getTopic network error, using local fallback:', e);
       return localTopic;
     }
+  },
+
+  async searchSpecialtyTopics(specialtyId: string, queryText: string): Promise<TopicItem[]> {
+    const q = queryText.toLowerCase().trim();
+    if (!q) return [];
+
+    const localTopics = (SPECIALTY_KNOWLEDGE[specialtyId]?.categories || [])
+      .flatMap((c) => c.topics)
+      .filter((t) =>
+        t.title.toLowerCase().includes(q) ||
+        t.subtitle.toLowerCase().includes(q) ||
+        t.type.toLowerCase().includes(q) ||
+        t.clinicalContent?.some((s) => s.title.toLowerCase().includes(q) || s.content.toLowerCase().includes(q))
+      );
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/topics/search?specialtyId=${specialtyId}&q=${encodeURIComponent(q)}`);
+      if (res.ok) {
+        const json = await res.json();
+        const remoteTopics: TopicItem[] = (json.topics || []).map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          subtitle: t.subtitle,
+          type: t.type,
+          aiScopeDescription: t.ai_scope_description,
+          clinicalContent: t.clinical_content,
+        }));
+
+        const topicMap = new Map<string, TopicItem>();
+        localTopics.forEach((t) => topicMap.set(t.id, t));
+        remoteTopics.forEach((t) => topicMap.set(t.id, t));
+        return Array.from(topicMap.values());
+      }
+    } catch {
+      // Return local search results on network failure
+    }
+
+    return localTopics;
+  },
+
+  async searchAllTopics(queryText: string): Promise<TopicSearchResult[]> {
+    const q = queryText.toLowerCase().trim();
+    if (!q) return [];
+
+    // Local instant search across the full SPECIALTY_KNOWLEDGE index
+    const localResults = LOCAL_SEARCH_INDEX.map((r) => ({ r, score: scoreResult(q, r) }))
+      .filter(({ r, score }) => score > 0 && (
+        r.title.toLowerCase().includes(q) ||
+        r.subtitle.toLowerCase().includes(q) ||
+        (r.type || '').toLowerCase().includes(q) ||
+        (r.categoryTitle || '').toLowerCase().includes(q) ||
+        (r.specialtyScientificName || '').toLowerCase().includes(q) ||
+        r.clinicalContent?.some((s) =>
+          s.title.toLowerCase().includes(q) || s.content.toLowerCase().includes(q)
+        )
+      ))
+      .sort((a, b) => b.score - a.score)
+      .map(({ r }) => r);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/topics/search?q=${encodeURIComponent(q)}`);
+      if (res.ok) {
+        const json = await res.json();
+        const remoteTopics: any[] = json.topics || [];
+
+        // Map remote rows to TopicSearchResult, resolving specialty/category context
+        const remoteResults: TopicSearchResult[] = [];
+        for (const t of remoteTopics) {
+          const specId = t.specialty_id as string | undefined;
+          const catId = t.category_id as string | undefined;
+          const spec = specId ? SPECIALTY_KNOWLEDGE[specId] : undefined;
+          const cat = spec?.categories?.find((c) => c.id === catId);
+
+          // Skip remote rows that duplicate an existing local hit (same topic id)
+          if (localResults.some((lr) => lr.id === t.id)) continue;
+
+          remoteResults.push({
+            id: t.id,
+            title: t.title,
+            subtitle: t.subtitle,
+            type: t.type,
+            aiScopeDescription: t.ai_scope_description,
+            clinicalContent: t.clinical_content,
+            specialtyId: specId || '',
+            specialtyName: spec?.name || '',
+            specialtyScientificName: spec?.scientificName || (specId || ''),
+            specialtyColor: spec?.color || '#6ec2be',
+            specialtyIcon: spec?.icon || ('medical' as any),
+            categoryId: catId || '',
+            categoryTitle: cat?.title || '',
+          });
+        }
+
+        // Merge: local (already ranked) first, then remote additions
+        return [...localResults, ...remoteResults].slice(0, 60);
+      }
+    } catch {
+      // Return local search results on network failure
+    }
+
+    return localResults;
+  },
+
+  async synthesizeTopicFromReference(specialtyId: string, categoryId: string, query: string): Promise<TopicItem | null> {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/topics/synthesize-from-reference`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ specialtyId, categoryId, query }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.topic) {
+          return {
+            id: data.topic.id,
+            title: data.topic.title,
+            subtitle: data.topic.subtitle,
+            type: data.topic.type,
+            aiScopeDescription: data.topic.ai_scope_description,
+            clinicalContent: data.topic.clinical_content,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('[dbService] synthesizeTopicFromReference failed:', err);
+    }
+    return null;
   },
 };

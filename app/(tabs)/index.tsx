@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   ScrollView,
   StatusBar,
@@ -13,6 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
+import { TopicSearchResult } from '../../constants/SpecialtyData';
+import { dbService } from '../../services/dbService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ORBIT_SIZE = Math.min(SCREEN_WIDTH * 0.78, 300);
@@ -45,6 +48,27 @@ type SpecialtyCategory = {
   color: string;
 };
 
+type SearchState = {
+  query: string;
+  results: TopicSearchResult[];
+  loading: boolean;
+  searched: boolean;
+};
+
+const EMPTY_SEARCH: SearchState = { query: '', results: [], loading: false, searched: false };
+
+// Group search results by specialty, then by category
+type CategoryGroup = { categoryId: string; title: string; topics: TopicSearchResult[] };
+type SpecialtyGroup = {
+  specialtyId: string;
+  name: string;
+  scientificName: string;
+  color: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  categories: CategoryGroup[];
+  topicCount: number;
+};
+
 // Header Component
 const Header = () => {
   const getGreeting = () => {
@@ -74,17 +98,17 @@ const Header = () => {
 };
 
 // Search Bar Component
-const SearchBar = () => {
-  const [searchText, setSearchText] = useState('');
-
-  const handleSearchSubmit = () => {
-    if (searchText.trim()) {
-      router.push({
-        pathname: '/(tabs)/ChatTab',
-      });
-    }
-  };
-
+const SearchBar = ({
+  value,
+  onChangeText,
+  onSubmit,
+  loading,
+}: {
+  value: string;
+  onChangeText: (text: string) => void;
+  onSubmit: () => void;
+  loading: boolean;
+}) => {
   return (
     <View className="px-6 py-4">
       <View className="flex-row items-center h-14 bg-teal-dark rounded-full px-4 border border-white/5">
@@ -93,18 +117,34 @@ const SearchBar = () => {
           className="flex-1 text-white text-base font-sans"
           placeholder="Search clinical conditions, workups..."
           placeholderTextColor={Colors.graySubtle}
-          value={searchText}
-          onChangeText={setSearchText}
-          onSubmitEditing={handleSearchSubmit}
+          value={value}
+          onChangeText={onChangeText}
+          onSubmitEditing={onSubmit}
           returnKeyType="search"
+          autoCorrect={false}
+          autoCapitalize="none"
         />
-        <TouchableOpacity
-          onPress={handleSearchSubmit}
-          className="w-11 h-11 items-center justify-center rounded-full bg-turquoise/15 -mr-2"
-          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-        >
-          <Ionicons name="arrow-forward" size={18} color={Colors.accent} />
-        </TouchableOpacity>
+        {value.length > 0 ? (
+          loading ? (
+            <ActivityIndicator size="small" color={Colors.accent} style={{ marginRight: 4 }} />
+          ) : (
+            <TouchableOpacity
+              onPress={() => onChangeText('')}
+              className="w-9 h-9 items-center justify-center -mr-1"
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            >
+              <Ionicons name="close-circle" size={18} color={Colors.grayMuted} />
+            </TouchableOpacity>
+          )
+        ) : (
+          <TouchableOpacity
+            onPress={onSubmit}
+            className="w-11 h-11 items-center justify-center rounded-full bg-turquoise/15 -mr-2"
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <Ionicons name="arrow-forward" size={18} color={Colors.accent} />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -222,7 +262,9 @@ const RecentInquiries = () => {
   ];
 
   return (
-    <View className="px-6 pb-6">
+    <View className="px-6 pb-6 mt-4">
+      {/* Visual separator between orbit navigation and recent consultations */}
+      <View className="h-px bg-white/10 mb-5" />
       <View className="flex-row items-center gap-2 mb-3">
         <Ionicons name="time-outline" size={15} color={Colors.gold} />
         <Text className="text-[17px] font-sans-bold text-white">Recent Clinical Consultations</Text>
@@ -251,7 +293,253 @@ const RecentInquiries = () => {
   );
 };
 
+// Build grouped structure: specialty -> category -> topics
+function groupResults(results: TopicSearchResult[]): SpecialtyGroup[] {
+  const specMap = new Map<string, SpecialtyGroup>();
+
+  for (const r of results) {
+    let spec = specMap.get(r.specialtyId);
+    if (!spec) {
+      spec = {
+        specialtyId: r.specialtyId,
+        name: r.specialtyName,
+        scientificName: r.specialtyScientificName,
+        color: r.specialtyColor,
+        icon: r.specialtyIcon,
+        categories: [],
+        topicCount: 0,
+      };
+      specMap.set(r.specialtyId, spec);
+    }
+
+    let cat = spec.categories.find((c) => c.categoryId === r.categoryId);
+    if (!cat) {
+      cat = { categoryId: r.categoryId, title: r.categoryTitle, topics: [] };
+      spec.categories.push(cat);
+    }
+    cat.topics.push(r);
+    spec.topicCount += 1;
+  }
+
+  return Array.from(specMap.values());
+}
+
+// A single search result row
+const ResultRow = ({ item, onOpen }: { item: TopicSearchResult; onOpen: (r: TopicSearchResult) => void }) => {
+  return (
+    <TouchableOpacity
+      onPress={() => onOpen(item)}
+      className="flex-row items-center gap-3 p-3 rounded-2xl bg-teal-medium border border-white/5 active:opacity-70"
+    >
+      <View
+        className="w-10 h-10 rounded-full items-center justify-center border"
+        style={{ backgroundColor: `${item.specialtyColor}20`, borderColor: `${item.specialtyColor}40` }}
+      >
+        <Ionicons name={item.specialtyIcon} size={18} color={item.specialtyColor} />
+      </View>
+      <View className="flex-1">
+        <View className="flex-row items-center gap-1.5 mb-0.5">
+          {item.type ? (
+            <View
+              className="px-1.5 py-0.5 rounded border"
+              style={{ backgroundColor: `${item.specialtyColor}20`, borderColor: `${item.specialtyColor}40` }}
+            >
+              <Text className="text-[9px] font-sans-bold uppercase" style={{ color: item.specialtyColor }}>
+                {item.type}
+              </Text>
+            </View>
+          ) : null}
+          {item.categoryTitle ? (
+            <Text className="text-gray-400 text-[10px]">{item.categoryTitle}</Text>
+          ) : null}
+        </View>
+        <Text className="text-[15px] font-sans-semibold text-white leading-tight" numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text className="text-[12px] text-gray-muted" numberOfLines={1}>{item.subtitle}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={item.specialtyColor} />
+    </TouchableOpacity>
+  );
+};
+
+// Search Results Component — grouped by specialty, then category
+const SearchResults = ({
+  results,
+  loading,
+  query,
+  onOpen,
+  onAskAi,
+}: {
+  results: TopicSearchResult[];
+  loading: boolean;
+  query: string;
+  onOpen: (r: TopicSearchResult) => void;
+  onAskAi: () => void;
+}) => {
+  const groups = useMemo(() => groupResults(results), [results]);
+
+  if (loading) {
+    return (
+      <View className="px-6 py-10 items-center">
+        <ActivityIndicator size="small" color={Colors.accent} />
+        <Text className="text-gray-muted text-[13px] font-sans-medium mt-3">
+          Searching clinical database...
+        </Text>
+      </View>
+    );
+  }
+
+  if (results.length === 0) {
+    return (
+      <View className="px-6 py-6">
+        <Text className="text-[17px] font-sans-bold text-white mb-3">
+          No matching topic found for &ldquo;{query}&rdquo;
+        </Text>
+        <View className="p-5 rounded-2xl bg-teal-dark/40 border border-white/5 items-center">
+          <Ionicons name="sparkles" size={28} color={Colors.accent} />
+          <Text className="text-white font-sans-bold text-[15px] mt-2 text-center">
+            Ask the Medical Arena AI
+          </Text>
+          <Text className="text-gray-muted text-[12px] text-center mt-1 mb-4 leading-4">
+            No curated protocol matched your query. Get an evidence-based answer from the clinical advisor.
+          </Text>
+          <TouchableOpacity
+            onPress={onAskAi}
+            className="px-5 py-2.5 rounded-full flex-row items-center gap-2 bg-turquoise"
+          >
+            <Ionicons name="chatbubbles" size={16} color={Colors.ink} />
+            <Text className="text-ink font-sans-bold text-[13px]">Consult AI Advisor</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View className="px-6 pb-6 mt-4">
+      <View className="flex-row items-center justify-between mb-3">
+        <Text className="text-gray-muted text-[12px] font-sans-bold uppercase tracking-wider">
+          Search Results
+        </Text>
+        <Text className="text-gray-muted text-[12px] font-sans-medium">
+          {results.length} {results.length === 1 ? 'topic' : 'topics'} • {groups.length} {groups.length === 1 ? 'specialty' : 'specialties'}
+        </Text>
+      </View>
+
+      <View className="h-px bg-white/10 mb-4" />
+
+      {groups.map((spec) => (
+        <View key={spec.specialtyId} className="mb-5">
+          {/* Specialty header */}
+          <View className="flex-row items-center gap-2 mb-3">
+            <View
+              className="w-7 h-7 rounded-full items-center justify-center border"
+              style={{ backgroundColor: `${spec.color}20`, borderColor: `${spec.color}40` }}
+            >
+              <Ionicons name={spec.icon} size={14} color={spec.color} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-white text-[15px] font-sans-bold leading-tight">
+                {spec.scientificName}
+              </Text>
+              <Text className="text-gray-muted text-[11px]">
+                {spec.topicCount} {spec.topicCount === 1 ? 'topic' : 'topics'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Category sub-groups */}
+          {spec.categories.map((cat) => (
+            <View key={cat.categoryId || cat.title} className="mb-3">
+              {cat.title ? (
+                <View className="flex-row items-center gap-1.5 mb-2 ml-0.5">
+                  <View className="w-1 h-1 rounded-full" style={{ backgroundColor: spec.color }} />
+                  <Text className="text-gray-muted text-[11px] font-sans-semibold uppercase tracking-wider">
+                    {cat.title}
+                  </Text>
+                </View>
+              ) : null}
+              <View className="flex flex-col gap-2">
+                {cat.topics.map((topic) => (
+                  <ResultRow key={topic.id} item={topic} onOpen={onOpen} />
+                ))}
+              </View>
+            </View>
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+};
+
 export default function Index() {
+  const [search, setSearch] = useState<SearchState>(EMPTY_SEARCH);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reqIdRef = useRef(0);
+
+  const runSearch = useCallback(async (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setSearch(EMPTY_SEARCH);
+      return;
+    }
+    const currentReqId = ++reqIdRef.current;
+    setSearch((s) => ({ ...s, query, loading: true }));
+    try {
+      const results = await dbService.searchAllTopics(trimmed);
+      // Only commit if this is still the latest request (avoid race conditions)
+      if (currentReqId === reqIdRef.current) {
+        setSearch({ query, results, loading: false, searched: true });
+      }
+    } catch {
+      if (currentReqId === reqIdRef.current) {
+        setSearch((s) => ({ ...s, loading: false, searched: true }));
+      }
+    }
+  }, []);
+
+  const handleSearchChange = useCallback((text: string) => {
+    setSearch((s) => ({ ...s, query: text }));
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    if (!text.trim()) {
+      setSearch(EMPTY_SEARCH);
+      return;
+    }
+    // Debounce network/local search for typing responsiveness
+    debounceRef.current = setTimeout(() => {
+      runSearch(text);
+    }, 280);
+  }, [runSearch]);
+
+  useEffect(() => {
+    const currentReqId = reqIdRef.current;
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      reqIdRef.current = currentReqId + 1;
+    };
+  }, []);
+
+  const handleOpenTopic = useCallback((r: TopicSearchResult) => {
+    router.push(`/specialty/${r.specialtyId}/${r.id}` as any);
+  }, []);
+
+  const handleAskAi = useCallback(() => {
+    router.push({
+      pathname: '/(tabs)/ChatTab',
+      params: { query: search.query },
+    } as any);
+  }, [search.query]);
+
+  const handleSubmit = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    runSearch(search.query);
+  }, [runSearch, search.query]);
+
+  const isSearching = search.query.trim().length > 0;
+
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
@@ -261,13 +549,31 @@ export default function Index() {
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-40"
         stickyHeaderIndices={[1]}
+        keyboardShouldPersistTaps="handled"
       >
         <Header />
         <View className="bg-background/95">
-          <SearchBar />
+          <SearchBar
+            value={search.query}
+            onChangeText={handleSearchChange}
+            onSubmit={handleSubmit}
+            loading={search.loading}
+          />
         </View>
-        <OrbitNavigation />
-        <RecentInquiries />
+        {isSearching ? (
+          <SearchResults
+            results={search.results}
+            loading={search.loading}
+            query={search.query.trim()}
+            onOpen={handleOpenTopic}
+            onAskAi={handleAskAi}
+          />
+        ) : (
+          <>
+            <OrbitNavigation />
+            <RecentInquiries />
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

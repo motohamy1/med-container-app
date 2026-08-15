@@ -5,6 +5,7 @@ const pdfParse = require('pdf-parse');
 const cheerio = require('cheerio');
 const { ingestKnowledge } = require('../services/knowledgeService');
 const { autoReviewAndUpdateTopics } = require('../services/knowledgeUpdateService');
+const { extractAndCompileTopicsFromResource } = require('../services/referenceTopicMiner');
 
 // Configure multer for PDF uploads (store in memory for immediate processing)
 const upload = multer({ storage: multer.memoryStorage() });
@@ -102,6 +103,12 @@ router.post('/ingest', upload.single('file'), async (req, res) => {
         console.log(`[Admin] Kicking off Auto-Update Pipeline for resource: ${title || sourceUrl}`);
         autoReviewAndUpdateTopics(textToIngest, title || sourceUrl).catch(err => {
             console.error("[Admin] Auto-Update Pipeline failed:", err);
+        });
+
+        // 5. Trigger Reference Topic Extraction & Compilation Pipeline (Discovers new conditions from this resource)
+        console.log(`[Admin] Kicking off Reference Topic Extraction for resource: ${title || sourceUrl}`);
+        extractAndCompileTopicsFromResource(title || sourceUrl, textToIngest).catch(err => {
+            console.error("[Admin] Topic Extraction Pipeline failed:", err);
         });
 
     } catch (error) {

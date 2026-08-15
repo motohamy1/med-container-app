@@ -14,7 +14,7 @@ import { Colors } from "../../constants/Colors";
 
 // Dark glass island — matches the chat composer, turquoise marks current state.
 // Active tab also gets a dot indicator so color is not the only signal.
-const BAR_BG = Colors.islandBg;
+const BAR_BG = Colors.tabIslandBg;
 const BAR_BORDER = "rgba(255,255,255,0.08)";
 const ACTIVE_COLOR = Colors.accent;
 const INACTIVE_COLOR = Colors.graySubtle;

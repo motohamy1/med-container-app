@@ -20,6 +20,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 // Chat endpoint
 app.use('/api/chat', chatRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/topics', require('./routes/topicRoutes'));
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {

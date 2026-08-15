@@ -59,6 +59,10 @@ export const Colors = {
 
   // Composer / floating islands
   islandBg: '#121719', // oklch(0.200 0.008 220)
+  // Tab bar — tinted glass, accent hue at bar L so the island feels
+  // intentional without breaking "turquoise = current state only"
+  // (border + dot carry the active signal; fill stays neutral-quiet)
+  tabIslandBg: '#0b1c1b', // oklch(0.211 0.023 190.7)
 
   // Specialty palette — constant oklch(0.700 0.075 H), hue rotates evenly;
   // pulmonology keeps the accent hue exactly
