@@ -31,15 +31,25 @@ Reply warmly, professionally, and briefly. Do NOT use any markdown bold (**) or 
     }
 
     try {
-        const rawKnowledge = await fetchMedicalKnowledge(message);
-        
         let searchKeywords = message;
         if (/[\u0600-\u06FF]/.test(message)) {
             searchKeywords = await extractEnglishKeywords(message);
             console.log(`[PMC Search] Translated Arabic query to keywords: "${searchKeywords}"`);
         }
-        
-        const literatureRefs = await fetchClinicalLiterature(searchKeywords, category);
+
+        // Parallelize knowledge base retrieval with a 2.5s maximum timeout
+        const withTimeout = (promise, ms = 2500, fallback = null) =>
+            Promise.race([promise, new Promise(resolve => setTimeout(() => resolve(fallback), ms))]);
+
+        const [rawKnowledgeRes, literatureRefsRes, customDocsRes] = await Promise.allSettled([
+            withTimeout(fetchMedicalKnowledge(message), 2500, ''),
+            withTimeout(fetchClinicalLiterature(searchKeywords, category), 2500, []),
+            withTimeout(searchCustomKnowledge(message), 2500, [])
+        ]);
+
+        const rawKnowledge = (rawKnowledgeRes.status === 'fulfilled' && rawKnowledgeRes.value) ? rawKnowledgeRes.value : '';
+        const literatureRefs = (literatureRefsRes.status === 'fulfilled' && Array.isArray(literatureRefsRes.value)) ? literatureRefsRes.value : [];
+        const customKnowledgeDocs = (customDocsRes.status === 'fulfilled' && Array.isArray(customDocsRes.value)) ? customDocsRes.value : [];
         
         let citations = [];
         let literatureContext = '';
@@ -64,8 +74,6 @@ Reply warmly, professionally, and briefly. Do NOT use any markdown bold (**) or 
             });
         }
 
-        // 1. Fetch from Custom Vector Knowledge Base
-        const customKnowledgeDocs = await searchCustomKnowledge(message);
         let customContext = '';
         if (customKnowledgeDocs.length > 0) {
             customContext += `\n### 📚 PRIVATE TEXTBOOKS & LOCAL GUIDELINES:\n`;

@@ -29,7 +29,7 @@ const categoryRoutes: Record<string, string> = {
   'Infectious Disease': '/specialty/fever',
   'Neurology': '/specialty/neuro',
   'Dermatology': '/specialty/skin',
-  'Obstetrics/Gynecology': '/specialty/gynacology',
+  'OB/GYN': '/specialty/gynacology',
   'Pulmonology': '/specialty/lungs',
 };
 
@@ -81,18 +81,28 @@ const Header = () => {
   return (
     <View className="flex-row items-center justify-between px-6 pt-6 pb-2">
       <View>
-        <View className="flex-row items-center gap-1.5">
-          <Ionicons name="medical" size={16} color={Colors.accent} />
-          <Text className="text-[13px] text-gray-muted font-sans-medium">{getGreeting()}, Dr.</Text>
+        <View className="flex-row items-center gap-1.5 mb-1">
+          <Ionicons name="medical" size={15} color={Colors.accent} />
+          <Text className="text-[13px] text-gray-muted font-sans-medium tracking-wide">{getGreeting()}</Text>
         </View>
-        <Text className="text-[22px] font-sans-bold leading-tight text-white tracking-tight">Alex Doe</Text>
+        <Text className="text-[24px] font-sans-bold leading-tight text-white tracking-tight">Dr. Alex Doe</Text>
       </View>
 
-      {/* Active Role Badge */}
-      <View className="px-3 py-1.5 rounded-full bg-turquoise/20 border border-turquoise flex-row items-center gap-1.5">
-        <View className="w-2 h-2 rounded-full bg-turquoise" />
-        <Text className="text-turquoise text-[11px] font-sans-bold uppercase tracking-wider">Physician Mode</Text>
-      </View>
+      {/* Profile Avatar / Quick Access with Depth */}
+      <TouchableOpacity
+        onPress={() => router.push('/(tabs)/profile')}
+        className="w-11 h-11 rounded-full bg-teal-medium border border-white/10 items-center justify-center"
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.35,
+          shadowRadius: 8,
+          elevation: 6,
+        }}
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+      >
+        <Ionicons name="person" size={18} color={Colors.accent} />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -111,10 +121,19 @@ const SearchBar = ({
 }) => {
   return (
     <View className="px-6 py-4">
-      <View className="flex-row items-center h-14 bg-teal-dark rounded-full px-4 border border-white/5">
+      <View
+        className="flex-row items-center h-14 bg-teal-dark rounded-2xl px-4 border border-white/10"
+        style={{
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.45,
+          shadowRadius: 14,
+          elevation: 8,
+        }}
+      >
         <Ionicons name="search" size={20} color={Colors.accent} style={{ marginRight: 12 }} />
         <TextInput
-          className="flex-1 text-white text-base font-sans"
+          className="flex-1 text-white text-[15px] font-sans"
           placeholder="Search clinical conditions, workups..."
           placeholderTextColor={Colors.graySubtle}
           value={value}
@@ -139,7 +158,7 @@ const SearchBar = ({
         ) : (
           <TouchableOpacity
             onPress={onSubmit}
-            className="w-11 h-11 items-center justify-center rounded-full bg-turquoise/15 -mr-2"
+            className="w-10 h-10 items-center justify-center rounded-xl bg-turquoise/20 border border-turquoise/30 -mr-1"
             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           >
             <Ionicons name="arrow-forward" size={18} color={Colors.accent} />
@@ -182,11 +201,19 @@ const OrbitButton = ({
       >
         <View
           className="bg-teal-medium border border-white/10 items-center justify-center rounded-full"
-          style={{ width: size, height: size }}
+          style={{
+            width: size,
+            height: size,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.4,
+            shadowRadius: 8,
+            elevation: 7,
+          }}
         >
           <Ionicons name={category.icon} size={20} color={category.color} />
         </View>
-        <Text className="text-[11px] font-sans-semibold text-gray-300 mt-1.5 text-center leading-tight" numberOfLines={2}>
+        <Text className="text-[11px] font-sans-medium text-gray-200 mt-1.5 text-center leading-tight tracking-tight" numberOfLines={2}>
           {category.name}
         </Text>
       </TouchableOpacity>
@@ -202,23 +229,15 @@ const OrbitNavigation = () => {
     { id: '3', name: 'Infectious Disease', icon: 'thermometer', color: Colors.specialty.infectious },
     { id: '4', name: 'Neurology', icon: 'pulse', color: Colors.specialty.neurology },
     { id: '5', name: 'Dermatology', icon: 'body', color: Colors.specialty.dermatology },
-    { id: '6', name: 'Obstetrics/Gynecology', icon: 'woman', color: Colors.specialty.obgyn },
+    { id: '6', name: 'OB/GYN', icon: 'woman', color: Colors.specialty.obgyn },
     { id: '7', name: 'Pulmonology', icon: 'fitness', color: Colors.specialty.pulmonology },
     { id: '8', name: 'More', icon: 'grid', color: Colors.specialty.more },
   ];
 
   return (
-    <View className="px-6 py-6">
-      <View className="flex-row items-center justify-between mb-2">
-        <Text className="text-[17px] font-sans-bold text-white">Physician Specialties</Text>
-        <TouchableOpacity className="flex-row items-center gap-1" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text className="text-turquoise text-[13px] font-sans-semibold">Clinical Hub</Text>
-          <Ionicons name="chevron-forward" size={16} color={Colors.accent} />
-        </TouchableOpacity>
-      </View>
-
+    <View className="px-6 py-4">
       <View
-        className="mx-auto mt-12 mb-6 relative"
+        className="mx-auto my-6 relative"
         style={{ width: ORBIT_SIZE, height: ORBIT_SIZE }}
       >
         <View
@@ -231,15 +250,23 @@ const OrbitNavigation = () => {
           style={{ width: ORBIT_SIZE * 0.98, height: ORBIT_SIZE * 0.98 }}
         />
 
-        {/* Center hub — the one glow on this screen */}
+        {/* Center hub — elevated medical AI focal point */}
         <TouchableOpacity
           onPress={() => router.push('/(tabs)/ChatTab')}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-turquoise shadow-glow-cyan rounded-full items-center justify-center border-4 border-background z-20 px-2 text-center"
-          style={{ width: CENTER_SIZE, height: CENTER_SIZE }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-turquoise rounded-full items-center justify-center border-4 border-background z-20 px-2 text-center"
+          style={{
+            width: CENTER_SIZE,
+            height: CENTER_SIZE,
+            shadowColor: Colors.accent,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.55,
+            shadowRadius: 20,
+            elevation: 14,
+          }}
         >
           <Ionicons name="medical" size={26} color={Colors.ink} />
-          <Text className="text-[11px] font-sans-bold text-black text-center mt-1">Medical Arena AI</Text>
-          <Text className="text-[10px] text-black/70 font-sans-semibold">Clinical Advisor</Text>
+          <Text className="text-[11px] font-sans-bold text-ink text-center mt-1">Medical Arena AI</Text>
+          <Text className="text-[10px] text-ink/75 font-sans-semibold">Clinical Advisor</Text>
         </TouchableOpacity>
         <OrbitButton category={categories[0]} size={BUTTON_SIZE} top="0%" left="50%" />
         <OrbitButton category={categories[1]} size={BUTTON_SIZE} top="14.6%" left="82%" />
@@ -258,34 +285,52 @@ const OrbitNavigation = () => {
 const RecentInquiries = () => {
   const inquiries: RecentInquiry[] = [
     { id: '1', topic: 'Acute Coronary Syndrome Protocol', category: 'Cardiology', timestamp: 'Today' },
-    { id: '2', topic: 'Sepsis Resuscitation Workup', category: 'Emergency', timestamp: 'Yesterday' },
+    { id: '2', topic: 'Sepsis Resuscitation Workup', category: 'Infectious Disease', timestamp: 'Yesterday' },
   ];
 
   return (
-    <View className="px-6 pb-6 mt-4">
+    <View className="px-6 pb-6 mt-2">
       {/* Visual separator between orbit navigation and recent consultations */}
       <View className="h-px bg-white/10 mb-5" />
-      <View className="flex-row items-center gap-2 mb-3">
-        <Ionicons name="time-outline" size={15} color={Colors.gold} />
-        <Text className="text-[17px] font-sans-bold text-white">Recent Clinical Consultations</Text>
+      <View className="flex-row items-center gap-2 mb-3.5">
+        <Ionicons name="time-outline" size={16} color={Colors.gold} />
+        <Text className="text-[17px] font-sans-bold text-white tracking-tight">Recent Clinical Consultations</Text>
       </View>
-      <View className="flex flex-col gap-2">
+      <View className="flex flex-col gap-2.5">
         {inquiries.map((inquiry) => (
           <TouchableOpacity
             key={inquiry.id}
             onPress={() => router.push('/(tabs)/ChatTab')}
-            className="flex-row items-center gap-3 p-3 rounded-2xl bg-teal-medium border border-white/5"
+            className="flex-row items-center gap-3.5 p-4 rounded-2xl bg-teal-medium border border-white/10 active:opacity-80"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.35,
+              shadowRadius: 12,
+              elevation: 7,
+            }}
           >
-            <View className="w-10 h-10 rounded-full bg-turquoise/10 items-center justify-center">
-              <Ionicons name="pulse-outline" size={18} color={Colors.accent} />
+            <View
+              className="w-11 h-11 rounded-xl bg-deep-teal border border-white/10 items-center justify-center"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 3,
+              }}
+            >
+              <Ionicons name="pulse-outline" size={20} color={Colors.accent} />
             </View>
             <View className="flex-1">
-              <Text className="text-[15px] font-sans-medium text-white">{inquiry.topic}</Text>
-              <Text className="text-[13px] text-gray-muted">
-                {inquiry.category} • {inquiry.timestamp}
-              </Text>
+              <Text className="text-[15px] font-sans-semibold text-white tracking-tight mb-0.5">{inquiry.topic}</Text>
+              <View className="flex-row items-center gap-1.5">
+                <Text className="text-[12px] font-sans-medium text-turquoise">{inquiry.category}</Text>
+                <Text className="text-[11px] text-gray-500">•</Text>
+                <Text className="text-[12px] font-mono text-gray-muted">{inquiry.timestamp}</Text>
+              </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.grayMuted} />
+            <Ionicons name="chevron-forward" size={18} color={Colors.grayMuted} />
           </TouchableOpacity>
         ))}
       </View>
@@ -329,11 +374,26 @@ const ResultRow = ({ item, onOpen }: { item: TopicSearchResult; onOpen: (r: Topi
   return (
     <TouchableOpacity
       onPress={() => onOpen(item)}
-      className="flex-row items-center gap-3 p-3 rounded-2xl bg-teal-medium border border-white/5 active:opacity-70"
+      className="flex-row items-center gap-3.5 p-3.5 rounded-2xl bg-teal-medium border border-white/10 active:opacity-75"
+      style={{
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 10,
+        elevation: 6,
+      }}
     >
       <View
-        className="w-10 h-10 rounded-full items-center justify-center border"
-        style={{ backgroundColor: `${item.specialtyColor}20`, borderColor: `${item.specialtyColor}40` }}
+        className="w-10 h-10 rounded-xl items-center justify-center border"
+        style={{
+          backgroundColor: `${item.specialtyColor}20`,
+          borderColor: `${item.specialtyColor}40`,
+          shadowColor: item.specialtyColor,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 3,
+        }}
       >
         <Ionicons name={item.specialtyIcon} size={18} color={item.specialtyColor} />
       </View>
@@ -350,13 +410,13 @@ const ResultRow = ({ item, onOpen }: { item: TopicSearchResult; onOpen: (r: Topi
             </View>
           ) : null}
           {item.categoryTitle ? (
-            <Text className="text-gray-400 text-[10px]">{item.categoryTitle}</Text>
+            <Text className="text-gray-400 text-[10px] font-sans-medium">{item.categoryTitle}</Text>
           ) : null}
         </View>
-        <Text className="text-[15px] font-sans-semibold text-white leading-tight" numberOfLines={1}>
+        <Text className="text-[15px] font-sans-semibold text-white leading-tight tracking-tight" numberOfLines={1}>
           {item.title}
         </Text>
-        <Text className="text-[12px] text-gray-muted" numberOfLines={1}>{item.subtitle}</Text>
+        <Text className="text-[12px] font-sans text-gray-muted mt-0.5" numberOfLines={1}>{item.subtitle}</Text>
       </View>
       <Ionicons name="chevron-forward" size={18} color={item.specialtyColor} />
     </TouchableOpacity>
@@ -396,20 +456,47 @@ const SearchResults = ({
         <Text className="text-[17px] font-sans-bold text-white mb-3">
           No matching topic found for &ldquo;{query}&rdquo;
         </Text>
-        <View className="p-5 rounded-2xl bg-teal-dark/40 border border-white/5 items-center">
-          <Ionicons name="sparkles" size={28} color={Colors.accent} />
-          <Text className="text-white font-sans-bold text-[15px] mt-2 text-center">
-            Ask the Medical Arena AI
+        <View
+          className="p-6 rounded-3xl bg-teal-medium border border-white/10 items-center"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.4,
+            shadowRadius: 16,
+            elevation: 8,
+          }}
+        >
+          <View
+            className="w-14 h-14 rounded-2xl bg-deep-teal border border-turquoise/30 items-center justify-center mb-3"
+            style={{
+              shadowColor: Colors.accent,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            }}
+          >
+            <Ionicons name="sparkles" size={26} color={Colors.accent} />
+          </View>
+          <Text className="text-white font-sans-bold text-[17px] text-center tracking-tight">
+            Consult Medical Arena AI
           </Text>
-          <Text className="text-gray-muted text-[12px] text-center mt-1 mb-4 leading-4">
-            No curated protocol matched your query. Get an evidence-based answer from the clinical advisor.
+          <Text className="text-gray-muted text-[13px] font-sans text-center mt-1.5 mb-5 leading-5 max-w-[280px]">
+            No curated offline topic matched your query. Get instant evidence-based guidance directly from the AI Clinical Advisor.
           </Text>
           <TouchableOpacity
             onPress={onAskAi}
-            className="px-5 py-2.5 rounded-full flex-row items-center gap-2 bg-turquoise"
+            className="px-6 py-3 rounded-full flex-row items-center gap-2 bg-turquoise active:opacity-90"
+            style={{
+              shadowColor: Colors.accent,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.4,
+              shadowRadius: 10,
+              elevation: 6,
+            }}
           >
-            <Ionicons name="chatbubbles" size={16} color={Colors.ink} />
-            <Text className="text-ink font-sans-bold text-[13px]">Consult AI Advisor</Text>
+            <Ionicons name="chatbubbles" size={17} color={Colors.ink} />
+            <Text className="text-ink font-sans-bold text-[14px]">Consult AI Advisor</Text>
           </TouchableOpacity>
         </View>
       </View>

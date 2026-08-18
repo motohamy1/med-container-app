@@ -888,7 +888,7 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
   gynacology: {
     id: 'gynacology',
     name: 'Gynacology',
-    scientificName: 'Obstetrics & Gynecology',
+    scientificName: 'OB/GYN',
     icon: 'woman',
     color: '#bc8db1',
     illustration: require('../assets/images/specialties/gynecology.jpg'),

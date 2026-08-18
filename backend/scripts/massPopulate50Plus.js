@@ -29,8 +29,8 @@ const CATEGORY_META = {
   research: { name: 'Recent Research & Landmark Trials', desc: 'Breakthrough clinical trials, FDA approvals, and evidence-based paradigm shifts' }
 };
 
-// 1. Groq Caller (LLaMA 3.3 70B / 3.1 8B)
-async function callGroq(systemPrompt, userPrompt, modelName = "llama-3.3-70b-versatile") {
+// 1. Groq Caller (gpt-oss-120b / qwen3.6-27b / gpt-oss-20b)
+async function callGroq(systemPrompt, userPrompt, modelName = "openai/gpt-oss-120b") {
   if (!GROQ_KEY) throw new Error("No Groq key");
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -44,8 +44,7 @@ async function callGroq(systemPrompt, userPrompt, modelName = "llama-3.3-70b-ver
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      temperature: 0.1,
-      response_format: { type: "json_object" }
+      temperature: 0.1
     })
   });
   if (!response.ok) throw new Error(`Groq ${modelName} (${response.status}): ${await response.text()}`);
@@ -100,7 +99,7 @@ async function callOpenRouter(systemPrompt, userPrompt) {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: "meta-llama/llama-3.1-8b-instruct:free",
+      model: "openrouter/free",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -116,8 +115,8 @@ async function callOpenRouter(systemPrompt, userPrompt) {
 // Unified Multi-Model Dispatcher
 async function callAIWithFallback(systemPrompt, userPrompt) {
   const providers = [
-    { name: 'Groq LLaMA 3.3 70B', fn: () => callGroq(systemPrompt, userPrompt, "llama-3.3-70b-versatile") },
-    { name: 'Groq LLaMA 3.1 8B', fn: () => callGroq(systemPrompt, userPrompt, "llama-3.1-8b-instant") },
+    { name: 'Groq GPT-OSS 120B', fn: () => callGroq(systemPrompt, userPrompt, "openai/gpt-oss-120b") },
+    { name: 'Groq Qwen 27B', fn: () => callGroq(systemPrompt, userPrompt, "qwen/qwen3.6-27b") },
     { name: 'Nvidia LLaMA 3.1 70B', fn: () => callNvidia(systemPrompt, userPrompt) },
     { name: 'Gemini 1.5 Flash', fn: () => callGemini(systemPrompt, userPrompt) },
     { name: 'OpenRouter', fn: () => callOpenRouter(systemPrompt, userPrompt) }
@@ -125,9 +124,23 @@ async function callAIWithFallback(systemPrompt, userPrompt) {
 
   for (const provider of providers) {
     try {
-      const rawText = await provider.fn();
+      let rawText = await provider.fn();
+      // Strip reasoning/think tags from DeepSeek/Qwen
+      rawText = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
       let cleaned = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
       cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F]/g, " ");
+
+      // Extract JSON if wrapped in markdown or other text
+      const firstBracket = cleaned.indexOf('{');
+      const firstArray = cleaned.indexOf('[');
+      if (firstBracket !== -1 && (firstArray === -1 || firstBracket < firstArray)) {
+        const lastBracket = cleaned.lastIndexOf('}');
+        if (lastBracket !== -1) cleaned = cleaned.substring(firstBracket, lastBracket + 1);
+      } else if (firstArray !== -1) {
+        const lastArray = cleaned.lastIndexOf(']');
+        if (lastArray !== -1) cleaned = cleaned.substring(firstArray, lastArray + 1);
+      }
+
       const parsed = JSON.parse(cleaned);
       if (Array.isArray(parsed)) return parsed;
       if (parsed.topics && Array.isArray(parsed.topics)) return parsed.topics;
@@ -193,7 +206,7 @@ async function populateCategory(specialtyId, categoryId) {
 
   while (currentCount < TARGET_MIN_TOPICS) {
     const needed = TARGET_MIN_TOPICS - currentCount;
-    const batchSize = Math.min(5, needed);
+    const batchSize = Math.min(3, needed);
     const existingListStr = Array.from(existingTitles).slice(-20).join(', ');
 
     console.log(`   ⚡ Generating batch of ${batchSize} clinical topics (Remaining needed: ${needed})...`);
@@ -239,7 +252,6 @@ Every topic must have real clinical rigor, exact dosages (e.g., mg/kg, IV rates,
 
       const { error: insErr } = await supabase.from('topics').insert(record);
       if (insErr) {
-        // If conflict on ID, generate random suffix and insert
         record.id = `${idSlug}_${Math.random().toString(36).substr(2, 4)}`;
         await supabase.from('topics').insert(record);
       }
@@ -251,11 +263,9 @@ Every topic must have real clinical rigor, exact dosages (e.g., mg/kg, IV rates,
     }
 
     if (savedInBatch === 0) {
-      // Avoid tight loops if duplicate titles are proposed
       await new Promise(r => setTimeout(r, 2000));
     }
 
-    // Brief polite pause between batches
     await new Promise(r => setTimeout(r, 1200));
   }
 
@@ -264,7 +274,7 @@ Every topic must have real clinical rigor, exact dosages (e.g., mg/kg, IV rates,
 
 async function runMasterExpansion() {
   console.log("======================================================================");
-  console.log("🏥 MASS MEDICAL KNOWLEDGE EXPANSION: 50+ TOPICS IN EVERY CATEGORY");
+  console.log("🏥 RESUMING MASS MEDICAL KNOWLEDGE EXPANSION: 50+ TOPICS IN EVERY CATEGORY");
   console.log("======================================================================");
 
   const specialties = Object.keys(SPECIALTY_META);
