@@ -82,8 +82,8 @@ const Header = () => {
     <View className="flex-row items-center justify-between px-6 pt-6 pb-2">
       <View>
         <View className="flex-row items-center gap-1.5 mb-1">
-          <Ionicons name="medical" size={15} color={Colors.accent} />
-          <Text className="text-[13px] text-gray-muted font-sans-medium tracking-wide">{getGreeting()}</Text>
+          <Ionicons name="medical" size={15} color={Colors.lime} />
+          <Text className="text-[13px] text-lime font-sans-bold tracking-wide">{getGreeting()}</Text>
         </View>
         <Text className="text-[24px] font-sans-bold leading-tight text-white tracking-tight">Dr. Alex Doe</Text>
       </View>
@@ -91,7 +91,7 @@ const Header = () => {
       {/* Profile Avatar / Quick Access with Depth */}
       <TouchableOpacity
         onPress={() => router.push('/(tabs)/profile')}
-        className="w-11 h-11 rounded-full bg-teal-medium border border-white/10 items-center justify-center"
+        className="w-11 h-11 rounded-full bg-[#0a0a0a] border border-white/10 items-center justify-center"
         style={{
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 4 },
@@ -101,7 +101,7 @@ const Header = () => {
         }}
         hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
       >
-        <Ionicons name="person" size={18} color={Colors.accent} />
+        <Ionicons name="person" size={18} color={Colors.lavender} />
       </TouchableOpacity>
     </View>
   );
@@ -122,7 +122,7 @@ const SearchBar = ({
   return (
     <View className="px-6 py-4">
       <View
-        className="flex-row items-center h-14 bg-teal-dark rounded-2xl px-4 border border-white/10"
+        className="flex-row items-center h-14 bg-[#080808] rounded-2xl px-4 border border-white/10"
         style={{
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 6 },
@@ -131,7 +131,7 @@ const SearchBar = ({
           elevation: 8,
         }}
       >
-        <Ionicons name="search" size={20} color={Colors.accent} style={{ marginRight: 12 }} />
+        <Ionicons name="search" size={20} color={Colors.lime} style={{ marginRight: 12 }} />
         <TextInput
           className="flex-1 text-white text-[15px] font-sans"
           placeholder="Search clinical conditions, workups..."
@@ -145,7 +145,7 @@ const SearchBar = ({
         />
         {value.length > 0 ? (
           loading ? (
-            <ActivityIndicator size="small" color={Colors.accent} style={{ marginRight: 4 }} />
+            <ActivityIndicator size="small" color={Colors.lime} style={{ marginRight: 4 }} />
           ) : (
             <TouchableOpacity
               onPress={() => onChangeText('')}
@@ -158,10 +158,10 @@ const SearchBar = ({
         ) : (
           <TouchableOpacity
             onPress={onSubmit}
-            className="w-10 h-10 items-center justify-center rounded-xl bg-turquoise/20 border border-turquoise/30 -mr-1"
+            className="w-10 h-10 items-center justify-center rounded-xl bg-lime/20 border border-lime/40 -mr-1"
             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           >
-            <Ionicons name="arrow-forward" size={18} color={Colors.accent} />
+            <Ionicons name="arrow-forward" size={18} color={Colors.lime} />
           </TouchableOpacity>
         )}
       </View>
@@ -200,7 +200,7 @@ const OrbitButton = ({
         hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
       >
         <View
-          className="bg-teal-medium border border-white/10 items-center justify-center rounded-full"
+          className="bg-[#080808] border border-white/10 items-center justify-center rounded-full"
           style={{
             width: size,
             height: size,
@@ -250,23 +250,23 @@ const OrbitNavigation = () => {
           style={{ width: ORBIT_SIZE * 0.98, height: ORBIT_SIZE * 0.98 }}
         />
 
-        {/* Center hub — elevated medical AI focal point */}
+        {/* Center hub — elevated medical AI focal point in Electric Lime */}
         <TouchableOpacity
           onPress={() => router.push('/(tabs)/ChatTab')}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-turquoise rounded-full items-center justify-center border-4 border-background z-20 px-2 text-center"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-lime rounded-full items-center justify-center border-4 border-[#010101] z-20 px-2 text-center"
           style={{
             width: CENTER_SIZE,
             height: CENTER_SIZE,
-            shadowColor: Colors.accent,
+            shadowColor: Colors.lime,
             shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.55,
+            shadowOpacity: 0.65,
             shadowRadius: 20,
             elevation: 14,
           }}
         >
-          <Ionicons name="medical" size={26} color={Colors.ink} />
-          <Text className="text-[11px] font-sans-bold text-ink text-center mt-1">Medical Arena AI</Text>
-          <Text className="text-[10px] text-ink/75 font-sans-semibold">Clinical Advisor</Text>
+          <Ionicons name="medical" size={26} color="#010101" />
+          <Text className="text-[11px] font-sans-bold text-[#010101] text-center mt-1">Medical Arena AI</Text>
+          <Text className="text-[10px] text-[#010101]/80 font-sans-bold">Clinical Advisor</Text>
         </TouchableOpacity>
         <OrbitButton category={categories[0]} size={BUTTON_SIZE} top="0%" left="50%" />
         <OrbitButton category={categories[1]} size={BUTTON_SIZE} top="14.6%" left="82%" />
@@ -281,62 +281,7 @@ const OrbitNavigation = () => {
   );
 };
 
-// Recent Inquiries Component
-const RecentInquiries = () => {
-  const inquiries: RecentInquiry[] = [
-    { id: '1', topic: 'Acute Coronary Syndrome Protocol', category: 'Cardiology', timestamp: 'Today' },
-    { id: '2', topic: 'Sepsis Resuscitation Workup', category: 'Infectious Disease', timestamp: 'Yesterday' },
-  ];
 
-  return (
-    <View className="px-6 pb-6 mt-2">
-      {/* Visual separator between orbit navigation and recent consultations */}
-      <View className="h-px bg-white/10 mb-5" />
-      <View className="flex-row items-center gap-2 mb-3.5">
-        <Ionicons name="time-outline" size={16} color={Colors.gold} />
-        <Text className="text-[17px] font-sans-bold text-white tracking-tight">Recent Clinical Consultations</Text>
-      </View>
-      <View className="flex flex-col gap-2.5">
-        {inquiries.map((inquiry) => (
-          <TouchableOpacity
-            key={inquiry.id}
-            onPress={() => router.push('/(tabs)/ChatTab')}
-            className="flex-row items-center gap-3.5 p-4 rounded-2xl bg-teal-medium border border-white/10 active:opacity-80"
-            style={{
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.35,
-              shadowRadius: 12,
-              elevation: 7,
-            }}
-          >
-            <View
-              className="w-11 h-11 rounded-xl bg-deep-teal border border-white/10 items-center justify-center"
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-            >
-              <Ionicons name="pulse-outline" size={20} color={Colors.accent} />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[15px] font-sans-semibold text-white tracking-tight mb-0.5">{inquiry.topic}</Text>
-              <View className="flex-row items-center gap-1.5">
-                <Text className="text-[12px] font-sans-medium text-turquoise">{inquiry.category}</Text>
-                <Text className="text-[11px] text-gray-500">•</Text>
-                <Text className="text-[12px] font-mono text-gray-muted">{inquiry.timestamp}</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={Colors.grayMuted} />
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-};
 
 // Build grouped structure: specialty -> category -> topics
 function groupResults(results: TopicSearchResult[]): SpecialtyGroup[] {
@@ -658,7 +603,41 @@ export default function Index() {
         ) : (
           <>
             <OrbitNavigation />
-            <RecentInquiries />
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => router.push('/(tabs)/pearls' as any)}
+              className="mx-6 mt-4 p-4 rounded-3xl bg-teal-medium border border-white/10 flex-row items-center justify-between"
+              style={{
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 10,
+                elevation: 6,
+              }}
+            >
+              <View className="flex-row items-center gap-3 flex-1 mr-2">
+                <View className="w-11 h-11 rounded-2xl bg-gold/15 border border-gold/30 items-center justify-center">
+                  <Ionicons name="sparkles" size={22} color={Colors.gold} />
+                </View>
+                <View className="flex-1">
+                  <View className="flex-row items-center gap-1.5 mb-0.5">
+                    <View className="w-1.5 h-1.5 rounded-full bg-lime" />
+                    <Text className="text-[10.5px] font-mono text-lime uppercase font-bold">
+                      Daily Briefing Ready
+                    </Text>
+                  </View>
+                  <Text className="text-[15px] font-sans-bold text-white tracking-tight">
+                    Clinical Pearls & Updates
+                  </Text>
+                  <Text className="text-[11.5px] font-sans text-gray-300" numberOfLines={1}>
+                    Swipe high-yield decks, trials & FDA approvals
+                  </Text>
+                </View>
+              </View>
+              <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
+                <Ionicons name="chevron-forward" size={16} color={Colors.accent} />
+              </View>
+            </TouchableOpacity>
           </>
         )}
       </ScrollView>

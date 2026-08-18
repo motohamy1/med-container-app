@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -59,138 +60,115 @@ type Message = {
 type QuickPrompt = {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
-  subtitle: string;
   prompt: string;
   color: string;
 };
 
 const QUICK_PROMPTS: QuickPrompt[] = [
   {
-    icon: "heart-circle-outline",
-    title: "ACS Protocol",
-    subtitle: "STEMI vs NSTEMI workup & catheterization timing",
+    icon: "heart-pulse-outline",
+    title: "ACS Protocol & Cath",
     prompt: "Provide the acute coronary syndrome (ACS) STEMI vs NSTEMI initial emergency workup, diagnostic criteria, and management protocol.",
-    color: Colors.specialty.cardiology,
+    color: Colors.pink,
   },
   {
-    icon: "pulse-outline",
-    title: "Sepsis Bundle",
-    subtitle: "Surviving Sepsis Campaign 1-hour resuscitation",
+    icon: "flash-outline",
+    title: "Sepsis 1-Hr Bundle",
     prompt: "Detail the Surviving Sepsis Campaign 1-hour resuscitation bundle, qSOFA scoring, and antibiotic timing.",
-    color: Colors.specialty.neurology,
+    color: Colors.lime,
   },
   {
-    icon: "alert-circle-outline",
+    icon: "speedometer-outline",
     title: "Hypertensive Crisis",
-    subtitle: "Urgency vs Emergency target BP reduction",
     prompt: "Explain the management of Hypertensive Urgency vs Emergency, including IV drug choices and target blood pressure reduction rates.",
-    color: Colors.terracotta,
+    color: Colors.accent,
   },
   {
     icon: "analytics-outline",
-    title: "Liver Scoring",
-    subtitle: "Child-Pugh vs MELD-Na calculation & interpretation",
+    title: "Child-Pugh vs MELD",
     prompt: "Compare Child-Pugh vs MELD-Na scoring systems for chronic liver failure and surgical mortality risk assessment.",
-    color: Colors.specialty.dermatology,
+    color: Colors.lavender,
+  },
+  {
+    icon: "git-network-outline",
+    title: "Acute Stroke Triage",
+    prompt: "Outline the acute ischemic stroke thrombolysis (tPA/TNK) eligibility criteria, BP targets, and thrombectomy window.",
+    color: Colors.lime,
+  },
+  {
+    icon: "fitness-outline",
+    title: "ARDS Lung Protection",
+    prompt: "Detail the ARDS low tidal volume ventilation strategy (6 mL/kg PBW), plateau pressure limits, and driving pressure targets.",
+    color: Colors.accent,
   },
 ];
 
-// Medical section config for structured AI rendering
+// Medical section config for structured AI rendering — harmonized with 4 main colors
 const SECTION_CONFIG: Record<
   string,
   { color: string; border: string; icon: keyof typeof Ionicons.glyphMap; label: string }
 > = {
   "CLINICAL ASSESSMENT": {
-    color: "#86b0d5",
-    border: "#4b7395",
+    color: Colors.accent, // #6dc2bd (Jewel Teal)
+    border: "rgba(109, 194, 189, 0.45)",
     icon: "clipboard-outline",
     label: "Clinical Assessment",
   },
   "DIFFERENTIAL DIAGNOSIS": {
-    color: "#d099ab",
-    border: "#905d6e",
+    color: Colors.lavender, // #c09ffa (Soft Lavender)
+    border: "rgba(192, 159, 250, 0.45)",
     icon: "git-branch-outline",
     label: "Differential Diagnosis",
   },
   "INVESTIGATIONS / WORKUP": {
-    color: "#7eb9a2",
-    border: "#427c67",
+    color: Colors.lime, // #c4f230 (Electric Lime)
+    border: "rgba(196, 242, 48, 0.45)",
     icon: "pulse-outline",
     label: "Investigations / Workup",
   },
   "INVESTIGATIONS": {
-    color: "#7eb9a2",
-    border: "#427c67",
+    color: Colors.lime, // #c4f230 (Electric Lime)
+    border: "rgba(196, 242, 48, 0.45)",
     icon: "flask-outline",
     label: "Investigations",
   },
   "MANAGEMENT PROTOCOL": {
-    color: "#ccab7f",
-    border: "#8d6f44",
+    color: Colors.accent, // #6dc2bd (Jewel Teal)
+    border: "rgba(109, 194, 189, 0.45)",
     icon: "medical-outline",
     label: "Management Protocol",
   },
   "SURGICAL / PROCEDURAL CONSIDERATIONS": {
-    color: Colors.clinicalGold,
-    border: "#8d6f44",
+    color: Colors.lavender, // #c09ffa (Soft Lavender)
+    border: "rgba(192, 159, 250, 0.45)",
     icon: "cut-outline",
     label: "Surgical / Procedural",
   },
-  "OVERVIEW": {
-    color: "#a79ccc",
-    border: "#6c618d",
-    icon: "document-text-outline",
-    label: "Overview",
+  "CLINICAL PEARLS & PITFALLS": {
+    color: Colors.pink, // #ffc3dd (Pastel Rose Pink)
+    border: "rgba(255, 195, 221, 0.45)",
+    icon: "sparkles-outline",
+    label: "Clinical Pearls & Pitfalls",
   },
-  "SCORING CRITERIA": {
-    color: "#86b0d5",
-    border: "#4b7395",
-    icon: "list-outline",
-    label: "Scoring Criteria",
+  "RED FLAGS / EMERGENCY": {
+    color: Colors.pink, // #ffc3dd (Pastel Rose Pink)
+    border: "rgba(255, 195, 221, 0.45)",
+    icon: "alert-circle-outline",
+    label: "Red Flags / Emergency",
   },
-  "INTERPRETATION": {
-    color: "#7eb9a2",
-    border: "#427c67",
-    icon: "analytics-outline",
-    label: "Interpretation",
-  },
-  "DEFINITION": {
-    color: "#a79ccc",
-    border: "#6c618d",
+  "EVIDENCE & CITATIONS": {
+    color: Colors.lavender, // #c09ffa (Soft Lavender)
+    border: "rgba(192, 159, 250, 0.45)",
     icon: "book-outline",
-    label: "Definition",
-  },
-  "KEY POINTS": {
-    color: "#86b0d5",
-    border: "#4b7395",
-    icon: "key-outline",
-    label: "Key Points",
-  },
-  "PROFESSIONAL CLINICAL ADVICE": {
-    color: "#6ec2be",
-    border: "#2b807e",
-    icon: "checkmark-circle-outline",
-    label: "Clinical Advice",
-  },
-  "CLINICAL PICTURE": {
-    color: "#86b0d5",
-    border: "#4b7395",
-    icon: "eye-outline",
-    label: "Clinical Picture",
-  },
-  "UPDATED INFO / SCORES": {
-    color: "#a79ccc",
-    border: "#6c618d",
-    icon: "trending-up-outline",
-    label: "Updated Info / Scores",
+    label: "Evidence & Citations",
   },
 };
 
 const FALLBACK_PALETTE = [
-  { color: "#a79ccc", border: "#6c618d", icon: "information-circle-outline" as const },
-  { color: "#86b0d5", border: "#4b7395", icon: "document-text-outline" as const },
-  { color: "#7eb9a2", border: "#427c67", icon: "list-outline" as const },
-  { color: "#ccab7f", border: "#8d6f44", icon: "alert-circle-outline" as const },
+  { color: Colors.lavender, border: "rgba(192, 159, 250, 0.45)", icon: "information-circle-outline" as const },
+  { color: Colors.accent, border: "rgba(109, 194, 189, 0.45)", icon: "document-text-outline" as const },
+  { color: Colors.lime, border: "rgba(196, 242, 48, 0.45)", icon: "list-outline" as const },
+  { color: Colors.pink, border: "rgba(255, 195, 221, 0.45)", icon: "alert-circle-outline" as const },
 ];
 
 type MedicalSection = { heading: string; content: string };
@@ -221,44 +199,8 @@ function parseMedicalSections(text: string): {
   };
 }
 
-// Ambient radial glow field — fixed behind all content, never scrolls
-const AmbientBackground: React.FC = () => (
-  <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-    <View
-      style={{
-        position: "absolute",
-        top: -140,
-        left: -110,
-        width: 360,
-        height: 360,
-        borderRadius: 180,
-        backgroundColor: "rgba(110,194,190,0.09)",
-      }}
-    />
-    <View
-      style={{
-        position: "absolute",
-        top: 60,
-        right: -160,
-        width: 320,
-        height: 320,
-        borderRadius: 160,
-        backgroundColor: "rgba(134,176,213,0.06)",
-      }}
-    />
-    <View
-      style={{
-        position: "absolute",
-        bottom: 80,
-        left: -130,
-        width: 300,
-        height: 300,
-        borderRadius: 150,
-        backgroundColor: "rgba(210,182,137,0.05)",
-      }}
-    />
-  </View>
-);
+// Ambient background is clean pure pitch black
+const AmbientBackground: React.FC = () => null;
 
 // Double-Bezel shell: outer tray + inner machined core
 const BezelShell: React.FC<{
@@ -269,16 +211,16 @@ const BezelShell: React.FC<{
   radius?: number;
 }> = ({ children, outerClassName = "", innerClassName = "", innerStyle = {}, radius = 30 }) => (
   <View
-    className={`bg-white/[0.04] border border-white/10 p-1.5 ${outerClassName}`}
+    className={`bg-white/[0.03] border border-white/10 p-1.5 ${outerClassName}`}
     style={{ borderRadius: radius }}
   >
     <View
-      className={`bg-teal-dark border border-white/[0.07] overflow-hidden ${innerClassName}`}
+      className={`bg-[#080808] border border-white/[0.08] overflow-hidden ${innerClassName}`}
       style={[
         {
           borderRadius: radius - 6,
           shadowColor: "#000",
-          shadowOpacity: 0.35,
+          shadowOpacity: 0.5,
           shadowRadius: 14,
           shadowOffset: { width: 0, height: 6 },
           elevation: 10,
@@ -597,20 +539,20 @@ const ChatBubble: React.FC<{
       <View className="max-w-[85%] items-end">
         <View className="flex-row items-center gap-1.5 mb-1.5 pr-1">
           <Text className="text-gray-400 text-[10px] font-mono">{message.timestamp}</Text>
-          <Text className="text-turquoise text-xs font-sans-bold">Doctor</Text>
+          <Text className="text-lavender text-xs font-sans-bold">Doctor</Text>
         </View>
         <View
           className="rounded-3xl rounded-tr-md overflow-hidden shadow-bubble"
           style={{ maxWidth: "85%" }}
         >
           <LinearGradient
-            colors={[Colors.accentBright, Colors.accentDeep]}
+            colors={[Colors.lavender, '#9d74e8']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
           <View className="px-4 py-3">
-            <Text className="text-[#0c2321] text-sm font-sans-semibold leading-5">
+            <Text className="text-[#010101] text-sm font-sans-bold leading-5">
               {message.text}
             </Text>
           </View>
@@ -621,16 +563,28 @@ const ChatBubble: React.FC<{
 };
 
 const ChatTab = () => {
-  const params = useLocalSearchParams<{ query?: string }>();
+  const params = useLocalSearchParams<{ query?: string; autoSend?: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState(params.query || "");
+  const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const reducedMotion = useReducedMotion();
+  const lastAutoQueryRef = useRef<string | null>(null);
 
   // Header collapses once a conversation starts (question sent or messages present)
   const chatActive = messages.length > 0 || isTyping;
   const headerCollapse = useSharedValue(0);
+
+  useEffect(() => {
+    if (params.query && params.query.trim()) {
+      const q = params.query.trim();
+      if (lastAutoQueryRef.current !== q) {
+        lastAutoQueryRef.current = q;
+        setInputText("");
+        handleTextSend(q);
+      }
+    }
+  }, [params.query, params.autoSend]);
 
   useEffect(() => {
     headerCollapse.value = withTiming(chatActive ? 1 : 0, {
@@ -747,83 +701,284 @@ const ChatTab = () => {
   };
 
   return (
-    <View className="flex-1 bg-background">
-      <AmbientBackground />
+    <View className="flex-1 bg-[#010101]" style={{ backgroundColor: "#010101" }}>
+      <StatusBar barStyle="light-content" backgroundColor="#010101" />
 
-      {/* Floating Glass Island Header */}
-      <SafeAreaView edges={["top"]}>
-        <Animated.View
-          entering={reducedMotion ? undefined : FadeInDown.duration(MOTION.enter).easing(EASE_HEAVY)}
-          className="mx-4 mt-3"
-        >
-          <BezelShell radius={30}>
-            <Animated.View style={[{ paddingHorizontal: 16 }, headerPadStyle]}>
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-3">
-                  {/* Brand mark — double ring */}
+      {/* Floating Header */}
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: "#010101" }}>
+        <Animated.View style={[{ paddingHorizontal: 20 }, headerPadStyle]}>
+          <BezelShell radius={28}>
+            <Animated.View
+              style={[
+                {
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingHorizontal: 16,
+                },
+                headerPadStyle,
+              ]}
+            >
+              <View className="flex-row items-center">
+                <Animated.View
+                  style={[
+                    {
+                      backgroundColor: "rgba(196,242,48,0.12)",
+                      borderWidth: 1,
+                      borderColor: "rgba(196,242,48,0.3)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 11,
+                    },
+                    markOuterStyle,
+                  ]}
+                >
                   <Animated.View
                     style={[
                       {
-                        borderRadius: 22,
+                        backgroundColor: "rgba(196,242,48,0.2)",
                         borderWidth: 1,
-                        borderColor: "rgba(110,194,190,0.3)",
+                        borderColor: "rgba(196,242,48,0.45)",
                         alignItems: "center",
                         justifyContent: "center",
-                        backgroundColor: "rgba(110,194,190,0.06)",
                       },
-                      markOuterStyle,
+                      markInnerStyle,
                     ]}
                   >
-                    <Animated.View
+                    <Ionicons name="sparkles" size={15} color={Colors.lime} />
+                  </Animated.View>
+                </Animated.View>
+
+                <View>
+                  <View className="flex-row items-center gap-1.5">
+                    <Animated.Text
                       style={[
                         {
-                          alignItems: "center",
-                          justifyContent: "center",
-                          backgroundColor: "rgba(110,194,190,0.18)",
+                          color: "#ffffff",
+                          fontFamily: "PlexSans_700Bold",
+                          letterSpacing: -0.4,
                         },
-                        markInnerStyle,
+                        titleStyle,
                       ]}
                     >
-                      <Ionicons name="medical" size={16} color={TURQUOISE} />
-                    </Animated.View>
-                  </Animated.View>
-                  <View>
-                    <View className="flex-row items-center gap-2">
-                      <Animated.Text
-                        style={[
-                          {
-                            color: "#fff",
-                            fontFamily: "PlexSans_700Bold",
-                            letterSpacing: -0.3,
-                          },
-                          titleStyle,
-                        ]}
-                      >
-                        Med Arena
-                      </Animated.Text>
-                      <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      {/* Compact category chip removed */}
-                    </View>
-                    <Animated.View
-                      style={[{ overflow: "hidden" }, subtitleWrapStyle]}
-                    >
-                      <Text className="text-gray-400 text-[11px] font-sans-medium mt-0.5">Clinical Decision Support</Text>
-                    </Animated.View>
+                      Med Arena
+                    </Animated.Text>
+                    <View className="w-1.5 h-1.5 rounded-full bg-lime" />
                   </View>
-                </View>
-
-                {messages.length > 0 && (
-                  <TouchableOpacity
-                    onPress={handleNewChat}
-                    className="flex-row items-center rounded-full bg-white/[0.06] border border-white/10 pl-3 pr-1.5 py-1.5 active:opacity-70"
+                  <Animated.View
+                    style={[{ overflow: "hidden" }, subtitleWrapStyle]}
                   >
-                    <Text className="text-turquoise text-xs font-sans-bold mr-2">New</Text>
-                    <View className="w-6 h-6 rounded-full bg-turquoise/20 items-center justify-center">
-                      <Ionicons name="add" size={14} color={TURQUOISE} />
-                    </View>
-                  </TouchableOpacity>
-                )}
+                    <Text className="text-lavender text-[11px] font-sans-medium mt-0.5">Clinical Decision Support</Text>
+                  </Animated.View>
+                </View>
               </View>
+
+              {messages.length > 0 && (
+                <TouchableOpacity
+                  onPress={handleNewChat}
+                  className="flex-row items-center rounded-full bg-white/[0.06] border border-white/10 pl-3 pr-1.5 py-1.5 active:opacity-70"
+                >
+                  <Text className="text-lime text-xs font-sans-bold mr-2">New</Text>
+                  <View className="w-6 h-6 rounded-full bg-lime/20 items-center justify-center">
+                    <Ionicons name="add" size={14} color={Colors.lime} />
+                  </View>
+                </TouchableOpacity>
+              )}
+            </Animated.View>
+          </BezelShell>
+        </Animated.View>
+      </SafeAreaView>
+
+      {/* Main Chat Body & Empty State */}
+  }));
+
+  const markOuterStyle = useAnimatedStyle(() => ({
+    width: interpolate(headerCollapse.value, [0, 1], [44, 34]),
+    height: interpolate(headerCollapse.value, [0, 1], [44, 34]),
+    borderRadius: interpolate(headerCollapse.value, [0, 1], [22, 17]),
+  }));
+
+  const markInnerStyle = useAnimatedStyle(() => ({
+    width: interpolate(headerCollapse.value, [0, 1], [32, 25]),
+    height: interpolate(headerCollapse.value, [0, 1], [32, 25]),
+    borderRadius: interpolate(headerCollapse.value, [0, 1], [16, 12.5]),
+  }));
+
+  const titleStyle = useAnimatedStyle(() => ({
+    fontSize: interpolate(headerCollapse.value, [0, 1], [17, 15]),
+  }));
+
+  const subtitleWrapStyle = useAnimatedStyle(() => ({
+    height: interpolate(headerCollapse.value, [0, 1], [20, 0]),
+    opacity: interpolate(headerCollapse.value, [0, 0.6, 1], [1, 0.4, 0]),
+  }));
+
+  useEffect(() => {
+    const keyboardShowListener = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => {
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 200);
+      },
+    );
+    return () => {
+      keyboardShowListener.remove();
+    };
+  }, []);
+
+  const handleCopyText = (text: string) => {
+    Clipboard.setString(text);
+    Alert.alert("Copied", "Clinical response copied to clipboard.");
+  };
+
+  const handleTextSend = async (queryOverride?: string) => {
+    const query = queryOverride || inputText.trim();
+    if (!query) return;
+    if (!queryOverride) setInputText("");
+    setIsTyping(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: query,
+      isUser: true,
+      timestamp: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    try {
+      const { reply, citations } = await aiService.sendMessageByText(query, "general", "physicians");
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: reply,
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        category: "physicians",
+        citations,
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error) {
+      console.error(error);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "",
+        isUser: false,
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        isError: true,
+        failedQuery: query,
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const handleRetry = (failedQuery: string) => {
+    // Remove the failed error bubble, then resend
+    setMessages((prev) => prev.filter((m) => !(m.isError && m.failedQuery === failedQuery)));
+    handleTextSend(failedQuery);
+  };
+
+  const handleNewChat = () => {
+    setMessages([]);
+  };
+
+  return (
+    <View className="flex-1 bg-[#010101]" style={{ backgroundColor: "#010101" }}>
+      <StatusBar barStyle="light-content" backgroundColor="#010101" />
+
+      {/* Floating Header */}
+      <SafeAreaView edges={["top"]} style={{ backgroundColor: "#010101" }}>
+        <Animated.View style={[{ paddingHorizontal: 20 }, headerPadStyle]}>
+          <BezelShell radius={28}>
+            <Animated.View
+              style={[
+                {
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingHorizontal: 16,
+                },
+                headerPadStyle,
+              ]}
+            >
+              <View className="flex-row items-center">
+                <Animated.View
+                  style={[
+                    {
+                      backgroundColor: "rgba(196,242,48,0.12)",
+                      borderWidth: 1,
+                      borderColor: "rgba(196,242,48,0.3)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 11,
+                    },
+                    markOuterStyle,
+                  ]}
+                >
+                  <Animated.View
+                    style={[
+                      {
+                        backgroundColor: "rgba(196,242,48,0.2)",
+                        borderWidth: 1,
+                        borderColor: "rgba(196,242,48,0.45)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      },
+                      markInnerStyle,
+                    ]}
+                  >
+                    <Ionicons name="sparkles" size={15} color={Colors.lime} />
+                  </Animated.View>
+                </Animated.View>
+
+                <View>
+                  <View className="flex-row items-center gap-1.5">
+                    <Animated.Text
+                      style={[
+                        {
+                          color: "#ffffff",
+                          fontFamily: "PlexSans_700Bold",
+                          letterSpacing: -0.4,
+                        },
+                        titleStyle,
+                      ]}
+                    >
+                      Med Arena
+                    </Animated.Text>
+                    <View className="w-1.5 h-1.5 rounded-full bg-lime" />
+                  </View>
+                  <Animated.View
+                    style={[{ overflow: "hidden" }, subtitleWrapStyle]}
+                  >
+                    <Text className="text-lavender text-[11px] font-sans-medium mt-0.5">Clinical Decision Support</Text>
+                  </Animated.View>
+                </View>
+              </View>
+
+              {messages.length > 0 && (
+                <TouchableOpacity
+                  onPress={handleNewChat}
+                  className="flex-row items-center rounded-full bg-white/[0.06] border border-white/10 pl-3 pr-1.5 py-1.5 active:opacity-70"
+                >
+                  <Text className="text-lime text-xs font-sans-bold mr-2">New</Text>
+                  <View className="w-6 h-6 rounded-full bg-lime/20 items-center justify-center">
+                    <Ionicons name="add" size={14} color={Colors.lime} />
+                  </View>
+                </TouchableOpacity>
+              )}
             </Animated.View>
           </BezelShell>
         </Animated.View>
@@ -832,117 +987,82 @@ const ChatTab = () => {
       {/* Main Chat Body & Empty State */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1"
+        className="flex-1 bg-[#010101]"
+        style={{ backgroundColor: "#010101" }}
       >
         {messages.length === 0 ? (
           <ScrollView
             contentContainerStyle={{
               paddingHorizontal: 20,
               paddingTop: 36,
-              paddingBottom: FLOATING_TAB_BAR_HEIGHT + 88,
+              paddingBottom: FLOATING_TAB_BAR_HEIGHT + 96,
             }}
             showsVerticalScrollIndicator={false}
-            className="flex-1"
+            className="flex-1 bg-[#010101]"
+            style={{ backgroundColor: "#010101" }}
           >
             {/* Empty State Hero */}
             <Animated.View
               entering={reducedMotion ? undefined : FadeIn.duration(MOTION.enter).easing(EASE_HEAVY)}
-              className="items-center mb-12"
+              className="items-center mb-8"
             >
               {/* Double-ring hero emblem */}
-              <View className="w-24 h-24 rounded-full border border-turquoise/25 items-center justify-center bg-turquoise/[0.05] mb-6">
-                <View className="w-[72px] h-[72px] rounded-full items-center justify-center border border-turquoise/30" style={{ backgroundColor: "rgba(110,194,190,0.12)" }}>
-                  <Ionicons name="sparkles" size={30} color={TURQUOISE} />
+              <View className="w-20 h-20 rounded-full border border-lime/30 items-center justify-center bg-lime/[0.06] mb-4">
+                <View className="w-[60px] h-[60px] rounded-full items-center justify-center border border-lime/45 bg-lime/15">
+                  <Ionicons name="sparkles" size={26} color={Colors.lime} />
                 </View>
               </View>
 
               {/* Eyebrow tag */}
-              <View className="px-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/10 mb-4">
-                <Text className="text-[10px] uppercase tracking-[0.25em] font-sans-semibold text-turquoise">
-                  Evidence-Based RAG
+              <View className="px-3.5 py-1 rounded-full bg-lavender/15 border border-lavender/40 mb-3">
+                <Text className="text-[10px] uppercase tracking-[0.25em] font-sans-bold text-lavender">
+                  Evidence-Based Clinical AI
                 </Text>
               </View>
 
-              <Text className="text-white text-[28px] font-sans-bold text-center tracking-tight leading-9 mb-3">
+              <Text className="text-white text-[25px] font-sans-bold text-center tracking-tight leading-8 mb-2">
                 Clinical Consultant AI
               </Text>
-              <Text className="text-gray-400 text-sm text-center max-w-[290px] leading-6 font-sans">
-                High-yield evidence-based clinical reasoning, differential diagnosis & workup protocols.
+              <Text className="text-gray-400 text-[13px] text-center max-w-[280px] leading-5 font-sans">
+                Ask about clinical management, diagnostic workups, dosing, or tap a preset below.
               </Text>
             </Animated.View>
 
-            {/* Bento: featured inquiry */}
-            <Animated.View entering={reducedMotion ? undefined : FadeInUp.duration(MOTION.enter).delay(MOTION.stagger).easing(EASE_HEAVY)}>
-              <TouchableOpacity
-                onPress={() => handleTextSend(QUICK_PROMPTS[0].prompt)}
-                activeOpacity={0.85}
-                className="mb-3.5"
-              >
-                <View className="rounded-[30px] p-1.5 border border-gold/30" style={{ backgroundColor: "rgba(210,182,137,0.06)" }}>
-                  <View className="rounded-3xl bg-teal-dark border border-white/[0.07] p-5">
-                    <View className="flex-row items-center justify-between mb-4">
-                      <View
-                        className="w-12 h-12 rounded-2xl items-center justify-center border"
-                        style={{ backgroundColor: QUICK_PROMPTS[0].color + "1f", borderColor: QUICK_PROMPTS[0].color + "35" }}
-                      >
-                        <Ionicons name={QUICK_PROMPTS[0].icon} size={22} color={QUICK_PROMPTS[0].color} />
-                      </View>
-                      <View className="px-2.5 py-1 rounded-full bg-gold/10 border border-gold/30 flex-row items-center gap-1">
-                        <Ionicons name="star" size={9} color={Colors.gold} />
-                        <Text className="text-[10px] uppercase tracking-[0.2em] font-sans-semibold text-gold">Featured</Text>
-                      </View>
-                    </View>
-                    <Text className="text-white font-sans-bold text-[17px] mb-1.5">{QUICK_PROMPTS[0].title}</Text>
-                    <Text className="text-gray-400 text-[13px] leading-5 mb-4 font-sans">{QUICK_PROMPTS[0].subtitle}</Text>
-                    <View className="flex-row items-center justify-between">
-                      <Text className="text-turquoise text-xs font-sans-bold tracking-wide">Run inquiry</Text>
-                      <View className="w-9 h-9 rounded-full bg-turquoise/15 border border-turquoise/30 items-center justify-center">
-                        <Ionicons name="arrow-up" size={16} color={TURQUOISE} />
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </Animated.View>
-
-            {/* Bento: stacked inquiries */}
-            <View className="flex-col gap-3.5">
-              {QUICK_PROMPTS.slice(1).map((item, idx) => (
-                <Animated.View
+            {/* Small Rounded Preset Chips (ChatGPT / Gemini Style) */}
+            <Animated.View
+              entering={reducedMotion ? undefined : FadeInUp.duration(MOTION.enter).delay(MOTION.stagger).easing(EASE_HEAVY)}
+              className="flex-row flex-wrap justify-center gap-2.5 px-1 mb-8"
+            >
+              {QUICK_PROMPTS.map((item, idx) => (
+                <TouchableOpacity
                   key={idx}
-                  entering={reducedMotion ? undefined : FadeInUp.duration(MOTION.enter).delay(MOTION.stagger * (2 + idx)).easing(EASE_HEAVY)}
+                  onPress={() => handleTextSend(item.prompt)}
+                  activeOpacity={0.75}
+                  className="flex-row items-center gap-2 px-3.5 py-2.5 rounded-full bg-[#0c1017] border border-white/[0.12]"
+                  style={{
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.35,
+                    shadowRadius: 6,
+                    elevation: 3,
+                  }}
                 >
-                  <TouchableOpacity
-                    onPress={() => handleTextSend(item.prompt)}
-                    activeOpacity={0.85}
+                  <View
+                    className="w-6 h-6 rounded-full items-center justify-center border"
+                    style={{
+                      backgroundColor: item.color + "20",
+                      borderColor: item.color + "45",
+                    }}
                   >
-                    <View className="rounded-[26px] p-1.5 bg-white/[0.04] border border-white/10">
-                      <View className="rounded-[20px] bg-teal-dark border border-white/[0.06] px-4 py-3.5 flex-row items-center justify-between">
-                        <View className="flex-row items-center flex-1 mr-3">
-                          <View
-                            className="w-10 h-10 rounded-2xl items-center justify-center mr-3.5 border"
-                            style={{ backgroundColor: item.color + "1f", borderColor: item.color + "30" }}
-                          >
-                            <Ionicons name={item.icon} size={19} color={item.color} />
-                          </View>
-                          <View className="flex-1">
-                            <Text className="text-white font-sans-bold text-sm mb-1">{item.title}</Text>
-                            <Text className="text-gray-400 text-xs leading-4 font-sans" numberOfLines={1}>
-                              {item.subtitle}
-                            </Text>
-                          </View>
-                        </View>
-
-                        {/* Button-in-button trailing icon */}
-                        <View className="w-9 h-9 rounded-full bg-white/[0.05] border border-white/10 items-center justify-center">
-                          <Ionicons name="arrow-up" size={15} color={TURQUOISE} />
-                        </View>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
-                </Animated.View>
+                    <Ionicons name={item.icon} size={12} color={item.color} />
+                  </View>
+                  <Text className="text-gray-200 font-sans-semibold text-[12.5px]">
+                    {item.title}
+                  </Text>
+                  <Ionicons name="arrow-up" size={12} color={Colors.grayMuted} />
+                </TouchableOpacity>
               ))}
-            </View>
+            </Animated.View>
           </ScrollView>
         ) : (
           <FlatList
@@ -953,8 +1073,9 @@ const ChatTab = () => {
             ListFooterComponent={isTyping ? <ThinkingIndicator /> : null}
             contentContainerStyle={{
               paddingTop: 24,
-              paddingBottom: FLOATING_TAB_BAR_HEIGHT + 88,
+              paddingBottom: FLOATING_TAB_BAR_HEIGHT + 96,
               flexGrow: 1,
+              backgroundColor: "#010101",
             }}
             onContentSizeChange={() =>
               flatListRef.current?.scrollToEnd({ animated: true })
@@ -962,21 +1083,28 @@ const ChatTab = () => {
             onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
-            style={{ flex: 1 }}
+            style={{ flex: 1, backgroundColor: "#010101" }}
           />
         )}
 
-        {/* Floating Composer Island */}
+        {/* Floating Composer Island (Height Increased by 25%) */}
         <View
           className="absolute left-4 right-4"
           style={{ bottom: FLOATING_TAB_BAR_HEIGHT + 4 }}
         >
           <View
-            className="flex-row items-center rounded-full px-3 py-4 border border-white/10"
-            style={{ backgroundColor: Colors.islandBg }}
+            className="flex-row items-center rounded-[28px] px-4 py-2 border border-white/[0.12]"
+            style={{
+              backgroundColor: "#0c1017",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.5,
+              shadowRadius: 14,
+              elevation: 8,
+            }}
           >
             <TextInput
-              className="flex-1 text-white text-base max-h-32 py-2 bg-transparent font-sans"
+              className="flex-1 text-white text-[15px] py-2 bg-transparent font-sans leading-5"
               placeholder="Ask clinical case, protocol, differential..."
               placeholderTextColor={Colors.graySubtle}
               value={inputText}
@@ -985,21 +1113,21 @@ const ChatTab = () => {
               returnKeyType="send"
               multiline
               textAlignVertical="center"
-              style={{ minHeight: 36 }}
+              style={{ minHeight: 46, maxHeight: 115 }}
             />
 
             <TouchableOpacity
               onPress={() => handleTextSend()}
               disabled={!inputText.trim() || isTyping}
               activeOpacity={0.8}
-              className="ml-2"
+              className="ml-2.5 self-center"
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 21,
+                width: 44,
+                height: 44,
+                borderRadius: 22,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: inputText.trim() && !isTyping ? TURQUOISE : "rgba(255,255,255,0.06)",
+                backgroundColor: inputText.trim() && !isTyping ? Colors.lime : "rgba(255,255,255,0.06)",
               }}
             >
               {isTyping ? (
@@ -1007,8 +1135,8 @@ const ChatTab = () => {
               ) : (
                 <Ionicons
                   name="arrow-up"
-                  size={18}
-                  color={inputText.trim() ? INK : Colors.graySubtle}
+                  size={19}
+                  color={inputText.trim() ? "#010101" : Colors.graySubtle}
                 />
               )}
             </TouchableOpacity>

@@ -324,4 +324,41 @@ export const dbService = {
     }
     return null;
   },
+
+  async getDailyClinicalPearls(offset: number = 0, count: number = 5): Promise<import('../constants/DailyPearlsData').ClinicalPearl[]> {
+    const { getDailyPearls } = await import('../constants/DailyPearlsData');
+    try {
+      const { data, error } = await supabase
+        .from('clinical_pearls')
+        .select('*')
+        .limit(20);
+
+      if (!error && data && data.length > 0) {
+        const mapped = data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          category: item.category,
+          specialtyId: item.specialty_id,
+          specialtyName: item.specialty_name,
+          specialtyColor: item.specialty_color,
+          specialtyIcon: item.specialty_icon,
+          badge: item.badge || item.key_numbers || '',
+          rule: item.rule || item.takeaway || item.pearl || '',
+          action: item.action || '',
+          pitfall: item.pitfall || '',
+          citation: item.citation,
+        }));
+        const start = (offset * count) % mapped.length;
+        const res: typeof mapped = [];
+        for (let i = 0; i < count; i++) {
+          res.push(mapped[(start + i) % mapped.length]);
+        }
+        return res;
+      }
+    } catch {
+      // Fallback
+    }
+
+    return getDailyPearls(undefined, count, offset);
+  },
 };

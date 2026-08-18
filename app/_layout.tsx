@@ -12,6 +12,7 @@ import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./global.css";
 
@@ -38,21 +39,23 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <Stack
-        screenOptions={{
-          contentStyle: {backgroundColor: "transparent"},
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="heart/index" options={{ headerShown: false }} />
-        <Stack.Screen name="git/index" options={{ headerShown: false }} />
-        <Stack.Screen name="fever/index" options={{ headerShown: false }} />
-        <Stack.Screen name="neuro/index" options={{ headerShown: false }} />
-        <Stack.Screen name="skin/index" options={{ headerShown: false }} />
-        <Stack.Screen name="gynacology/index" options={{ headerShown: false }} />
-        <Stack.Screen name="lungs/index" options={{ headerShown: false }} />
-      </Stack>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Stack
+          screenOptions={{
+            contentStyle: {backgroundColor: "transparent"},
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="heart/index" options={{ headerShown: false }} />
+          <Stack.Screen name="git/index" options={{ headerShown: false }} />
+          <Stack.Screen name="fever/index" options={{ headerShown: false }} />
+          <Stack.Screen name="neuro/index" options={{ headerShown: false }} />
+          <Stack.Screen name="skin/index" options={{ headerShown: false }} />
+          <Stack.Screen name="gynacology/index" options={{ headerShown: false }} />
+          <Stack.Screen name="lungs/index" options={{ headerShown: false }} />
+        </Stack>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

@@ -13,13 +13,15 @@ module.exports = {
         "teal-dark": Colors.tealDark,
         "teal-medium": Colors.tealMedium,
         "surface-hover": Colors.surfaceHover,
-        // Signature accent — refined jewel teal
-        turquoise: Colors.accent,
+        // Signature 4-Color Palette (User Palette)
+        turquoise: Colors.accent, // #6dc2bd (Jewel Teal)
+        lime: Colors.lime, // #c4f230 (Electric Lime)
+        lavender: Colors.lavender, // #c09ffa (Soft Lavender)
+        pink: Colors.pink, // #ffc3dd (Pastel Rose Pink)
         "accent-bright": Colors.accentBright,
-        // Champagne gold — muted signal
-        gold: Colors.gold,
-        // Burnt terracotta — clinical caution / warning / destructive
-        terracotta: Colors.terracotta,
+        // Functional tokens
+        gold: Colors.gold, // Mapped to #c4f230
+        terracotta: Colors.terracotta, // Mapped to #ffc3dd
         "terracotta-deep": Colors.terracottaDeep,
         // Neutral tones
         charcoal: Colors.charcoal,

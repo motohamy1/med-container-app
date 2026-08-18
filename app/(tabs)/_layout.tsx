@@ -12,11 +12,10 @@ import Animated, {
 } from "react-native-reanimated";
 import { Colors } from "../../constants/Colors";
 
-// Dark glass island — matches the chat composer, turquoise marks current state.
-// Active tab also gets a dot indicator so color is not the only signal.
-const BAR_BG = Colors.tabIslandBg;
-const BAR_BORDER = "rgba(255,255,255,0.08)";
-const ACTIVE_COLOR = Colors.accent;
+// Dark glass island — matches the chat composer, vibrant active states
+const BAR_BG = '#080808';
+const BAR_BORDER = "rgba(255,255,255,0.1)";
+const ACTIVE_COLOR = Colors.lime;
 const INACTIVE_COLOR = Colors.graySubtle;
 
 const ICON_SIZE = 24;
@@ -26,8 +25,9 @@ const TAB_ICONS: Record<
   string,
   { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }
 > = {
-  ChatTab: { active: "chatbubble-ellipses", inactive: "chatbubble-ellipses-outline" },
   index: { active: "grid", inactive: "grid-outline" },
+  ChatTab: { active: "chatbubble-ellipses", inactive: "chatbubble-ellipses-outline" },
+  pearls: { active: "sparkles", inactive: "sparkles-outline" },
   profile: { active: "person-circle", inactive: "person-circle-outline" },
 };
 
@@ -172,6 +172,7 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="index" options={{ title: "Med Center" }} />
       <Tabs.Screen name="ChatTab" options={{ title: "Chat" }} />
+      <Tabs.Screen name="pearls" options={{ title: "Pearls" }} />
       <Tabs.Screen name="profile" options={{ title: "Profile" }} />
     </Tabs>
   );

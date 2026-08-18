@@ -22,59 +22,54 @@
  */
 
 export const Colors = {
-  // Neutral graphite surfaces — quiet-teal ramp, hue pinned to 220°
-  background: '#0e1314', // oklch(0.181 0.008 220)
-  deepTeal: '#12181a', // oklch(0.203 0.009 220)
-  tealDark: '#181e20', // oklch(0.229 0.010 220)
-  tealMedium: '#21282a', // oklch(0.271 0.011 220)
-  surfaceHover: '#2b3336', // oklch(0.315 0.012 220)
+  // Neutral graphite surfaces — quiet-teal ramp on sleek minimal pitch black
+  background: '#010101', // ultra-sleek minimal dark OLED pitch black
+  deepTeal: '#080c0d',
+  tealDark: '#0e1416',
+  tealMedium: '#141b1d',
+  surfaceHover: '#1c2527',
 
-  // Signature accent — refined jewel teal
-  accent: '#6ec2be', // oklch(0.760 0.082 191.6)
-  accentBright: '#8ad9d5', // oklch(0.833 0.078 191.7)
-  accentDeep: '#5aa8a4', // oklch(0.681 0.078 191.2) — gradient endpoint for filled bubbles
+  // Four Main Core Colors (User Palette)
+  accent: '#6dc2bd',       // Medical Jewel Teal / Cyan
+  lime: '#c4f230',         // Electric Lime / Chartreuse
+  lavender: '#c09ffa',     // Soft Lavender / Violet
+  pink: '#ffc3dd',         // Pastel Rose Pink
 
-  // Champagne gold — muted signal (premium / featured), sole owner of hue ~79
-  gold: '#d2b689', // oklch(0.790 0.068 79.3)
-  clinicalGold: '#b8a273', // oklch(0.720 0.068 85) — same family at lower L for section color chips; never on the marker itself
-
-  // Burnt terracotta — clinical caution / warning / destructive.
-  // Hue pinned to 50° so both steps share one hue. Fills/borders only —
-  // never body text on the dark background (raises L to >= 0.72 for text).
-  terracotta: '#c37a4f', // oklch(0.647 0.108 50)
-  terracottaDeep: '#95532a', // oklch(0.512 0.104 50)
+  // Harmonized Gradient & Functional Aliases
+  accentBright: '#8ad9d5',
+  accentDeep: '#5aa8a4',
+  gold: '#c4f230',         // Electric Lime for high-energy signal highlights & features
+  clinicalGold: '#c09ffa', // Soft Lavender for secondary clinical badges
+  terracotta: '#ffc3dd',   // Pastel Rose for alerts, pitfalls, and critical markers
+  terracottaDeep: '#e08ca9',
 
   // Text & utility neutrals
-  charcoal: '#353e41', // oklch(0.357 0.013 220)
-  grayDark: '#232a2c', // oklch(0.278 0.010 220)
-  grayMuted: '#9ca3af', // oklch(0.714 0.019 261.3) — secondary text (7.39:1)
-  graySubtle: '#7b8188', // oklch(0.600 0.013 252) — placeholders, disabled (4.77:1 AA)
-  textPrimary: '#ffffff', // oklch(1 0 0)
-  textBody: '#e4e8ed', // oklch(0.929 0.008 253.9)
-  ink: '#0e1314', // oklch(0.181 0.008 220) — text on filled accent surfaces
+  charcoal: '#263033',
+  grayDark: '#161c1e',
+  grayMuted: '#9ca3af',
+  graySubtle: '#7b8188',
+  textPrimary: '#ffffff',
+  textBody: '#e4e8ed',
+  ink: '#010101',
 
   // Medicine reference surfaces
-  medicineBg: '#262d2f', // oklch(0.290 0.011 220)
-  medicineCard: '#171d1f', // oklch(0.225 0.009 220)
+  medicineBg: '#151d1f',
+  medicineCard: '#090e0f',
 
   // Composer / floating islands
-  islandBg: '#121719', // oklch(0.200 0.008 220)
-  // Tab bar — tinted glass, accent hue at bar L so the island feels
-  // intentional without breaking "turquoise = current state only"
-  // (border + dot carry the active signal; fill stays neutral-quiet)
-  tabIslandBg: '#0b1c1b', // oklch(0.211 0.023 190.7)
+  islandBg: '#090d0e',
+  tabIslandBg: '#040808',
 
-  // Specialty palette — constant oklch(0.700 0.075 H), hue rotates evenly;
-  // pulmonology keeps the accent hue exactly
+  // Specialty palette — harmonized using the 4 main palette colors
   specialty: {
-    cardiology: '#c98c87', // oklch(0.700 0.075 25)
-    git: '#a9a069', // oklch(0.700 0.075 100) — olive, keeps clear of gold (~79°)
-    infectious: '#79a3cb', // oklch(0.700 0.075 248)
-    neurology: '#7dac86', // oklch(0.700 0.075 150)
-    dermatology: '#9d97ca', // oklch(0.700 0.075 290)
-    obgyn: '#bc8db1', // oklch(0.700 0.075 335)
-    pulmonology: '#63aeaa', // oklch(0.700 0.075 191.6)
-    more: '#9a9fa5', // oklch(0.700 0.010 250)
+    cardiology: '#ffc3dd',  // Pastel Pink
+    git: '#c4f230',         // Electric Lime
+    infectious: '#6dc2bd',  // Jewel Teal
+    neurology: '#c09ffa',   // Soft Lavender
+    dermatology: '#ffc3dd', // Pastel Pink
+    obgyn: '#c09ffa',       // Soft Lavender
+    pulmonology: '#6dc2bd', // Jewel Teal
+    more: '#c4f230',        // Electric Lime
   },
 } as const;
 
