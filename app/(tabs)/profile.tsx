@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
-import React, { useState } from 'react';
+import { router, useNavigation, useScrollToTop } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ScrollView,
   StatusBar,
@@ -246,6 +246,17 @@ const MenuSection = ({
 const Profile = () => {
   const { profile, loading } = useUserProfile();
   const [voiceOutput, setVoiceOutput] = useState(true);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const navigation = useNavigation();
+
+  useScrollToTop(scrollViewRef);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress' as any, () => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   // My Health menu items
   const healthItems: MenuItem[] = [
@@ -326,6 +337,7 @@ const Profile = () => {
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
       <ScrollView
+        ref={scrollViewRef}
         className="flex-1"
         contentContainerClassName="pb-[76px]"
         showsVerticalScrollIndicator={false}

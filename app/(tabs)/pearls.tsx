@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { router, useNavigation, useScrollToTop } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { ClinicalPearl, CLINICAL_PEARLS_POOL } from '../../constants/DailyPearlsData';
 import { dbService } from '../../services/dbService';
@@ -40,6 +40,17 @@ export default function PearlsTab() {
   const [selectedPearl, setSelectedPearl] = useState<ClinicalPearl | null>(null);
 
   const spinAnim = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef<ScrollView>(null);
+  const navigation = useNavigation();
+
+  useScrollToTop(scrollViewRef);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress' as any, () => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   // Load daily pearls and saved bookmarks
   useEffect(() => {
@@ -192,6 +203,7 @@ export default function PearlsTab() {
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
       <ScrollView
+        ref={scrollViewRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{

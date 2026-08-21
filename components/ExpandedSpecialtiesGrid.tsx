@@ -27,7 +27,7 @@ export const ExpandedSpecialtiesGrid: React.FC<ExpandedSpecialtiesGridProps> = (
   };
 
   return (
-    <View onLayout={onLayout} className="mt-8 px-6 pb-6">
+    <View onLayout={onLayout} className="mt-4 pt-8 border-t border-white/5 px-6 pb-8">
       {/* Section Header */}
       <View className="mb-4">
         <View className="flex-row items-center justify-between mb-1">

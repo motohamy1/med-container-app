@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useNavigation, useScrollToTop } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -243,9 +243,9 @@ const OrbitNavigation = ({ onPressMore }: { onPressMore?: () => void }) => {
   ];
 
   return (
-    <View className="px-6 py-4">
+    <View className="px-6 pt-8 pb-8">
       <View
-        className="mx-auto my-6 relative"
+        className="mx-auto mt-6 mb-10 relative"
         style={{ width: ORBIT_SIZE, height: ORBIT_SIZE }}
       >
         <View
@@ -519,6 +519,17 @@ export default function Index() {
   const reqIdRef = useRef(0);
   const scrollViewRef = useRef<ScrollView>(null);
   const gridYRef = useRef<number>(850);
+  const navigation = useNavigation();
+
+  // Scroll to top when the active tab bar icon is pressed
+  useScrollToTop(scrollViewRef);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress' as any, () => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const runSearch = useCallback(async (query: string) => {
     const trimmed = query.trim();

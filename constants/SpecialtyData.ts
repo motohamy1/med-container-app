@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { SURGICAL_SPECIALTY_KNOWLEDGE } from './SurgicalSpecialtiesData';
 
 export type ClinicalSection = {
   title: string;
@@ -1773,5 +1774,6 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
         ]
       }
     ]
-  }
+  },
+  ...SURGICAL_SPECIALTY_KNOWLEDGE,
 };

@@ -232,6 +232,9 @@ function NotchedTabBar({ state, descriptors, navigation }: any) {
                 key={route.key}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: isFocused }}
+                accessibilityLabel={`${config.title} tab, ${isFocused ? 'active' : 'inactive'}`}
+                accessibilityHint={isFocused ? 'Double tap to scroll to top' : undefined}
+                hitSlop={{ top: 20, bottom: 12, left: 8, right: 8 }}
                 onPress={onPress}
                 onLongPress={onLongPress}
                 style={styles.tabSlot}

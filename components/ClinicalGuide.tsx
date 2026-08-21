@@ -141,11 +141,16 @@ export default function ClinicalGuide({ topicData, themeColor, specialtyIllustra
 
 function getIconForSection(title: string): keyof typeof Ionicons.glyphMap {
   const lower = title.toLowerCase();
+  if (lower.includes('operative step') || lower.includes('surgical technique') || lower.includes('dissection')) return 'cut';
+  if (lower.includes('instrument') || lower.includes('equipment') || lower.includes('device') || lower.includes('suture')) return 'hardware-chip';
+  if (lower.includes('preoperative') || lower.includes('pre-op') || lower.includes('clearance') || lower.includes('risk')) return 'shield-checkmark';
+  if (lower.includes('post-operative') || lower.includes('post-op') || lower.includes('critical care') || lower.includes('eras') || lower.includes('drain')) return 'pulse';
+  if (lower.includes('complication') || lower.includes('intraoperative') || lower.includes('pitfall') || lower.includes('malpractice') || lower.includes('warning')) return 'alert-circle';
+  if (lower.includes('scenario') || lower.includes('presentation') || lower.includes('history')) return 'document-text';
   if (lower.includes('triage') || lower.includes('red flag') || lower.includes('emergency')) return 'warning';
   if (lower.includes('diagnostic') || lower.includes('criteria') || lower.includes('scoring') || lower.includes('scale')) return 'clipboard';
   if (lower.includes('pharmacotherapy') || lower.includes('dosing') || lower.includes('medication') || lower.includes('drug')) return 'medkit';
   if (lower.includes('algorithm') || lower.includes('stepwise') || lower.includes('management') || lower.includes('protocol')) return 'git-network';
-  if (lower.includes('pitfall') || lower.includes('malpractice') || lower.includes('warning')) return 'alert-circle';
   if (lower.includes('citation') || lower.includes('reference') || lower.includes('guideline') || lower.includes('trial')) return 'book';
   return 'information-circle';
 }
@@ -153,14 +158,58 @@ function getIconForSection(title: string): keyof typeof Ionicons.glyphMap {
 function getSectionCardStyle(title: string, themeColor: string) {
   const lower = title.toLowerCase();
 
-  // Red Flags / Immediate Triage
-  if (lower.includes('triage') || lower.includes('red flag')) {
+  // Operative Steps & Techniques (Surgical Cut - Vibrant Mint/Teal)
+  if (lower.includes('operative step') || lower.includes('surgical technique') || lower.includes('dissection')) {
+    return {
+      cardBg: 'rgba(222, 255, 249, 0.07)',
+      cardBorder: 'rgba(222, 255, 249, 0.35)',
+      iconBg: 'rgba(222, 255, 249, 0.18)',
+      iconBorder: 'rgba(222, 255, 249, 0.5)',
+      iconColor: '#defff9',
+    };
+  }
+
+  // Preoperative Risk & Preparation (Shield - Rose / Light Amber)
+  if (lower.includes('preoperative') || lower.includes('pre-op') || lower.includes('clearance')) {
+    return {
+      cardBg: 'rgba(255, 195, 221, 0.07)',
+      cardBorder: 'rgba(255, 195, 221, 0.35)',
+      iconBg: 'rgba(255, 195, 221, 0.18)',
+      iconBorder: 'rgba(255, 195, 221, 0.5)',
+      iconColor: '#ffc3dd',
+    };
+  }
+
+  // Complications & Red Flags / Emergency (Alert - Coral Red)
+  if (lower.includes('complication') || lower.includes('triage') || lower.includes('red flag') || lower.includes('emergency')) {
     return {
       cardBg: 'rgba(217, 83, 79, 0.08)',
       cardBorder: 'rgba(217, 83, 79, 0.35)',
       iconBg: 'rgba(217, 83, 79, 0.2)',
       iconBorder: 'rgba(217, 83, 79, 0.5)',
       iconColor: '#e06c75',
+    };
+  }
+
+  // Post-Op Critical Care & ERAS (Pulse - Lavender)
+  if (lower.includes('post-operative') || lower.includes('post-op') || lower.includes('critical care') || lower.includes('eras')) {
+    return {
+      cardBg: 'rgba(219, 212, 253, 0.07)',
+      cardBorder: 'rgba(219, 212, 253, 0.35)',
+      iconBg: 'rgba(219, 212, 253, 0.18)',
+      iconBorder: 'rgba(219, 212, 253, 0.5)',
+      iconColor: '#dbd4fd',
+    };
+  }
+
+  // Surgical Instruments & Equipment (Hardware - Jewel Teal)
+  if (lower.includes('instrument') || lower.includes('equipment') || lower.includes('device') || lower.includes('suture')) {
+    return {
+      cardBg: 'rgba(109, 194, 189, 0.07)',
+      cardBorder: 'rgba(109, 194, 189, 0.35)',
+      iconBg: 'rgba(109, 194, 189, 0.18)',
+      iconBorder: 'rgba(109, 194, 189, 0.5)',
+      iconColor: '#6dc2bd',
     };
   }
 
