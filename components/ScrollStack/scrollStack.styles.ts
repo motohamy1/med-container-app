@@ -9,10 +9,9 @@ export const createScrollStackStyles = () => {
     },
     stackContainer: {
       width: '100%',
-      minHeight: 390,
       position: 'relative',
       alignItems: 'center',
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
     },
     cardWrapper: {
       position: 'absolute',
@@ -25,24 +24,25 @@ export const createScrollStackStyles = () => {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      marginTop: 12,
-      gap: 8,
+      marginTop: 4, // Reduced by 50% for snug fit directly under the card
+      gap: 6,
+      paddingVertical: 2,
     },
     paginationDot: {
-      width: 7,
-      height: 7,
-      borderRadius: 4,
+      width: 6,
+      height: 6,
+      borderRadius: 3,
       backgroundColor: 'rgba(255, 255, 255, 0.18)',
     },
     paginationDotActive: {
-      width: 24,
-      height: 7,
-      borderRadius: 4,
+      width: 18,
+      height: 6,
+      borderRadius: 3,
       backgroundColor: Colors.lime,
     },
     navArrow: {
-      paddingHorizontal: 10,
-      paddingVertical: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
     },
   });
 };

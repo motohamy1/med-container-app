@@ -1,5 +1,12 @@
 import React from 'react';
-import { StyleSheet, StyleProp, ViewStyle, TouchableOpacity, Dimensions } from 'react-native';
+import {
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+  Pressable,
+  Dimensions,
+  LayoutChangeEvent,
+} from 'react-native';
 import Animated, {
   useAnimatedStyle,
   interpolate,
@@ -14,7 +21,12 @@ interface ScrollStackItemProps {
   index: number;
   totalCards: number;
   progress: SharedValue<number>;
+  itemScale?: number;
+  itemStackDistance?: number;
+  baseScale?: number;
+  rotationAmount?: number;
   onSelect: () => void;
+  onLayout?: (e: LayoutChangeEvent) => void;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -23,7 +35,12 @@ export const ScrollStackItem: React.FC<ScrollStackItemProps> = ({
   index,
   totalCards,
   progress,
+  itemScale = 0.04,
+  itemStackDistance = 12,
+  baseScale = 0.90,
+  rotationAmount = 10,
   onSelect,
+  onLayout,
   style,
 }) => {
   const animatedStyle = useAnimatedStyle(() => {
@@ -34,7 +51,7 @@ export const ScrollStackItem: React.FC<ScrollStackItemProps> = ({
     if (diff < -totalCards / 2) diff += totalCards;
 
     // Invisible / outside visible window
-    if (diff < -1.4 || diff > 2.6) {
+    if (diff < -1.15 || diff > 2.5) {
       return {
         opacity: 0,
         zIndex: 0,
@@ -43,13 +60,13 @@ export const ScrollStackItem: React.FC<ScrollStackItemProps> = ({
     }
 
     if (diff <= 0) {
-      // Top card or card exiting offscreen
+      // Top card or card exiting offscreen — stays completely solid while swiping
       const translateX = diff * SCREEN_WIDTH * 1.05;
-      const rotate = `${diff * 14}deg`;
+      const rotate = `${diff * rotationAmount}deg`;
       const opacity = interpolate(
         diff,
-        [-1, -0.6, 0],
-        [0, 0.7, 1.0],
+        [-1, -0.8, 0],
+        [0, 0.95, 1.0],
         Extrapolation.CLAMP
       );
 
@@ -61,7 +78,7 @@ export const ScrollStackItem: React.FC<ScrollStackItemProps> = ({
           { rotate },
         ],
         opacity,
-        zIndex: 30,
+        zIndex: 40,
       };
     }
 
@@ -69,25 +86,25 @@ export const ScrollStackItem: React.FC<ScrollStackItemProps> = ({
     const translateY = interpolate(
       diff,
       [0, 1, 2],
-      [0, 14, 26],
+      [0, itemStackDistance, itemStackDistance * 1.8],
       Extrapolation.CLAMP
     );
 
     const scale = interpolate(
       diff,
       [0, 1, 2],
-      [1.0, 0.93, 0.86],
+      [1.0, 1.0 - itemScale, baseScale],
       Extrapolation.CLAMP
     );
 
     const opacity = interpolate(
       diff,
       [0, 1, 2, 2.5],
-      [1.0, 0.82, 0.45, 0],
+      [1.0, 0.88, 0.6, 0],
       Extrapolation.CLAMP
     );
 
-    const zIndex = Math.round(20 - diff * 5);
+    const zIndex = Math.round(30 - diff * 5);
 
     return {
       transform: [{ translateY }, { scale }],
@@ -100,14 +117,14 @@ export const ScrollStackItem: React.FC<ScrollStackItemProps> = ({
     <Animated.View
       style={[styles.cardContainer, animatedStyle, style]}
       pointerEvents="box-none"
+      onLayout={onLayout}
     >
-      <TouchableOpacity
-        activeOpacity={0.88}
+      <Pressable
         onPress={onSelect}
         style={styles.touchable}
       >
         {children}
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 };

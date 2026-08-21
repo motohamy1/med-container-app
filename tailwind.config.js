@@ -14,14 +14,19 @@ module.exports = {
         "teal-medium": Colors.tealMedium,
         "surface-hover": Colors.surfaceHover,
         // Signature 4-Color Palette (User Palette)
-        turquoise: Colors.accent, // #6dc2bd (Jewel Teal)
-        lime: Colors.lime, // #c4f230 (Electric Lime)
-        lavender: Colors.lavender, // #c09ffa (Soft Lavender)
+        main: Colors.main, // #defff9 (Main Ice Mint)
+        primary: Colors.main, // #defff9
+        accent: Colors.accent, // #defff9
+        turquoise: Colors.teal, // #6dc2bd (Jewel Teal)
+        teal: Colors.teal, // #6dc2bd
+        lime: Colors.main, // #defff9 (Mapped to Main #defff9)
+        lavender: Colors.lavender, // #dbd4fd (Soft Lavender)
         pink: Colors.pink, // #ffc3dd (Pastel Rose Pink)
         "accent-bright": Colors.accentBright,
+        "accent-deep": Colors.accentDeep,
         // Functional tokens
-        gold: Colors.gold, // Mapped to #c4f230
-        terracotta: Colors.terracotta, // Mapped to #ffc3dd
+        gold: Colors.gold, // #dbd4fd
+        terracotta: Colors.terracotta, // #ffc3dd
         "terracotta-deep": Colors.terracottaDeep,
         // Neutral tones
         charcoal: Colors.charcoal,

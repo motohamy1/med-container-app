@@ -1,5 +1,12 @@
 import React, { Children, useState, useCallback } from 'react';
-import { View, TouchableOpacity, StyleProp, ViewStyle, Dimensions } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  StyleProp,
+  ViewStyle,
+  Dimensions,
+  LayoutChangeEvent,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -15,27 +22,38 @@ import ScrollStackItem from './ScrollStackItem';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const SPRING_CONFIG = {
-  damping: 26,
-  stiffness: 240,
+  damping: 24,
+  stiffness: 220,
   mass: 0.8,
 };
 
 interface ScrollStackProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  itemScale?: number;
+  itemStackDistance?: number;
+  baseScale?: number;
+  rotationAmount?: number;
   onCardChange?: (index: number) => void;
+  onStackComplete?: () => void;
 }
 
 export const ScrollStack: React.FC<ScrollStackProps> = ({
   children,
   style,
+  itemScale = 0.04,
+  itemStackDistance = 12,
+  baseScale = 0.90,
+  rotationAmount = 10,
   onCardChange,
+  onStackComplete,
 }) => {
   const styles = createScrollStackStyles();
   const cardArray = Children.toArray(children);
   const totalCards = cardArray.length;
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [measuredCardHeight, setMeasuredCardHeight] = useState<number | null>(null);
 
   // Single continuous float value representing the scroll position
   const progress = useSharedValue(0);
@@ -45,8 +63,11 @@ export const ScrollStack: React.FC<ScrollStackProps> = ({
     (newIndex: number) => {
       setActiveIndex(newIndex);
       onCardChange?.(newIndex);
+      if (newIndex === totalCards - 1) {
+        onStackComplete?.();
+      }
     },
-    [onCardChange]
+    [onCardChange, onStackComplete, totalCards]
   );
 
   const goToCard = useCallback(
@@ -73,8 +94,23 @@ export const ScrollStack: React.FC<ScrollStackProps> = ({
     [totalCards, progress, handleIndexChange]
   );
 
+  const handleCardLayout = useCallback(
+    (idx: number, e: LayoutChangeEvent) => {
+      const height = e.nativeEvent.layout.height;
+      if (height > 0) {
+        setMeasuredCardHeight((prev) => {
+          if (!prev || Math.abs(prev - height) > 4) {
+            return height;
+          }
+          return prev;
+        });
+      }
+    },
+    []
+  );
+
   const panGesture = Gesture.Pan()
-    .activeOffsetX([-10, 10])
+    .activeOffsetX([-8, 8])
     .onStart(() => {
       startProgress.value = progress.value;
     })
@@ -88,13 +124,13 @@ export const ScrollStack: React.FC<ScrollStackProps> = ({
 
       let target = Math.round(progress.value);
 
-      // Flick or drag distance threshold
-      if (Math.abs(velocity) > 450) {
+      // Flick or drag distance threshold (15% of screen width)
+      if (Math.abs(velocity) > 350) {
         target =
           velocity < 0
             ? Math.floor(startProgress.value) + 1
             : Math.ceil(startProgress.value) - 1;
-      } else if (Math.abs(dragDistance) > SCREEN_WIDTH * 0.2) {
+      } else if (Math.abs(dragDistance) > SCREEN_WIDTH * 0.15) {
         target =
           dragDistance < 0
             ? Math.floor(startProgress.value) + 1
@@ -111,18 +147,28 @@ export const ScrollStack: React.FC<ScrollStackProps> = ({
       });
     });
 
+  // Dynamic height calculation matching exact measured card height + background layer offset
+  const stackHeightStyle = measuredCardHeight
+    ? { height: measuredCardHeight + itemStackDistance * 1.8 }
+    : { minHeight: 410 };
+
   return (
     <View style={[styles.container, style]}>
-      {/* Gesture-Driven Stack with Single-Pass Physics */}
+      {/* Gesture-Driven Stack with React Bits Physics */}
       <GestureDetector gesture={panGesture}>
-        <View style={styles.stackContainer}>
+        <View style={[styles.stackContainer, stackHeightStyle]}>
           {cardArray.map((child, idx) => (
             <ScrollStackItem
               key={idx}
               index={idx}
               totalCards={totalCards}
               progress={progress}
+              itemScale={itemScale}
+              itemStackDistance={itemStackDistance}
+              baseScale={baseScale}
+              rotationAmount={rotationAmount}
               onSelect={() => goToCard(idx)}
+              onLayout={(e) => handleCardLayout(idx, e)}
             >
               {child}
             </ScrollStackItem>
@@ -130,16 +176,16 @@ export const ScrollStack: React.FC<ScrollStackProps> = ({
         </View>
       </GestureDetector>
 
-      {/* Pagination Controls */}
+      {/* Snug Pagination Controls (< 50% gap from before) */}
       {totalCards > 1 && (
         <View style={styles.paginationRow}>
           <TouchableOpacity
             onPress={() => goToCard(activeIndex - 1)}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             activeOpacity={0.6}
             style={styles.navArrow}
           >
-            <Ionicons name="chevron-back" size={18} color={Colors.grayMuted} />
+            <Ionicons name="chevron-back" size={16} color={Colors.grayMuted} />
           </TouchableOpacity>
 
           {cardArray.map((_, dotIdx) => {
@@ -149,7 +195,7 @@ export const ScrollStack: React.FC<ScrollStackProps> = ({
                 key={dotIdx}
                 onPress={() => goToCard(dotIdx)}
                 activeOpacity={0.7}
-                hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                 style={[styles.paginationDot, isActive && styles.paginationDotActive]}
               />
             );
@@ -157,11 +203,11 @@ export const ScrollStack: React.FC<ScrollStackProps> = ({
 
           <TouchableOpacity
             onPress={() => goToCard(activeIndex + 1)}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             activeOpacity={0.6}
             style={styles.navArrow}
           >
-            <Ionicons name="chevron-forward" size={18} color={Colors.grayMuted} />
+            <Ionicons name="chevron-forward" size={16} color={Colors.grayMuted} />
           </TouchableOpacity>
         </View>
       )}

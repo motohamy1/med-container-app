@@ -23,7 +23,7 @@ export const aiService = {
     category: DoctorCategory | string = 'physicians',
     topicId?: string,
     categoryContext?: string
-  ): Promise<{ reply: string; citations?: Citation[] }> {
+  ): Promise<{ reply: string; citations?: Citation[]; suggestions?: string[] }> {
     try {
       const response = await fetch(`${BACKEND_URL}/api/chat`, {
         method: 'POST',
@@ -39,7 +39,8 @@ export const aiService = {
       const data = await response.json();
       return { 
         reply: data.reply || "I'm sorry, I received an empty response. Please try again.",
-        citations: data.citations
+        citations: data.citations || [],
+        suggestions: data.suggestions || []
       };
     } catch (error) {
       console.error('AI Service Error:', error);

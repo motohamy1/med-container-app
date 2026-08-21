@@ -1,23 +1,63 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Dimensions,
-  StyleSheet,
-  Modal,
-  ScrollView,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import React, { useState } from 'react';
+import {
+  Dimensions,
+  FlatList,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Colors } from '../constants/Colors';
 import { MEDICAL_UPDATES_DATA, MedicalUpdate } from '../constants/MedicalUpdatesData';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = Math.min(SCREEN_WIDTH * 0.84, 320);
 const CARD_GAP = 14;
+
+// Distinct theme configuration for glassmorphic update cards
+const getUpdateTheme = (item: MedicalUpdate) => {
+  switch (item.category) {
+    case 'Clinical Trial':
+      return {
+        color: '#6dc2bd', // Medical Jewel Teal
+        gradient: ['rgba(109, 194, 189, 0.26)', '#0e2427', '#071315'] as const,
+        border: 'rgba(109, 194, 189, 0.45)',
+        shadow: '#6dc2bd',
+        tagIcon: 'flask' as const,
+      };
+    case 'Practice Guideline':
+      return {
+        color: '#dbd4fd', // Soft Lavender / Periwinkle
+        gradient: ['rgba(219, 212, 253, 0.26)', '#1c1736', '#0c0919'] as const,
+        border: 'rgba(219, 212, 253, 0.45)',
+        shadow: '#dbd4fd',
+        tagIcon: 'ribbon' as const,
+      };
+    case 'FDA Approval':
+      return {
+        color: '#defff9', // Luminous Mint
+        gradient: ['rgba(222, 255, 249, 0.26)', '#133534', '#061716'] as const,
+        border: 'rgba(222, 255, 249, 0.45)',
+        shadow: '#defff9',
+        tagIcon: 'checkmark-circle' as const,
+      };
+    case 'Safety Alert':
+    default:
+      return {
+        color: '#ffc3dd', // Pastel Rose
+        gradient: ['rgba(255, 195, 221, 0.26)', '#381525', '#16070e'] as const,
+        border: 'rgba(255, 195, 221, 0.45)',
+        shadow: '#ffc3dd',
+        tagIcon: 'warning' as const,
+      };
+  }
+};
 
 export const MedicalUpdatesCarousel: React.FC = () => {
   const [selectedUpdate, setSelectedUpdate] = useState<MedicalUpdate | null>(null);
@@ -34,9 +74,11 @@ export const MedicalUpdatesCarousel: React.FC = () => {
   };
 
   const renderCard = ({ item, index }: { item: MedicalUpdate; index: number }) => {
+    const theme = getUpdateTheme(item);
+
     return (
       <TouchableOpacity
-        activeOpacity={0.88}
+        activeOpacity={0.9}
         onPress={() => {
           try {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -44,86 +86,122 @@ export const MedicalUpdatesCarousel: React.FC = () => {
           setSelectedUpdate(item);
         }}
         style={[
-          styles.card,
+          styles.glassCardTouchable,
           {
+            borderColor: theme.border,
+            shadowColor: theme.shadow,
             marginLeft: index === 0 ? 20 : 0,
             marginRight: index === MEDICAL_UPDATES_DATA.length - 1 ? 20 : CARD_GAP,
           },
         ]}
       >
-        {/* Top Header Row */}
-        <View className="flex-row items-center justify-between mb-3">
-          <View
-            className="px-2.5 py-1 rounded-lg border flex-row items-center gap-1.5"
-            style={{
-              backgroundColor: `${item.specialtyColor}18`,
-              borderColor: `${item.specialtyColor}40`,
-            }}
-          >
-            <Ionicons name={item.specialtyIcon as any} size={12} color={item.specialtyColor} />
-            <Text
-              className="text-[10px] font-sans-bold uppercase tracking-wider"
-              style={{ color: item.specialtyColor }}
+        <LinearGradient
+          colors={theme.gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.glassCardGradient}
+        >
+          {/* Top Header Row */}
+          <View className="flex-row items-center justify-between mb-2.5">
+            <View
+              className="px-2.5 py-1 rounded-lg border flex-row items-center gap-1.5"
+              style={{
+                backgroundColor: `${theme.color}20`,
+                borderColor: `${theme.color}45`,
+              }}
             >
-              {item.specialtyName}
+              <Ionicons name={item.specialtyIcon as any} size={12} color={theme.color} />
+              <Text
+                className="text-[10px] font-sans-bold uppercase tracking-wider"
+                style={{ color: theme.color }}
+              >
+                {item.specialtyName}
+              </Text>
+            </View>
+
+            <View className="px-2 py-0.5 rounded-full bg-white/10 border border-white/10 flex-row items-center gap-1">
+              <Ionicons name="calendar-outline" size={10} color="#cbd5e1" />
+              <Text className="text-[10px] font-sans-medium text-gray-300">
+                {item.date}
+              </Text>
+            </View>
+          </View>
+
+          {/* Badge Banner */}
+          <View className="flex-row items-center gap-1.5 mb-1.5">
+            <View
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: theme.color }}
+            />
+            <Text
+              className="text-[10.5px] font-mono font-bold uppercase tracking-wider"
+              style={{ color: theme.color }}
+            >
+              {item.badge}
             </Text>
           </View>
 
-          <View className="px-2 py-0.5 rounded-full bg-white/10">
-            <Text className="text-[10px] font-sans-medium text-gray-300">
-              {item.date}
-            </Text>
-          </View>
-        </View>
-
-        {/* Badge Banner */}
-        <View className="flex-row items-center gap-1.5 mb-2">
-          <View className="w-1.5 h-1.5 rounded-full bg-accent" />
-          <Text className="text-[10.5px] font-mono font-bold text-accent">
-            {item.badge}
-          </Text>
-        </View>
-
-        {/* Title */}
-        <Text
-          className="text-[15px] font-sans-bold text-white tracking-tight leading-5 mb-2"
-          numberOfLines={2}
-        >
-          {item.title}
-        </Text>
-
-        {/* Headline Summary */}
-        <Text
-          className="text-[12px] font-sans text-gray-300 leading-4.5 mb-3 flex-1"
-          numberOfLines={3}
-        >
-          {item.headline}
-        </Text>
-
-        {/* Card Footer */}
-        <View className="pt-2.5 border-t border-white/10 flex-row items-center justify-between">
+          {/* Title */}
           <Text
-            className="text-[10px] font-mono text-gray-muted flex-1 mr-2"
-            numberOfLines={1}
+            className="text-[15px] font-sans-bold text-white tracking-tight leading-5 mb-2"
+            numberOfLines={2}
           >
-            📄 {item.journalOrSource}
+            {item.title}
           </Text>
-          <View className="flex-row items-center gap-1">
-            <Text className="text-[11px] font-sans-semibold text-turquoise">Read</Text>
-            <Ionicons name="arrow-forward" size={12} color={Colors.accent} />
+
+          {/* Glassmorphic Summary Box with Colored Left Accent */}
+          <View
+            style={[
+              styles.summaryGlassBox,
+              { borderLeftColor: theme.color },
+            ]}
+          >
+            <Text
+              className="text-[11.5px] font-sans text-gray-200 leading-4"
+              numberOfLines={3}
+            >
+              {item.headline}
+            </Text>
           </View>
-        </View>
+
+          {/* Card Footer */}
+          <View className="pt-2.5 border-t border-white/10 flex-row items-center justify-between mt-auto">
+            <Text
+              className="text-[10px] font-mono text-gray-400 flex-1 mr-2"
+              numberOfLines={1}
+            >
+              📄 {item.journalOrSource}
+            </Text>
+            <View
+              className="flex-row items-center gap-1 px-2.5 py-1 rounded-full border"
+              style={{
+                backgroundColor: `${theme.color}18`,
+                borderColor: `${theme.color}50`,
+              }}
+            >
+              <Text
+                className="text-[10.5px] font-sans-bold"
+                style={{ color: theme.color }}
+              >
+                Read Brief
+              </Text>
+              <Ionicons name="arrow-forward" size={11} color={theme.color} />
+            </View>
+          </View>
+        </LinearGradient>
       </TouchableOpacity>
     );
   };
+
+  const selectedTheme = selectedUpdate ? getUpdateTheme(selectedUpdate) : null;
 
   return (
     <View className="mb-8">
       {/* Section Header */}
       <View className="px-6 flex-row items-center justify-between mb-3.5">
         <View className="flex-row items-center gap-2">
-          <View className="w-8 h-8 rounded-xl bg-turquoise/15 border border-turquoise/30 items-center justify-center">
-            <Ionicons name="newspaper-outline" size={16} color={Colors.accent} />
+          <View className="w-8 h-8 rounded-xl bg-teal/15 border border-teal/30 items-center justify-center">
+            <Ionicons name="newspaper-outline" size={16} color={Colors.teal} />
           </View>
           <View>
             <Text className="text-[17px] font-sans-bold text-white tracking-tight">
@@ -136,7 +214,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
         </View>
 
         <View className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10">
-          <Text className="text-[10.5px] font-mono text-lime">
+          <Text className="text-[10.5px] font-mono text-lime font-bold">
             {MEDICAL_UPDATES_DATA.length} New
           </Text>
         </View>
@@ -154,7 +232,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
         contentContainerStyle={styles.listContent}
       />
 
-      {/* Detail Modal */}
+      {/* Detail Modal with Matching Glassmorphism */}
       <Modal
         visible={!!selectedUpdate}
         transparent
@@ -162,124 +240,161 @@ export const MedicalUpdatesCarousel: React.FC = () => {
         onRequestClose={() => setSelectedUpdate(null)}
       >
         <View className="flex-1 bg-black/85 justify-center items-center px-5">
-          {selectedUpdate && (
+          {selectedUpdate && selectedTheme && (
             <View
-              className="w-full max-w-md rounded-3xl bg-[#0c1017] border border-white/15 p-6 max-h-[85%]"
+              className="w-full max-w-md rounded-3xl border overflow-hidden max-h-[85%]"
               style={{
-                shadowColor: '#000',
+                borderColor: selectedTheme.border,
+                shadowColor: selectedTheme.shadow,
                 shadowOffset: { width: 0, height: 12 },
-                shadowOpacity: 0.6,
+                shadowOpacity: 0.5,
                 shadowRadius: 24,
                 elevation: 16,
+                backgroundColor: '#0c1017',
               }}
             >
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Header Tag */}
-                <View className="flex-row items-center justify-between mb-3">
-                  <View
-                    className="px-2.5 py-1 rounded-lg border flex-row items-center gap-1.5"
-                    style={{
-                      backgroundColor: `${selectedUpdate.specialtyColor}20`,
-                      borderColor: `${selectedUpdate.specialtyColor}40`,
-                    }}
-                  >
-                    <Ionicons
-                      name={selectedUpdate.specialtyIcon as any}
-                      size={12}
-                      color={selectedUpdate.specialtyColor}
-                    />
-                    <Text
-                      className="text-[10.5px] font-sans-bold uppercase tracking-wider"
-                      style={{ color: selectedUpdate.specialtyColor }}
+              <LinearGradient
+                colors={selectedTheme.gradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ padding: 22 }}
+              >
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  {/* Header Tag */}
+                  <View className="flex-row items-center justify-between mb-3">
+                    <View
+                      className="px-2.5 py-1 rounded-lg border flex-row items-center gap-1.5"
+                      style={{
+                        backgroundColor: `${selectedTheme.color}25`,
+                        borderColor: `${selectedTheme.color}50`,
+                      }}
                     >
-                      {selectedUpdate.specialtyName}
+                      <Ionicons
+                        name={selectedUpdate.specialtyIcon as any}
+                        size={13}
+                        color={selectedTheme.color}
+                      />
+                      <Text
+                        className="text-[10.5px] font-sans-bold uppercase tracking-wider"
+                        style={{ color: selectedTheme.color }}
+                      >
+                        {selectedUpdate.specialtyName}
+                      </Text>
+                    </View>
+
+                    <TouchableOpacity
+                      onPress={() => setSelectedUpdate(null)}
+                      className="w-8 h-8 rounded-full bg-white/10 items-center justify-center"
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="close" size={18} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Evidence Badge */}
+                  <View className="mb-2">
+                    <Text
+                      className="text-[11.5px] font-mono font-bold"
+                      style={{ color: selectedTheme.color }}
+                    >
+                      ⚡ {selectedUpdate.badge} • {selectedUpdate.date}
                     </Text>
                   </View>
 
+                  {/* Title */}
+                  <Text className="text-[18px] font-sans-bold text-white leading-6 mb-3">
+                    {selectedUpdate.title}
+                  </Text>
+
+                  {/* Headline Box */}
+                  <View
+                    className="border rounded-2xl p-3.5 mb-4"
+                    style={{
+                      backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      borderLeftColor: selectedTheme.color,
+                      borderLeftWidth: 3.5,
+                    }}
+                  >
+                    <Text className="text-[13px] font-sans text-gray-200 leading-5">
+                      {selectedUpdate.headline}
+                    </Text>
+                  </View>
+
+                  {/* Key Takeaways */}
+                  <Text
+                    className="text-[12.5px] font-sans-bold uppercase tracking-wider mb-2"
+                    style={{ color: selectedTheme.color }}
+                  >
+                    Key Takeaways
+                  </Text>
+                  <View className="gap-2 mb-4">
+                    {selectedUpdate.keyTakeaways.map((point, idx) => (
+                      <View key={idx} className="flex-row items-start gap-2">
+                        <View
+                          className="w-1.5 h-1.5 rounded-full mt-1.5"
+                          style={{ backgroundColor: selectedTheme.color }}
+                        />
+                        <Text className="text-[12.5px] font-sans text-gray-300 flex-1 leading-4.5">
+                          {point}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* Clinical Impact */}
+                  <View
+                    className="border rounded-xl p-3 mb-4"
+                    style={{
+                      backgroundColor: `${selectedTheme.color}10`,
+                      borderColor: `${selectedTheme.color}35`,
+                    }}
+                  >
+                    <Text
+                      className="text-[11px] font-sans-bold uppercase mb-1"
+                      style={{ color: selectedTheme.color }}
+                    >
+                      Clinical Practice Impact
+                    </Text>
+                    <Text className="text-[12px] font-sans text-gray-200 leading-4.5">
+                      {selectedUpdate.clinicalImpact}
+                    </Text>
+                  </View>
+
+                  {/* Citation */}
+                  <Text className="text-[11px] font-mono text-gray-400 mb-5">
+                    📚 Source: {selectedUpdate.journalOrSource}
+                  </Text>
+
+                  {/* Action Button */}
+                  <TouchableOpacity
+                    onPress={() => handleConsultAI(selectedUpdate)}
+                    className="w-full py-3.5 rounded-full flex-row items-center justify-center gap-2 active:opacity-90 mb-2.5"
+                    style={{
+                      backgroundColor: selectedTheme.color,
+                      shadowColor: selectedTheme.color,
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 8,
+                      elevation: 6,
+                    }}
+                  >
+                    <Ionicons name="sparkles" size={16} color="#010101" />
+                    <Text className="text-[#010101] font-sans-bold text-[14px]">
+                      Consult AI for Deep Analysis
+                    </Text>
+                  </TouchableOpacity>
+
                   <TouchableOpacity
                     onPress={() => setSelectedUpdate(null)}
-                    className="w-8 h-8 rounded-full bg-white/10 items-center justify-center"
+                    className="w-full py-2 items-center justify-center"
                   >
-                    <Ionicons name="close" size={18} color="#fff" />
+                    <Text className="text-gray-400 font-sans-medium text-[13px]">
+                      Dismiss
+                    </Text>
                   </TouchableOpacity>
-                </View>
-
-                {/* Evidence Badge */}
-                <View className="mb-2">
-                  <Text className="text-[11px] font-mono text-accent font-bold">
-                    ⚡ {selectedUpdate.badge} • {selectedUpdate.date}
-                  </Text>
-                </View>
-
-                {/* Title */}
-                <Text className="text-[18px] font-sans-bold text-white leading-6 mb-3">
-                  {selectedUpdate.title}
-                </Text>
-
-                {/* Headline Box */}
-                <View className="bg-white/[0.04] border border-white/10 rounded-2xl p-3.5 mb-4">
-                  <Text className="text-[13px] font-sans text-gray-200 leading-5">
-                    {selectedUpdate.headline}
-                  </Text>
-                </View>
-
-                {/* Key Takeaways */}
-                <Text className="text-[13px] font-sans-bold text-lime mb-2 tracking-wide uppercase">
-                  Key Takeaways
-                </Text>
-                <View className="gap-2 mb-4">
-                  {selectedUpdate.keyTakeaways.map((point, idx) => (
-                    <View key={idx} className="flex-row items-start gap-2">
-                      <View className="w-1.5 h-1.5 rounded-full bg-turquoise mt-1.5" />
-                      <Text className="text-[12.5px] font-sans text-gray-300 flex-1 leading-4.5">
-                        {point}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Clinical Impact */}
-                <View className="bg-white/[0.04] border border-white/10 rounded-xl p-3 mb-4">
-                  <Text className="text-[11px] font-sans-bold text-gold uppercase mb-1">
-                    Clinical Practice Impact
-                  </Text>
-                  <Text className="text-[12px] font-sans text-gray-300 leading-4.5">
-                    {selectedUpdate.clinicalImpact}
-                  </Text>
-                </View>
-
-                {/* Citation */}
-                <Text className="text-[11px] font-mono text-gray-muted mb-5">
-                  📚 Source: {selectedUpdate.journalOrSource}
-                </Text>
-
-                {/* Buttons */}
-                <TouchableOpacity
-                  onPress={() => handleConsultAI(selectedUpdate)}
-                  className="w-full py-3.5 rounded-full bg-accent flex-row items-center justify-center gap-2 active:opacity-90 mb-2.5"
-                  style={{
-                    shadowColor: Colors.accent,
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.4,
-                    shadowRadius: 8,
-                    elevation: 6,
-                  }}
-                >
-                  <Ionicons name="sparkles" size={16} color={Colors.ink} />
-                  <Text className="text-ink font-sans-bold text-[14px]">
-                    Consult AI for Deep Analysis
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => setSelectedUpdate(null)}
-                  className="w-full py-2 items-center justify-center"
-                >
-                  <Text className="text-gray-400 font-sans-medium text-[13px]">
-                    Dismiss
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
+                </ScrollView>
+              </LinearGradient>
             </View>
           )}
         </View>
@@ -292,18 +407,30 @@ const styles = StyleSheet.create({
   listContent: {
     paddingVertical: 4,
   },
-  card: {
+  glassCardTouchable: {
     width: CARD_WIDTH,
-    minHeight: 200,
-    backgroundColor: '#0c1017',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    padding: 16,
-    shadowColor: '#000',
+    minHeight: 215,
+    borderRadius: 22,
+    borderWidth: 1.2,
+    overflow: 'hidden',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    elevation: 8,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 7,
+    backgroundColor: '#0c1017',
+  },
+  glassCardGradient: {
+    padding: 16,
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  summaryGlassBox: {
+    backgroundColor: 'rgba(0, 0, 0, 0.38)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderLeftWidth: 3,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 10,
   },
 });

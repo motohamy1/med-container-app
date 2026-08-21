@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -9,7 +10,8 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
-  Alert
+  Alert,
+  StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { dbService } from '../../../../services/dbService';
@@ -79,14 +81,16 @@ export default function CategoryPage() {
     if (!searchText.trim() || !specialty || !category) return;
     setIsSynthesizing(true);
     try {
-      const compiled = await dbService.synthesizeTopicFromReference(specialty.id, category.id, searchText.trim());
+      const compiled = await dbService.synthesizeTopicFromReference(
+        specialty.id,
+        category.id,
+        searchText.trim()
+      );
       if (compiled && compiled.id) {
-        // Add to local state list
         setCategory((prev) => prev ? {
           ...prev,
           topics: [compiled, ...(prev.topics || [])]
         } : prev);
-        // Navigate to newly compiled topic
         router.push(`/specialty/${specialty.id}/${compiled.id}` as any);
       } else {
         Alert.alert(
@@ -106,7 +110,7 @@ export default function CategoryPage() {
     return (
       <SafeAreaView className="flex-1 bg-background justify-center items-center">
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator size="large" color="#6ec2be" />
+        <ActivityIndicator size="large" color={Colors.main} />
       </SafeAreaView>
     );
   }
@@ -123,7 +127,7 @@ export default function CategoryPage() {
         </TouchableOpacity>
         <View className="flex-1 ml-2">
           <Text className="text-white text-lg font-sans-bold" numberOfLines={1}>{category.title}</Text>
-          <Text className="text-turquoise text-xs font-sans-semibold uppercase tracking-wider" style={{ color: specialty.color }}>
+          <Text className="text-xs font-sans-semibold uppercase tracking-wider" style={{ color: specialty.color }}>
             {specialty.scientificName} • {topicsList.length} Verified Protocols
           </Text>
         </View>
@@ -137,7 +141,7 @@ export default function CategoryPage() {
 
       {/* Live Search Bar */}
       <View className="px-5 pt-3 pb-2 bg-background">
-        <View className="bg-[#181a1d] rounded-2xl flex-row items-center px-4 py-2.5 border border-white/10">
+        <View className="bg-[#121719] rounded-2xl flex-row items-center px-4 py-2.5 border border-white/10">
           <Ionicons name="search" size={18} color={specialty.color} />
           <TextInput
             className="flex-1 text-white ml-2.5 font-sans-medium text-sm"
@@ -165,7 +169,7 @@ export default function CategoryPage() {
                   onPress={() => setSelectedFilter(chip)}
                   className="px-3 py-1 rounded-full border"
                   style={{
-                    backgroundColor: isSelected ? `${specialty.color}25` : '#181a1d',
+                    backgroundColor: isSelected ? `${specialty.color}25` : '#121719',
                     borderColor: isSelected ? specialty.color : 'rgba(255,255,255,0.08)',
                   }}
                 >
@@ -189,7 +193,7 @@ export default function CategoryPage() {
           </Text>
 
           {filteredTopics.length === 0 ? (
-            <View className="items-center justify-center py-10 px-4 bg-[#181a1d] rounded-3xl border border-white/5 mt-2">
+            <View className="items-center justify-center py-10 px-4 bg-[#121719] rounded-3xl border border-white/5 mt-2">
                <Ionicons name="document-text-outline" size={44} color={specialty.color} />
                <Text className="text-white font-sans-bold text-base mt-3 text-center">
                  {searchText.trim() ? `No topic matching "${searchText}"` : 'No curated topics in this filter'}
@@ -204,26 +208,26 @@ export default function CategoryPage() {
                  <TouchableOpacity
                    onPress={handleSynthesizeOnDemand}
                    disabled={isSynthesizing}
-                   className="px-5 py-3 rounded-full flex-row items-center gap-2"
-                   style={{ backgroundColor: specialty.color }}
+                   activeOpacity={0.85}
+                   style={[styles.primaryActionBtn, { backgroundColor: specialty.color }]}
                  >
                    {isSynthesizing ? (
                      <ActivityIndicator size="small" color={Colors.ink} />
                    ) : (
                      <Ionicons name="sparkles" size={16} color={Colors.ink} />
                    )}
-                   <Text className="text-ink font-sans-bold text-xs">
+                   <Text style={styles.primaryActionBtnText}>
                      {isSynthesizing ? 'Compiling from References...' : `Synthesize Guide for "${searchText}"`}
                    </Text>
                  </TouchableOpacity>
                ) : (
                  <TouchableOpacity
                    onPress={handleAskAI}
-                   className="px-5 py-2.5 rounded-full flex-row items-center gap-2"
-                   style={{ backgroundColor: specialty.color }}
+                   activeOpacity={0.85}
+                   style={[styles.primaryActionBtn, { backgroundColor: specialty.color }]}
                  >
                    <Ionicons name="chatbubbles" size={16} color={Colors.ink} />
-                   <Text className="text-ink font-sans-bold text-xs">Ask Category Specialist AI</Text>
+                   <Text style={styles.primaryActionBtnText}>Ask Category Specialist AI</Text>
                  </TouchableOpacity>
                )}
             </View>
@@ -233,26 +237,46 @@ export default function CategoryPage() {
                 <TouchableOpacity
                   key={topic.id}
                   onPress={() => handleTopicPress(topic.id)}
-                  className="bg-teal-medium/40 border border-white/10 p-4 rounded-2xl flex-row items-center justify-between active:opacity-70"
+                  activeOpacity={0.8}
+                  style={[styles.topicCardTouchable, { borderColor: `${specialty.color}40` }]}
                 >
-                  <View className="flex-1 mr-3">
-                    <View 
-                      className="self-start px-2 py-0.5 rounded border mb-1.5"
-                      style={{ backgroundColor: `${specialty.color}20`, borderColor: `${specialty.color}40` }}
-                    >
-                      <Text 
-                        className="text-[10px] font-sans-bold uppercase"
-                        style={{ color: specialty.color }}
+                  <LinearGradient
+                    colors={[`${specialty.color}22`, `${specialty.color}08`, '#0d1316']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.topicCardGradient}
+                  >
+                    <View className="flex-1 mr-3">
+                      <View 
+                        style={[
+                          styles.topicTypeBadge,
+                          {
+                            backgroundColor: `${specialty.color}20`,
+                            borderColor: `${specialty.color}45`,
+                          }
+                        ]}
                       >
-                        {topic.type}
-                      </Text>
+                        <Text 
+                          style={[styles.topicTypeText, { color: specialty.color }]}
+                        >
+                          {topic.type}
+                        </Text>
+                      </View>
+                      <Text style={styles.topicTitle}>{topic.title}</Text>
+                      <Text style={styles.topicSubtitle} numberOfLines={2}>{topic.subtitle}</Text>
                     </View>
-                    <Text className="text-white font-sans-bold text-base mb-1">{topic.title}</Text>
-                    <Text className="text-gray-400 text-xs leading-4" numberOfLines={2}>{topic.subtitle}</Text>
-                  </View>
-                  <View className="w-9 h-9 rounded-full bg-white/5 items-center justify-center border border-white/10">
-                    <Ionicons name="chevron-forward" size={18} color={specialty.color} />
-                  </View>
+                    <View 
+                      style={[
+                        styles.topicArrowBadge,
+                        {
+                          backgroundColor: `${specialty.color}18`,
+                          borderColor: `${specialty.color}40`,
+                        }
+                      ]}
+                    >
+                      <Ionicons name="chevron-forward" size={16} color={specialty.color} />
+                    </View>
+                  </LinearGradient>
                 </TouchableOpacity>
               ))}
             </View>
@@ -261,16 +285,137 @@ export default function CategoryPage() {
       </ScrollView>
 
       {/* Floating Ask AI Button */}
-      <View className="absolute bottom-6 left-0 right-0 items-center px-6" pointerEvents="box-none">
+      <View style={styles.floatingContainer} pointerEvents="box-none">
         <TouchableOpacity 
           onPress={handleAskAI}
-          className="flex-row items-center justify-center gap-2 py-3.5 px-6 rounded-full shadow-lg shadow-black/60"
-          style={{ backgroundColor: specialty.color }}
+          activeOpacity={0.85}
+          style={styles.floatingTouchable}
         >
-          <Ionicons name="chatbubbles" size={18} color={Colors.ink} />
-          <Text className="text-ink text-sm font-sans-bold">Ask AI about {category.title}</Text>
+          <LinearGradient
+            colors={[`${specialty.color}`, `${specialty.color}e6`]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.floatingGradient}
+          >
+            <View style={styles.floatingIconBadge}>
+              <Ionicons name="chatbubbles" size={16} color={Colors.ink} />
+            </View>
+            <Text style={styles.floatingText} numberOfLines={1}>
+              Ask AI about {category.title}
+            </Text>
+            <Ionicons name="arrow-forward" size={14} color={Colors.ink} />
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  primaryActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 24,
+  },
+  primaryActionBtnText: {
+    color: '#010101',
+    fontFamily: 'PlexSans_700Bold',
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  topicCardTouchable: {
+    borderRadius: 18,
+    borderWidth: 1.2,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  topicCardGradient: {
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  topicTypeBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 6,
+  },
+  topicTypeText: {
+    fontSize: 9.5,
+    fontFamily: 'PlexSans_700Bold',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  topicTitle: {
+    color: '#ffffff',
+    fontFamily: 'PlexSans_700Bold',
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  topicSubtitle: {
+    color: '#cbd5e1',
+    fontFamily: 'PlexSans_400Regular',
+    fontSize: 11.5,
+    lineHeight: 16,
+  },
+  topicArrowBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  floatingContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  floatingTouchable: {
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+    overflow: 'hidden',
+  },
+  floatingGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 13,
+    paddingHorizontal: 22,
+    borderRadius: 24,
+  },
+  floatingIconBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  floatingText: {
+    color: '#010101',
+    fontFamily: 'PlexSans_700Bold',
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+});

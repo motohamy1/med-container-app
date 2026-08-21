@@ -15,15 +15,43 @@ router.post('/', async (req, res) => {
     
     if (intent === 'CONVERSATIONAL') {
         console.log(`[Chat] Intercepted conversational intent: "${message}"`);
-        const conversationalPrompt = `You are the Med Arena Clinical Consultant, a professional medical AI. 
-The user just said: "${message}". 
-Reply warmly, professionally, and briefly. Do NOT use any markdown bold (**) or asterisks. Keep it conversational.`;
+        const conversationalPrompt = `You are the Med Arena Clinical Consultant, a professional medical AI assistant for physicians and medical students.
+The user just said: "${message}".
+Reply warmly, professionally, and concisely in 1-2 short sentences.
+Also suggest 3 high-yield clinical sample questions they might explore next.
+
+Format:
+##GREETING##
+Hello Doctor! How can I assist you with clinical guidelines, treatment protocols, or diagnostic workups today?
+##END##
+
+##SUGGESTIONS##
+• COPD GOLD 2024 management protocol
+• Acute Coronary Syndrome initial workup
+• Sepsis 1-hour resuscitation bundle
+##END##`;
         
         try {
-            const reply = await callAI(conversationalPrompt);
+            const rawReply = await callAI(conversationalPrompt);
+            let replyText = rawReply;
+            let suggestions = [];
+            const sugMatch = rawReply.match(/##SUGGESTIONS##([\s\S]*?)(?:##END##|$)/i);
+            if (sugMatch && sugMatch[1]) {
+                suggestions = sugMatch[1]
+                    .split('\n')
+                    .map(line => line.replace(/^[\s•\-*0-9.)]+/, '').replace(/##/g, '').trim())
+                    .filter(line => line.length > 4 && !line.toUpperCase().includes('END'));
+                replyText = rawReply.replace(/##SUGGESTIONS##[\s\S]*?(?:##END##|$)/gi, '').trim();
+            }
+
             return res.json({ 
-                reply: `##GREETING##\n${reply}\n##END##`, 
-                citations: [] 
+                reply: replyText.includes('##GREETING##') ? replyText : `##GREETING##\n${replyText}\n##END##`, 
+                citations: [],
+                suggestions: suggestions.length > 0 ? suggestions : [
+                    "COPD GOLD 2024 management protocol",
+                    "Acute Coronary Syndrome initial workup",
+                    "Sepsis 1-hour resuscitation bundle"
+                ]
             });
         } catch (err) {
             console.error('[Chat Intent]', err);
@@ -92,15 +120,12 @@ Reply warmly, professionally, and briefly. Do NOT use any markdown bold (**) or 
             : '';
 
         // DYNAMIC PERSONA RESOLUTION
-        // Fetch base scope from Supabase specialties table
         let personaInstruction = '';
         const specialtyScope = await getSpecialtyScope(category); 
-        // Note: frontend currently passes specialty.id in the `category` field (e.g. 'heart', 'skin')
         
         if (specialtyScope) {
             personaInstruction = `You are Med Arena AI Clinical Consultant. ${specialtyScope}`;
         } else {
-            // Fallback
             personaInstruction = `You are Med Arena AI Clinical Consultant, a Senior Physician & Medical/Surgical Specialist. Focus on human medicine, internal medicine, surgery, pediatrics, cardiology, neurology, gastroenterology, gynecology, pathophysiology, differential diagnosis, laboratory/imaging workup, and evidence-based clinical management guidelines.`;
         }
         
@@ -108,15 +133,11 @@ Reply warmly, professionally, and briefly. Do NOT use any markdown bold (**) or 
         if (topicId && topicId !== 'general') {
             const topicScope = await getTopicAiScope(topicId);
             if (topicScope) {
-                personaInstruction += `\nSPECIFIC FOCUS: ${topicScope}`;
+                personaInstruction += `\nSPECIFIC TOPIC CONTEXT: ${topicScope}`;
             }
         } else if (categoryContext) {
-            // Fallback for general chat within a category context
-            personaInstruction += `\nSPECIFIC FOCUS: You are currently advising within the ${categoryContext} context. Tailor your response strictly to this sub-domain.`;
+            personaInstruction += `\nSPECIFIC CONTEXT: You are advising within ${categoryContext}.`;
         }
-
-        const currentYear = new Date().getFullYear();
-        personaInstruction += `\n\nCRITICAL KNOWLEDGE AWARENESS: You are operating in the year ${currentYear}. You are provided with both 'Highly Cited Foundation' literature (most reliable established knowledge) and 'Latest Update' literature (newest cutting-edge research). You MUST explicitly synthesize these in your response: briefly state what the established reliable foundational knowledge says, and then highlight what the absolute latest cutting-edge updates say, ensuring the user is aware of both the reliable foundation and the newest developments.`;
 
         let systemPrompt = '';
 
@@ -124,49 +145,39 @@ Reply warmly, professionally, and briefly. Do NOT use any markdown bold (**) or 
             systemPrompt = `
 ${personaInstruction}
 
-YOUR TASK: Provide a FAST but COMPREHENSIVE CLINICAL RECAP.
+YOUR TASK: Provide a FAST, CONCISE, HIGH-YIELD CLINICAL RECAP.
 
 KNOWLEDGE RESOURCES:
 ${medicalKnowledgeContext}
 
-STRICT FORMATTING RULE — NO EXCEPTIONS:
-Every word of your response MUST be inside a structured section. 
-Do NOT use ANY asterisks (*) or markdown bold (**). 
-Do NOT mention drug trade names or brand names unless discussing active therapeutic principles.
-CRITICAL CITATION RULE: You MUST cite the provided PEER-REVIEWED MEDICAL LITERATURE using bracketed numbers, e.g., [1] or [2], inline where relevant in the text.
-
-You MUST use EXACTLY these section delimiters:
-
-##DEFINITION##
-content
+### FORMATTING RULES:
+- Use structured section delimiters:
+##DEFINITION & OVERVIEW##
+• Concise definition and diagnostic thresholds.
 ##END##
 
 ##CLINICAL PICTURE##
-content
+• Key signs, symptoms, and presentation.
 ##END##
 
-##INVESTIGATIONS##
-content
-##END##
-
-##DIFFERENTIAL DIAGNOSIS##
-content
-##END##
-
-##UPDATED INFO / SCORES##
-content
+##INVESTIGATIONS / WORKUP##
+• Essential diagnostic tests and scoring.
 ##END##
 
 ##MANAGEMENT PROTOCOL##
-content
+• First-line pharmacotherapy and key clinical steps.
 ##END##
 
-STRICT RULES:
-- ZERO asterisks (*) allowed anywhere.
-- ZERO markdown bold (**) allowed anywhere.
-- No conversational text outside of ##SECTION## blocks.
-- LANGUAGE RULE: Match the user's language perfectly. If the query is in English, respond ONLY in English. If the query is in Arabic, respond intelligently in Arabic but DO NOT force translations of complex medical terms, procedures, or drugs (e.g., write "Obeticholic acid" directly in English, do not translate it to Arabic). Keep medical terms in English unless they have a very common Egyptian Arabic medical equivalent.
-      `;
+##SUGGESTIONS##
+• Follow-up clinical question 1?
+• Follow-up clinical question 2?
+• Follow-up clinical question 3?
+##END##
+
+- Highlight key medications, dosages, and guidelines using **bold**.
+- Cite references inline using [1], [2] where applicable.
+- Match user's language (English or Arabic). Keep drug names/scores in English.
+`;
         } else {
             systemPrompt = `
 ${personaInstruction}
@@ -174,34 +185,55 @@ ${personaInstruction}
 KNOWLEDGE RESOURCES:
 ${medicalKnowledgeContext}
 
-### INSTRUCTIONS:
-Deliver a high-yield, accurate, and structured clinical response for doctors. 
+### CRITICAL CLINICAL INSTRUCTIONS:
+1. **QUESTION-FOCUSED SPECIFICITY (DO NOT OVER-DUMP)**:
+   - Answer PRECISELY what the user asks. Do NOT output a comprehensive textbook overview if only a specific aspect was asked.
+   - Specific Examples:
+     * If asked about "treatment / management of COPD": Provide ONLY the management protocol (first-line inhalers, step-up/step-down, acute vs stable). Do NOT include definitions, etiology, or complete diagnostic workup.
+     * If asked about "definition of COPD": Provide ONLY the clinical definition and spirometric diagnostic threshold (FEV1/FVC < 0.70). Do NOT dump treatment regimens.
+     * If asked about "investigations / diagnostic criteria": Provide ONLY the diagnostic algorithm, scoring criteria, and lab/imaging workup.
+     * If asked about "dosing / pharmacology of X": Provide ONLY the dosage, mechanism, contraindications, and monitoring.
+
+2. **CLEAN SECTION STRUCTURE**:
+   - Organize your response using 1 to 3 targeted, highly relevant section titles in ALL CAPS enclosed in '##SECTION TITLE##'.
+   - Examples of matching titles:
+     * Treatment: ##MANAGEMENT PROTOCOL##, ##PHARMACOTHERAPY & DOSING##, ##CLINICAL PEARLS##
+     * Diagnosis: ##DIAGNOSTIC CRITERIA##, ##LABS & IMAGING WORKUP##
+     * Definition: ##DEFINITION & CLASSIFICATION##
+     * Emergency: ##EMERGENCY PROTOCOL & RED FLAGS##
+   - Use clear bullet points ('•') for lists.
+   - Use **bold text** to highlight key drug names, doses, thresholds, and clinical criteria.
+   - Do NOT use markdown '#' inside sections (only '##HEADING##').
+
+3. **EVIDENCE & CITATIONS**:
+   - Cite provided peer-reviewed literature using bracketed numbers [1], [2] inline.
+
+4. **FOLLOW-UP QUESTIONS (SUGGESTIONS)**:
+   - At the end of your response, ALWAYS provide a ##SUGGESTIONS## section containing 2 to 4 concise, high-yield follow-up questions directly related to what the user asked.
+   - Each suggestion must start with '•'.
+   - Suggestions should be realistic next clinical questions a doctor or student would ask (e.g. next-line therapy, emergency signs, complication management, dosing).
+
+5. **LANGUAGE**:
+   - Match the user's language (English or Arabic). Keep international drug names, scores, and medical acronyms in standard English.
 
 ${topicId && topicId !== 'general' ? `
-CRITICAL TOPIC SCOPE: You are operating strictly within the topic context of ID: "${topicId}". 
-Evaluate the user's query against this specific topic. 
-If the user's query is OUTSIDE the medical scope of this topic, you MUST abort and output EXACTLY:
+CRITICAL TOPIC SCOPE: You are operating within topic ID: "${topicId}".
+If the query is completely OUT OF SCOPE for this medical topic, output EXACTLY:
 ##OUT_OF_SCOPE##
 This question is not related to the ${topicId} topic.
 ` : ''}
 
-STRICT OUTPUT RULE:
-- Your response MUST START immediately with the first ##SECTION HEADING## (unless you are triggering the ##OUT_OF_SCOPE## block).
-- LANGUAGE RULE: Match the user's language perfectly. If the query is in English, respond ONLY in English. If the query is in Arabic, respond intelligently in Arabic but DO NOT force translations of complex medical terms, procedures, or drugs (e.g., write "Obeticholic acid" directly in English, do not translate it to Arabic). Keep medical terms in English unless they have a very common Egyptian Arabic medical equivalent.
-- NEVER use asterisks (*) or markdown bold (**).
-- NEVER use the '#' character anywhere in your text except for the main section headings. Do NOT use it for bullet points.
-- ZERO markdown formatting allowed inside sections.
-- ALL HEADINGS must be in ALL CAPS.
-- CRITICAL CITATION RULE: You MUST cite the provided PEER-REVIEWED MEDICAL LITERATURE using bracketed numbers, e.g., [1] or [2], inline where relevant in the text.
+REQUIRED OUTPUT TEMPLATE:
+##[RELEVANT SECTION TITLE]##
+• Direct, high-yield clinical answer with **bold highlights** for drugs, criteria, and numbers.
+##END##
 
-HEADING CATEGORIES (Pick the most relevant sections):
-- CLINICAL: ##DEFINITION##, ##CLINICAL ASSESSMENT##, ##DIFFERENTIAL DIAGNOSIS##, ##INVESTIGATIONS / WORKUP##, ##MANAGEMENT PROTOCOL##, ##SURGICAL / PROCEDURAL CONSIDERATIONS##
-- CRITERIA/SCORES: ##OVERVIEW##, ##SCORING CRITERIA##, ##INTERPRETATION##, ##CLINICAL SIGNIFICANCE##
-- GENERAL DOCTOR ADVICE: ##KEY POINTS##, ##PROFESSIONAL CLINICAL ADVICE##
-- CONVERSATIONAL: ##GREETING## (Use this ONLY if the user is saying hello, thanks, or engaging in small talk without a medical question. Do NOT use other sections).
-
-NOW RESPOND TO THE CLINICAL QUERY:
-      `;
+##SUGGESTIONS##
+• First relevant follow-up question?
+• Second relevant follow-up question?
+• Third relevant follow-up question?
+##END##
+`;
         }
 
         const rawReply = await callAI(systemPrompt, message);
@@ -215,7 +247,21 @@ NOW RESPOND TO THE CLINICAL QUERY:
         normalized = normalized.replace(/^\*\*\s*([^*\n]+)\s*\*\*$/gm, (match, headingText) => {
             return `##${headingText.trim().toUpperCase()}##`;
         });
-        
+
+        // Extract ##SUGGESTIONS## section
+        let suggestions = [];
+        const suggestionsMatch = normalized.match(/##SUGGESTIONS##([\s\S]*?)(?:##END##|$)/i);
+        if (suggestionsMatch && suggestionsMatch[1]) {
+            const rawSuggestionsText = suggestionsMatch[1].trim();
+            suggestions = rawSuggestionsText
+                .split('\n')
+                .map(line => line.replace(/^[\s•\-*0-9.)]+/, '').replace(/##/g, '').trim())
+                .filter(line => line.length > 5 && !line.toUpperCase().includes('END') && !line.startsWith('##'));
+            
+            // Remove the suggestions block from normalized text
+            normalized = normalized.replace(/##SUGGESTIONS##[\s\S]*?(?:##END##|$)/gi, '');
+        }
+
         normalized = normalized.replace(/##END##/gi, '');
 
         const sections = normalized.split(/##(.*?)##/);
@@ -223,21 +269,22 @@ NOW RESPOND TO THE CLINICAL QUERY:
         for (let i = 1; i < sections.length; i += 2) {
             const h = sections[i].trim().toUpperCase();
             const content = sections[i + 1] || '';
-            if (h && h !== 'END') {
+            if (h && h !== 'END' && h !== 'SUGGESTIONS') {
                 finalReply += `##${h}##\n${content.trim()}\n##END##\n\n`;
             }
         }
 
-        const reply = finalReply.trim() || rawReply.trim();
+        const reply = finalReply.trim() || normalized.trim();
 
-        console.log(`[AI Response Category: ${category}] Citations: ${citations.length} | Scrubbed Start: "${reply.substring(0, 50).replace(/\n/g, ' ')}..."`);
+        console.log(`[AI Response Category: ${category}] Citations: ${citations.length} | Suggestions: ${suggestions.length} | Start: "${reply.substring(0, 50).replace(/\n/g, ' ')}..."`);
 
-        res.json({ reply, citations });
+        res.json({ reply, citations, suggestions });
     } catch (err) {
         console.error('[/api/chat]', err.message);
         res.status(500).json({
             error: 'AI service error',
             reply: "I'm sorry, I'm having trouble with the clinical AI model right now. Please try again.",
+            suggestions: []
         });
     }
 });

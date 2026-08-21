@@ -31,10 +31,11 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 import { aiService, DoctorCategory, Citation } from "../../services/aiService";
 import { Colors } from "../../constants/Colors";
+import FormattedClinicalText from "../../components/FormattedClinicalText";
 
 const FLOATING_TAB_BAR_HEIGHT = 70;
 
@@ -53,6 +54,7 @@ type Message = {
   timestamp: string;
   category?: DoctorCategory;
   citations?: Citation[];
+  suggestions?: string[];
   isError?: boolean;
   failedQuery?: string;
 };
@@ -60,114 +62,221 @@ type Message = {
 type QuickPrompt = {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
+  subtitle: string;
   prompt: string;
   color: string;
 };
 
-const QUICK_PROMPTS: QuickPrompt[] = [
-  {
-    icon: "heart-pulse-outline",
-    title: "ACS Protocol & Cath",
-    prompt: "Provide the acute coronary syndrome (ACS) STEMI vs NSTEMI initial emergency workup, diagnostic criteria, and management protocol.",
-    color: Colors.pink,
-  },
-  {
-    icon: "flash-outline",
-    title: "Sepsis 1-Hr Bundle",
-    prompt: "Detail the Surviving Sepsis Campaign 1-hour resuscitation bundle, qSOFA scoring, and antibiotic timing.",
-    color: Colors.lime,
-  },
-  {
-    icon: "speedometer-outline",
-    title: "Hypertensive Crisis",
-    prompt: "Explain the management of Hypertensive Urgency vs Emergency, including IV drug choices and target blood pressure reduction rates.",
-    color: Colors.accent,
-  },
-  {
-    icon: "analytics-outline",
-    title: "Child-Pugh vs MELD",
-    prompt: "Compare Child-Pugh vs MELD-Na scoring systems for chronic liver failure and surgical mortality risk assessment.",
-    color: Colors.lavender,
-  },
-  {
-    icon: "git-network-outline",
-    title: "Acute Stroke Triage",
-    prompt: "Outline the acute ischemic stroke thrombolysis (tPA/TNK) eligibility criteria, BP targets, and thrombectomy window.",
-    color: Colors.lime,
-  },
-  {
-    icon: "fitness-outline",
-    title: "ARDS Lung Protection",
-    prompt: "Detail the ARDS low tidal volume ventilation strategy (6 mL/kg PBW), plateau pressure limits, and driving pressure targets.",
-    color: Colors.accent,
-  },
+const PROMPT_BATCHES: QuickPrompt[][] = [
+  // Batch 1: Acute Emergencies & Resuscitation
+  [
+    {
+      icon: "heart-outline",
+      title: "ACS Protocol",
+      subtitle: "STEMI vs NSTEMI workup",
+      prompt: "Provide the acute coronary syndrome (ACS) STEMI vs NSTEMI initial emergency workup, diagnostic criteria, and catheterization timing.",
+      color: Colors.pink,
+    },
+    {
+      icon: "flash-outline",
+      title: "Sepsis 1-Hr Bundle",
+      subtitle: "qSOFA & resuscitation",
+      prompt: "Detail the Surviving Sepsis Campaign 1-hour resuscitation bundle, qSOFA scoring, and antibiotic timing.",
+      color: Colors.lime,
+    },
+    {
+      icon: "speedometer-outline",
+      title: "Hypertensive Crisis",
+      subtitle: "Urgency vs emergency BP",
+      prompt: "Explain the management of Hypertensive Urgency vs Emergency, including IV drug choices and target blood pressure reduction rates.",
+      color: Colors.accent,
+    },
+    {
+      icon: "analytics-outline",
+      title: "Liver Scoring",
+      subtitle: "Child-Pugh vs MELD-Na",
+      prompt: "Compare Child-Pugh vs MELD-Na scoring systems for chronic liver failure and surgical mortality risk assessment.",
+      color: Colors.lavender,
+    },
+  ],
+  // Batch 2: Neuro & Pulmonary Care
+  [
+    {
+      icon: "git-network-outline",
+      title: "Acute Stroke Triage",
+      subtitle: "tPA & thrombectomy window",
+      prompt: "Outline the acute ischemic stroke thrombolysis (tPA/TNK) eligibility criteria, BP targets, and endovascular thrombectomy window.",
+      color: Colors.lime,
+    },
+    {
+      icon: "fitness-outline",
+      title: "ARDS Ventilation",
+      subtitle: "6 mL/kg lung protection",
+      prompt: "Detail the ARDS low tidal volume ventilation strategy (6 mL/kg PBW), plateau pressure limits, and driving pressure targets.",
+      color: Colors.accent,
+    },
+    {
+      icon: "flame-outline",
+      title: "DKA Management",
+      subtitle: "Insulin & Potassium protocol",
+      prompt: "Provide the Diabetic Ketoacidosis (DKA) resuscitation protocol, IV insulin infusion titration, and potassium repletion thresholds.",
+      color: Colors.pink,
+    },
+    {
+      icon: "shield-checkmark-outline",
+      title: "Anaphylaxis Dosing",
+      subtitle: "IM Epinephrine algorithm",
+      prompt: "Outline the emergency anaphylaxis algorithm, intramuscular epinephrine 1:1000 dosing, refractory shock IV infusions, and airway rescue.",
+      color: Colors.lavender,
+    },
+  ],
+  // Batch 3: Critical Nephro, Cardio & GI
+  [
+    {
+      icon: "pulse-outline",
+      title: "PE Thrombolysis",
+      subtitle: "Massive vs Submassive PE",
+      prompt: "Explain the risk stratification for Acute Pulmonary Embolism (massive vs submassive), PESI score, and systemic vs catheter-directed thrombolysis indications.",
+      color: Colors.pink,
+    },
+    {
+      icon: "water-outline",
+      title: "Hyperkalemia Shift",
+      subtitle: "Calcium & Insulin protocol",
+      prompt: "Detail the emergent severe hyperkalemia management protocol: cardiac membrane stabilization with Calcium Gluconate, cellular shift with insulin/dextrose, and removal agents.",
+      color: Colors.lime,
+    },
+    {
+      icon: "medkit-outline",
+      title: "Upper GI Bleed",
+      subtitle: "PPI, Octreotide & Scope",
+      prompt: "Detail the initial resuscitation and pharmacotherapy (IV PPI, Octreotide, Ceftriaxone) for acute Upper GI Bleeding and endoscopy timing within 24 hours.",
+      color: Colors.accent,
+    },
+    {
+      icon: "hardware-chip-outline",
+      title: "Status Epilepticus",
+      subtitle: "Benzos & 2nd-line AEDs",
+      prompt: "Outline the emergent status epilepticus treatment ladder: 0-5 min Lorazepam/Midazolam, 5-20 min Levetiracetam/Fosphenytoin, and refractory general anesthesia.",
+      color: Colors.lavender,
+    },
+  ],
+  // Batch 4: Infectious & Cardiopulmonary Triage
+  [
+    {
+      icon: "bandage-outline",
+      title: "Meningitis Workup",
+      subtitle: "LP, Steroids & Antibiotics",
+      prompt: "Detail the acute bacterial meningitis workup: LP timing, empiric Ceftriaxone + Vancomycin + Ampicillin, and Dexamethasone timing before or with 1st antibiotic dose.",
+      color: Colors.lime,
+    },
+    {
+      icon: "warning-outline",
+      title: "Acute Pancreatitis",
+      subtitle: "Fluids & BISAP score",
+      prompt: "Explain the initial management of Acute Pancreatitis: goal-directed Lactated Ringer's resuscitation, BISAP/Ranson risk stratification, and enteral nutrition timing.",
+      color: Colors.pink,
+    },
+    {
+      icon: "radio-outline",
+      title: "Afib Rate Control",
+      subtitle: "Beta-blocker vs Diltiazem",
+      prompt: "Compare initial IV Beta-blocker vs Diltiazem vs Amiodarone for rapid atrial fibrillation rate control, with consideration of HFrEF vs preserved ejection fraction.",
+      color: Colors.accent,
+    },
+    {
+      icon: "help-buoy-outline",
+      title: "Syncope Risk Rules",
+      subtitle: "San Francisco & Canadian",
+      prompt: "Detail the clinical decision rules (San Francisco Syncope Rule and Canadian Syncope Risk Score) for outpatient vs inpatient admission of syncopal episodes.",
+      color: Colors.lavender,
+    },
+  ],
 ];
 
-// Medical section config for structured AI rendering — harmonized with 4 main colors
+// Medical section config for structured AI rendering — harmonized with 4 main colors (#defff9, #6dc2bd, #dbd4fd, #ffc3dd)
 const SECTION_CONFIG: Record<
   string,
   { color: string; border: string; icon: keyof typeof Ionicons.glyphMap; label: string }
 > = {
   "CLINICAL ASSESSMENT": {
-    color: Colors.accent, // #6dc2bd (Jewel Teal)
-    border: "rgba(109, 194, 189, 0.45)",
+    color: Colors.main,
+    border: "rgba(222, 255, 249, 0.45)",
     icon: "clipboard-outline",
     label: "Clinical Assessment",
   },
   "DIFFERENTIAL DIAGNOSIS": {
-    color: Colors.lavender, // #c09ffa (Soft Lavender)
-    border: "rgba(192, 159, 250, 0.45)",
+    color: Colors.lavender,
+    border: "rgba(219, 212, 253, 0.45)",
     icon: "git-branch-outline",
     label: "Differential Diagnosis",
   },
   "INVESTIGATIONS / WORKUP": {
-    color: Colors.lime, // #c4f230 (Electric Lime)
-    border: "rgba(196, 242, 48, 0.45)",
+    color: Colors.teal,
+    border: "rgba(109, 194, 189, 0.45)",
     icon: "pulse-outline",
     label: "Investigations / Workup",
   },
   "INVESTIGATIONS": {
-    color: Colors.lime, // #c4f230 (Electric Lime)
-    border: "rgba(196, 242, 48, 0.45)",
+    color: Colors.teal,
+    border: "rgba(109, 194, 189, 0.45)",
     icon: "flask-outline",
     label: "Investigations",
   },
   "MANAGEMENT PROTOCOL": {
-    color: Colors.accent, // #6dc2bd (Jewel Teal)
-    border: "rgba(109, 194, 189, 0.45)",
+    color: Colors.main,
+    border: "rgba(222, 255, 249, 0.45)",
     icon: "medical-outline",
     label: "Management Protocol",
   },
+  "MANAGEMENT & PHARMACOTHERAPY": {
+    color: Colors.main,
+    border: "rgba(222, 255, 249, 0.45)",
+    icon: "medical-outline",
+    label: "Management & Pharmacotherapy",
+  },
+  "FIRST-LINE PHARMACOTHERAPY": {
+    color: Colors.main,
+    border: "rgba(222, 255, 249, 0.45)",
+    icon: "medical-outline",
+    label: "First-Line Pharmacotherapy",
+  },
   "SURGICAL / PROCEDURAL CONSIDERATIONS": {
-    color: Colors.lavender, // #c09ffa (Soft Lavender)
-    border: "rgba(192, 159, 250, 0.45)",
+    color: Colors.lavender,
+    border: "rgba(219, 212, 253, 0.45)",
     icon: "cut-outline",
     label: "Surgical / Procedural",
   },
   "CLINICAL PEARLS & PITFALLS": {
-    color: Colors.pink, // #ffc3dd (Pastel Rose Pink)
+    color: Colors.pink,
     border: "rgba(255, 195, 221, 0.45)",
     icon: "sparkles-outline",
     label: "Clinical Pearls & Pitfalls",
   },
+  "CLINICAL PEARLS": {
+    color: Colors.pink,
+    border: "rgba(255, 195, 221, 0.45)",
+    icon: "sparkles-outline",
+    label: "Clinical Pearls",
+  },
   "RED FLAGS / EMERGENCY": {
-    color: Colors.pink, // #ffc3dd (Pastel Rose Pink)
+    color: Colors.pink,
     border: "rgba(255, 195, 221, 0.45)",
     icon: "alert-circle-outline",
     label: "Red Flags / Emergency",
   },
   "EVIDENCE & CITATIONS": {
-    color: Colors.lavender, // #c09ffa (Soft Lavender)
-    border: "rgba(192, 159, 250, 0.45)",
+    color: Colors.lavender,
+    border: "rgba(219, 212, 253, 0.45)",
     icon: "book-outline",
     label: "Evidence & Citations",
   },
 };
 
 const FALLBACK_PALETTE = [
-  { color: Colors.lavender, border: "rgba(192, 159, 250, 0.45)", icon: "information-circle-outline" as const },
-  { color: Colors.accent, border: "rgba(109, 194, 189, 0.45)", icon: "document-text-outline" as const },
-  { color: Colors.lime, border: "rgba(196, 242, 48, 0.45)", icon: "list-outline" as const },
+  { color: Colors.main, border: "rgba(222, 255, 249, 0.45)", icon: "document-text-outline" as const },
+  { color: Colors.teal, border: "rgba(109, 194, 189, 0.45)", icon: "list-outline" as const },
+  { color: Colors.lavender, border: "rgba(219, 212, 253, 0.45)", icon: "information-circle-outline" as const },
   { color: Colors.pink, border: "rgba(255, 195, 221, 0.45)", icon: "alert-circle-outline" as const },
 ];
 
@@ -187,7 +296,7 @@ function parseMedicalSections(text: string): {
     let content = parts[i + 1] || "";
     content = content.replace(/##END##/gi, "").trim();
 
-    if (heading && heading !== "END") {
+    if (heading && heading !== "END" && heading !== "SUGGESTIONS") {
       sections.push({ heading, content });
     }
   }
@@ -198,9 +307,6 @@ function parseMedicalSections(text: string): {
     plainText,
   };
 }
-
-// Ambient background is clean pure pitch black
-const AmbientBackground: React.FC = () => null;
 
 // Double-Bezel shell: outer tray + inner machined core
 const BezelShell: React.FC<{
@@ -336,16 +442,7 @@ const MedicalSectionBox: React.FC<{
             </Text>
           </View>
           <View style={{ paddingHorizontal: 17, paddingVertical: 15 }}>
-            <Text
-              style={{
-                color: Colors.textBody,
-                fontSize: 14,
-                lineHeight: 22,
-                fontFamily: "PlexSans_400Regular",
-              }}
-            >
-              {section.content}
-            </Text>
+            <FormattedClinicalText text={section.content} themeColor={cfg.color} />
           </View>
         </View>
       </View>
@@ -411,7 +508,8 @@ const ChatBubble: React.FC<{
   message: Message;
   onCopy: (text: string) => void;
   onRetry?: (query: string) => void;
-}> = ({ message, onCopy, onRetry }) => {
+  onSelectSuggestion?: (query: string) => void;
+}> = ({ message, onCopy, onRetry, onSelectSuggestion }) => {
   const reducedMotion = useReducedMotion();
   const isAi = !message.isUser;
 
@@ -479,7 +577,7 @@ const ChatBubble: React.FC<{
           <View className="pl-1">
             {plainText.length > 0 && (
               <View className="bg-teal-dark border border-turquoise/20 rounded-3xl p-4 mb-3">
-                <Text className="text-gray-200 text-sm leading-6 font-sans">{plainText}</Text>
+                <FormattedClinicalText text={plainText} themeColor={TURQUOISE} />
               </View>
             )}
             {sections.map((section, i) => (
@@ -488,9 +586,7 @@ const ChatBubble: React.FC<{
           </View>
         ) : (
           <View className="bg-teal-dark border border-white/10 rounded-3xl rounded-tl-md p-4 shadow-card">
-            <Text className="text-gray-200 text-sm leading-6 font-sans">
-              {message.text}
-            </Text>
+            <FormattedClinicalText text={message.text} themeColor={TURQUOISE} />
           </View>
         )}
 
@@ -513,6 +609,30 @@ const ChatBubble: React.FC<{
                 </View>
               </View>
             ))}
+          </View>
+        )}
+
+        {/* Interactive Follow-Up Questions (Suggestions) */}
+        {message.suggestions && message.suggestions.length > 0 && (
+          <View className="mt-4 mb-2">
+            <Text className="text-gray-400 text-[11px] font-sans-bold uppercase tracking-widest mb-2.5 ml-1">
+              <Ionicons name="sparkles" size={12} color={TURQUOISE} /> Suggested Follow-Up Inquiries
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {message.suggestions.map((sug, sIdx) => (
+                <TouchableOpacity
+                  key={`tab-sug-${sIdx}`}
+                  onPress={() => onSelectSuggestion?.(sug)}
+                  activeOpacity={0.7}
+                  className="flex-row items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-[#0c1214] border border-turquoise/30 active:opacity-60"
+                >
+                  <Ionicons name="arrow-forward-circle" size={14} color={TURQUOISE} />
+                  <Text className="text-gray-200 text-xs font-sans-medium leading-4 flex-shrink">
+                    {sug}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         )}
 
@@ -564,12 +684,37 @@ const ChatBubble: React.FC<{
 
 const ChatTab = () => {
   const params = useLocalSearchParams<{ query?: string; autoSend?: string }>();
+  const insets = useSafeAreaInsets();
+  const floatingBottom = insets.bottom > 0 ? insets.bottom : 10;
+  const DOCK_BAR_HEIGHT = 64;
+  const ACTIVE_BUBBLE_OVERFLOW = 16;
+  const COMPOSER_CLEARANCE = 14;
+  const composerBottom = floatingBottom + DOCK_BAR_HEIGHT + ACTIVE_BUBBLE_OVERFLOW + COMPOSER_CLEARANCE;
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [batchIndex, setBatchIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const reducedMotion = useReducedMotion();
   const lastAutoQueryRef = useRef<string | null>(null);
+
+  // Automatically cycle preset prompt batches every 6.5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setBatchIndex((prev) => (prev + 1) % PROMPT_BATCHES.length);
+    }, 6500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleManualShuffle = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {}
+    setBatchIndex((prev) => (prev + 1) % PROMPT_BATCHES.length);
+  };
+
+  const activeBatch = PROMPT_BATCHES[batchIndex];
 
   // Header collapses once a conversation starts (question sent or messages present)
   const chatActive = messages.length > 0 || isTyping;
@@ -656,7 +801,7 @@ const ChatTab = () => {
     setMessages((prev) => [...prev, userMessage]);
 
     try {
-      const { reply, citations } = await aiService.sendMessageByText(query, "general", "physicians");
+      const { reply, citations, suggestions } = await aiService.sendMessageByText(query, "general", "physicians");
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: reply,
@@ -667,201 +812,7 @@ const ChatTab = () => {
         }),
         category: "physicians",
         citations,
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (error) {
-      console.error(error);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "",
-        isUser: false,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        isError: true,
-        failedQuery: query,
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const handleRetry = (failedQuery: string) => {
-    // Remove the failed error bubble, then resend
-    setMessages((prev) => prev.filter((m) => !(m.isError && m.failedQuery === failedQuery)));
-    handleTextSend(failedQuery);
-  };
-
-  const handleNewChat = () => {
-    setMessages([]);
-  };
-
-  return (
-    <View className="flex-1 bg-[#010101]" style={{ backgroundColor: "#010101" }}>
-      <StatusBar barStyle="light-content" backgroundColor="#010101" />
-
-      {/* Floating Header */}
-      <SafeAreaView edges={["top"]} style={{ backgroundColor: "#010101" }}>
-        <Animated.View style={[{ paddingHorizontal: 20 }, headerPadStyle]}>
-          <BezelShell radius={28}>
-            <Animated.View
-              style={[
-                {
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  paddingHorizontal: 16,
-                },
-                headerPadStyle,
-              ]}
-            >
-              <View className="flex-row items-center">
-                <Animated.View
-                  style={[
-                    {
-                      backgroundColor: "rgba(196,242,48,0.12)",
-                      borderWidth: 1,
-                      borderColor: "rgba(196,242,48,0.3)",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: 11,
-                    },
-                    markOuterStyle,
-                  ]}
-                >
-                  <Animated.View
-                    style={[
-                      {
-                        backgroundColor: "rgba(196,242,48,0.2)",
-                        borderWidth: 1,
-                        borderColor: "rgba(196,242,48,0.45)",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      },
-                      markInnerStyle,
-                    ]}
-                  >
-                    <Ionicons name="sparkles" size={15} color={Colors.lime} />
-                  </Animated.View>
-                </Animated.View>
-
-                <View>
-                  <View className="flex-row items-center gap-1.5">
-                    <Animated.Text
-                      style={[
-                        {
-                          color: "#ffffff",
-                          fontFamily: "PlexSans_700Bold",
-                          letterSpacing: -0.4,
-                        },
-                        titleStyle,
-                      ]}
-                    >
-                      Med Arena
-                    </Animated.Text>
-                    <View className="w-1.5 h-1.5 rounded-full bg-lime" />
-                  </View>
-                  <Animated.View
-                    style={[{ overflow: "hidden" }, subtitleWrapStyle]}
-                  >
-                    <Text className="text-lavender text-[11px] font-sans-medium mt-0.5">Clinical Decision Support</Text>
-                  </Animated.View>
-                </View>
-              </View>
-
-              {messages.length > 0 && (
-                <TouchableOpacity
-                  onPress={handleNewChat}
-                  className="flex-row items-center rounded-full bg-white/[0.06] border border-white/10 pl-3 pr-1.5 py-1.5 active:opacity-70"
-                >
-                  <Text className="text-lime text-xs font-sans-bold mr-2">New</Text>
-                  <View className="w-6 h-6 rounded-full bg-lime/20 items-center justify-center">
-                    <Ionicons name="add" size={14} color={Colors.lime} />
-                  </View>
-                </TouchableOpacity>
-              )}
-            </Animated.View>
-          </BezelShell>
-        </Animated.View>
-      </SafeAreaView>
-
-      {/* Main Chat Body & Empty State */}
-  }));
-
-  const markOuterStyle = useAnimatedStyle(() => ({
-    width: interpolate(headerCollapse.value, [0, 1], [44, 34]),
-    height: interpolate(headerCollapse.value, [0, 1], [44, 34]),
-    borderRadius: interpolate(headerCollapse.value, [0, 1], [22, 17]),
-  }));
-
-  const markInnerStyle = useAnimatedStyle(() => ({
-    width: interpolate(headerCollapse.value, [0, 1], [32, 25]),
-    height: interpolate(headerCollapse.value, [0, 1], [32, 25]),
-    borderRadius: interpolate(headerCollapse.value, [0, 1], [16, 12.5]),
-  }));
-
-  const titleStyle = useAnimatedStyle(() => ({
-    fontSize: interpolate(headerCollapse.value, [0, 1], [17, 15]),
-  }));
-
-  const subtitleWrapStyle = useAnimatedStyle(() => ({
-    height: interpolate(headerCollapse.value, [0, 1], [20, 0]),
-    opacity: interpolate(headerCollapse.value, [0, 0.6, 1], [1, 0.4, 0]),
-  }));
-
-  useEffect(() => {
-    const keyboardShowListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      () => {
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 200);
-      },
-    );
-    return () => {
-      keyboardShowListener.remove();
-    };
-  }, []);
-
-  const handleCopyText = (text: string) => {
-    Clipboard.setString(text);
-    Alert.alert("Copied", "Clinical response copied to clipboard.");
-  };
-
-  const handleTextSend = async (queryOverride?: string) => {
-    const query = queryOverride || inputText.trim();
-    if (!query) return;
-    if (!queryOverride) setInputText("");
-    setIsTyping(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: query,
-      isUser: true,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-    setMessages((prev) => [...prev, userMessage]);
-
-    try {
-      const { reply, citations } = await aiService.sendMessageByText(query, "general", "physicians");
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: reply,
-        isUser: false,
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        category: "physicians",
-        citations,
+        suggestions,
       };
       setMessages((prev) => [...prev, aiMessage]);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -995,7 +946,7 @@ const ChatTab = () => {
             contentContainerStyle={{
               paddingHorizontal: 20,
               paddingTop: 36,
-              paddingBottom: FLOATING_TAB_BAR_HEIGHT + 96,
+              paddingBottom: composerBottom + 110,
             }}
             showsVerticalScrollIndicator={false}
             className="flex-1 bg-[#010101]"
@@ -1024,42 +975,79 @@ const ChatTab = () => {
                 Clinical Consultant AI
               </Text>
               <Text className="text-gray-400 text-[13px] text-center max-w-[280px] leading-5 font-sans">
-                Ask about clinical management, diagnostic workups, dosing, or tap a preset below.
+                Ask about clinical management, diagnostic workups, dosing, or choose a prompt below.
               </Text>
             </Animated.View>
 
-            {/* Small Rounded Preset Chips (ChatGPT / Gemini Style) */}
+            {/* Section Header with Cycle Badge & Manual Shuffle */}
+            <View className="flex-row items-center justify-between w-full mb-3 px-1">
+              <View className="flex-row items-center gap-1.5">
+                <Ionicons name="sparkles" size={13} color={Colors.lime} />
+                <Text className="text-gray-300 font-sans-bold text-[11.5px] uppercase tracking-wider">
+                  Clinical Presets
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={handleManualShuffle}
+                activeOpacity={0.7}
+                className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.06] border border-white/10"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="shuffle" size={12} color={Colors.lime} />
+                <Text className="text-lime text-[10.5px] font-sans-bold">
+                  Cycle {batchIndex + 1}/{PROMPT_BATCHES.length}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Dynamic Symmetrical 2-Column Grid (Cycles automatically every 6.5s) */}
             <Animated.View
-              entering={reducedMotion ? undefined : FadeInUp.duration(MOTION.enter).delay(MOTION.stagger).easing(EASE_HEAVY)}
-              className="flex-row flex-wrap justify-center gap-2.5 px-1 mb-8"
+              key={batchIndex}
+              entering={reducedMotion ? undefined : FadeInUp.duration(350).easing(EASE_HEAVY)}
+              className="w-full flex-row flex-wrap justify-between gap-y-2.5 mb-8"
             >
-              {QUICK_PROMPTS.map((item, idx) => (
+              {activeBatch.map((item, idx) => (
                 <TouchableOpacity
                   key={idx}
                   onPress={() => handleTextSend(item.prompt)}
                   activeOpacity={0.75}
-                  className="flex-row items-center gap-2 px-3.5 py-2.5 rounded-full bg-[#0c1017] border border-white/[0.12]"
                   style={{
+                    width: "48.5%",
                     shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
+                    shadowOffset: { width: 0, height: 3 },
                     shadowOpacity: 0.35,
-                    shadowRadius: 6,
-                    elevation: 3,
+                    shadowRadius: 8,
+                    elevation: 4,
                   }}
+                  className="p-3.5 rounded-2xl bg-[#0c1017] border border-white/[0.12] justify-between h-[96px]"
                 >
-                  <View
-                    className="w-6 h-6 rounded-full items-center justify-center border"
-                    style={{
-                      backgroundColor: item.color + "20",
-                      borderColor: item.color + "45",
-                    }}
-                  >
-                    <Ionicons name={item.icon} size={12} color={item.color} />
+                  <View className="flex-row items-center justify-between">
+                    <View
+                      className="w-7 h-7 rounded-xl items-center justify-center border"
+                      style={{
+                        backgroundColor: item.color + "18",
+                        borderColor: item.color + "45",
+                      }}
+                    >
+                      <Ionicons name={item.icon} size={14} color={item.color} />
+                    </View>
+                    <Ionicons name="arrow-up" size={13} color="#6b7280" />
                   </View>
-                  <Text className="text-gray-200 font-sans-semibold text-[12.5px]">
-                    {item.title}
-                  </Text>
-                  <Ionicons name="arrow-up" size={12} color={Colors.grayMuted} />
+                  <View>
+                    <Text
+                      className="text-gray-100 font-sans-bold text-[13px] leading-4"
+                      numberOfLines={1}
+                    >
+                      {item.title}
+                    </Text>
+                    <Text
+                      className="text-gray-400 font-sans text-[11px] leading-3.5 mt-0.5"
+                      numberOfLines={1}
+                    >
+                      {item.subtitle}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               ))}
             </Animated.View>
@@ -1069,11 +1057,18 @@ const ChatTab = () => {
             ref={flatListRef}
             data={messages}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <ChatBubble message={item} onCopy={handleCopyText} onRetry={handleRetry} />}
+            renderItem={({ item }) => (
+              <ChatBubble
+                message={item}
+                onCopy={handleCopyText}
+                onRetry={handleRetry}
+                onSelectSuggestion={(q) => handleTextSend(q)}
+              />
+            )}
             ListFooterComponent={isTyping ? <ThinkingIndicator /> : null}
             contentContainerStyle={{
               paddingTop: 24,
-              paddingBottom: FLOATING_TAB_BAR_HEIGHT + 96,
+              paddingBottom: composerBottom + 110,
               flexGrow: 1,
               backgroundColor: "#010101",
             }}
@@ -1087,11 +1082,56 @@ const ChatTab = () => {
           />
         )}
 
-        {/* Floating Composer Island (Height Increased by 25%) */}
+        {/* Floating Composer Island (With Dynamic Above-Input Suggestion Pill) */}
         <View
           className="absolute left-4 right-4"
-          style={{ bottom: FLOATING_TAB_BAR_HEIGHT + 4 }}
+          style={{ bottom: composerBottom }}
         >
+          {/* Dynamic Suggestion Pill Above Composer during active conversation */}
+          {messages.length > 0 && !isTyping && (
+            <Animated.View
+              key={activeBatch[0].title}
+              entering={reducedMotion ? undefined : FadeInUp.duration(300).easing(EASE_HEAVY)}
+              className="mb-2 flex-row items-center justify-between"
+            >
+              <TouchableOpacity
+                onPress={() => handleTextSend(activeBatch[0].prompt)}
+                activeOpacity={0.75}
+                className="flex-row items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0c1017] border border-white/[0.12] flex-1 mr-2"
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.35,
+                  shadowRadius: 6,
+                  elevation: 4,
+                }}
+              >
+                <View
+                  className="w-5 h-5 rounded-full items-center justify-center border"
+                  style={{
+                    backgroundColor: activeBatch[0].color + "20",
+                    borderColor: activeBatch[0].color + "45",
+                  }}
+                >
+                  <Ionicons name={activeBatch[0].icon} size={11} color={activeBatch[0].color} />
+                </View>
+                <Text className="text-gray-300 text-[12px] font-sans flex-1" numberOfLines={1}>
+                  Prompt: <Text className="font-sans-bold text-white">{activeBatch[0].title}</Text>
+                </Text>
+                <Ionicons name="arrow-up" size={12} color={Colors.lime} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleManualShuffle}
+                activeOpacity={0.7}
+                className="w-8 h-8 rounded-full bg-[#0c1017] border border-white/[0.12] items-center justify-center"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="shuffle" size={14} color={Colors.lime} />
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
           <View
             className="flex-row items-center rounded-[28px] px-4 py-2 border border-white/[0.12]"
             style={{

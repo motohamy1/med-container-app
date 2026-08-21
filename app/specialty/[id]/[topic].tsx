@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { StatusBar, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { StatusBar, Text, TouchableOpacity, View, ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { dbService } from '../../../services/dbService';
 import { SpecialtyData, TopicItem } from '../../../constants/SpecialtyData';
@@ -33,7 +33,7 @@ export default function TopicPage() {
     return (
       <SafeAreaView className="flex-1 bg-background justify-center items-center">
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator size="large" color="#6ec2be" />
+        <ActivityIndicator size="large" color={Colors.main} />
       </SafeAreaView>
     );
   }
@@ -63,18 +63,53 @@ export default function TopicPage() {
       </View>
 
       {/* Tabs */}
-      <View className="flex-row mx-4 mt-4 mb-2 bg-[#181a1d] p-1 rounded-xl border border-white/5">
+      <View style={styles.tabContainer}>
         <TouchableOpacity 
-          className={`flex-1 py-2 items-center rounded-lg ${activeTab === 'guide' ? 'bg-[#2b2e33]' : 'bg-transparent'}`}
+          style={[
+            styles.tabButton,
+            activeTab === 'guide' && [styles.tabButtonActive, { backgroundColor: `${specialty.color}22`, borderColor: `${specialty.color}55` }]
+          ]}
           onPress={() => setActiveTab('guide')}
+          activeOpacity={0.8}
         >
-          <Text className={`font-sans-bold ${activeTab === 'guide' ? 'text-white' : 'text-gray-500'}`}>Clinical Guide</Text>
+          <Ionicons 
+            name="book" 
+            size={14} 
+            color={activeTab === 'guide' ? specialty.color : '#8e8e93'} 
+            style={{ marginRight: 6 }} 
+          />
+          <Text 
+            style={[
+              styles.tabText, 
+              activeTab === 'guide' && { color: specialty.color, fontWeight: '700' }
+            ]}
+          >
+            Clinical Guide
+          </Text>
         </TouchableOpacity>
+
         <TouchableOpacity 
-          className={`flex-1 py-2 items-center rounded-lg ${activeTab === 'chat' ? 'bg-[#2b2e33]' : 'bg-transparent'}`}
+          style={[
+            styles.tabButton,
+            activeTab === 'chat' && [styles.tabButtonActive, { backgroundColor: `${specialty.color}22`, borderColor: `${specialty.color}55` }]
+          ]}
           onPress={() => setActiveTab('chat')}
+          activeOpacity={0.8}
         >
-          <Text className={`font-sans-bold ${activeTab === 'chat' ? 'text-white' : 'text-gray-500'}`}>AI Assistant</Text>
+          <Ionicons 
+            name="chatbubbles" 
+            size={14} 
+            color={activeTab === 'chat' ? specialty.color : '#8e8e93'} 
+            style={{ marginRight: 6 }} 
+          />
+          <Text 
+            style={[
+              styles.tabText, 
+              activeTab === 'chat' && { color: specialty.color, fontWeight: '700' }
+            ]}
+          >
+            AI Assistant
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -94,3 +129,39 @@ export default function TopicPage() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  tabContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 8,
+    backgroundColor: '#121719',
+    padding: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  tabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingVertical: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  tabButtonActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: 12.5,
+    fontFamily: 'PlexSans_600SemiBold',
+    color: '#8e8e93',
+  },
+});

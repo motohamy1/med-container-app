@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { SpecialtyData, SpecialtyCategory, TopicItem, TopicSearchResult, SPECIALTY_KNOWLEDGE } from '../constants/SpecialtyData';
+import { Colors } from '../constants/Colors';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -111,7 +112,7 @@ export const dbService = {
         name: specialty.name || localSpec?.name || '',
         scientificName: specialty.scientific_name || localSpec?.scientificName || '',
         icon: (specialty.icon as any) || localSpec?.icon || 'medical',
-        color: specialty.color || localSpec?.color || '#6ec2be',
+        color: localSpec?.color || specialty.color || Colors.main,
         generalScope: specialty.general_scope || localSpec?.generalScope || '',
         illustration: localSpec?.illustration || null,
         categories: mappedCategories,

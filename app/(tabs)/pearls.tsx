@@ -9,9 +9,11 @@ import {
   Modal,
   StatusBar,
   Platform,
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
@@ -35,6 +37,7 @@ export default function PearlsTab() {
   const [offset, setOffset] = useState(0);
   const [regensRemaining, setRegensRemaining] = useState(MAX_FREE_REGENS);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [selectedPearl, setSelectedPearl] = useState<ClinicalPearl | null>(null);
 
   const spinAnim = useRef(new Animated.Value(0)).current;
 
@@ -138,6 +141,7 @@ export default function PearlsTab() {
       const newPearls = await dbService.getDailyClinicalPearls(nextOffset, 5);
       setPearls(newPearls);
     } catch {
+      // Fallback
     } finally {
       setLoading(false);
     }
@@ -151,29 +155,41 @@ export default function PearlsTab() {
   const handleConsultAI = (pearl: ClinicalPearl) => {
     router.push({
       pathname: '/(tabs)/ChatTab',
-      params: {
+      params: { 
         query: `Explain the clinical rationale, mechanism, and guideline evidence for: "${pearl.title}" (${pearl.citation}).`,
         autoSend: 'true',
       },
     } as any);
   };
 
-  const savedPearlsList = CLINICAL_PEARLS_POOL.filter((p) => bookmarkedIds.includes(p.id));
-  const filteredSavedPearls = savedFilter === 'All'
-    ? savedPearlsList
-    : savedPearlsList.filter((p) => p.specialtyName === savedFilter);
+  // Get full objects of bookmarked pearls
+  const savedPearlsList = CLINICAL_PEARLS_POOL.filter((p) =>
+    bookmarkedIds.includes(p.id)
+  );
 
-  const availableCategories = ['All', ...Array.from(new Set(savedPearlsList.map((p) => p.specialtyName)))];
+  // Available categories for bookmarks filter
+  const availableCategories = [
+    'All',
+    ...Array.from(new Set(savedPearlsList.map((p) => p.category))),
+  ];
 
-  const currentDateFormatted = new Date().toLocaleDateString('en-US', {
+  // Filtered bookmarks list
+  const filteredSavedPearls =
+    savedFilter === 'All'
+      ? savedPearlsList
+      : savedPearlsList.filter((p) => p.category === savedFilter);
+
+  // Date formatting for subtitle
+  const today = new Date();
+  const currentDateFormatted = today.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-[#05070a]" edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor="#05070a" />
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
       <ScrollView
         className="flex-1"
@@ -183,23 +199,21 @@ export default function PearlsTab() {
           paddingBottom: 120,
         }}
       >
-        {/* ========================================================================= */}
-        {/* CLEAN, UNCLUTTERED HEADER WITH ADEQUATE BREATHING ROOM                    */}
-        {/* ========================================================================= */}
+        {/* Header Row */}
         <View className="px-5 pt-2 pb-5 flex-row items-center justify-between">
           <View>
             <Text className="text-[23px] font-sans-bold text-white tracking-tight">
               Pearls & Updates
             </Text>
             <View className="flex-row items-center gap-1.5 mt-1">
-              <View className="w-2 h-2 rounded-full bg-lime" />
+              <View className="w-2 h-2 rounded-full bg-main" />
               <Text className="text-[11.5px] font-mono text-gray-400">
                 {currentDateFormatted} • High-Yield Briefs
               </Text>
             </View>
           </View>
 
-          {/* Minimalist Shuffle Action */}
+          {/* Shuffle Action */}
           <TouchableOpacity
             onPress={handleRegenerate}
             activeOpacity={0.75}
@@ -216,25 +230,23 @@ export default function PearlsTab() {
               <Ionicons
                 name="sync"
                 size={13}
-                color={regensRemaining > 0 ? Colors.lime : Colors.gold}
+                color={regensRemaining > 0 ? Colors.main : Colors.gold}
               />
             </Animated.View>
             <Text
               className="text-[11.5px] font-sans-semibold"
-              style={{ color: regensRemaining > 0 ? Colors.lime : Colors.gold }}
+              style={{ color: regensRemaining > 0 ? Colors.main : Colors.gold }}
             >
               {regensRemaining > 0 ? `Shuffle (${regensRemaining})` : 'Upgrade'}
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* ========================================================================= */}
-        {/* SECTION 1: MAIN SECTION - SILKY HIGH-YIELD PEARL SWIPE DECK               */}
-        {/* ========================================================================= */}
+        {/* Section 1: Solid Glassmorphism Swipe Stack Deck */}
         <View className="px-5 mb-2">
           {loading ? (
             <View className="py-24 items-center justify-center">
-              <ActivityIndicator size="small" color={Colors.accent} />
+              <ActivityIndicator size="small" color={Colors.main} />
               <Text className="text-gray-400 text-[12px] font-sans-medium mt-3">
                 Loading today's clinical pearls deck...
               </Text>
@@ -244,144 +256,168 @@ export default function PearlsTab() {
               {pearls.map((item) => {
                 const isBookmarked = bookmarkedIds.includes(item.id);
                 return (
-                  <View
+                  <TouchableOpacity
                     key={item.id}
-                    className="p-5 rounded-[28px] bg-[#0c1017] border border-white/[0.12]"
-                    style={{
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 10 },
-                      shadowOpacity: 0.6,
-                      shadowRadius: 20,
-                      elevation: 12,
+                    activeOpacity={0.92}
+                    onPress={() => {
+                      try {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      } catch {}
+                      setSelectedPearl(item);
                     }}
+                    style={[
+                      styles.glassCardTouchable,
+                      {
+                        borderColor: `${item.specialtyColor}50`,
+                      },
+                    ]}
                   >
-                    {/* Top Row: Specialty Pill + Threshold Badge + Bookmark */}
-                    <View className="flex-row items-center justify-between mb-3 gap-2">
-                      <View className="flex-row items-center gap-2 flex-1 min-w-0">
-                        <View
-                          className="px-2.5 py-1 rounded-full border flex-row items-center gap-1.5 flex-shrink-0"
-                          style={{
-                            backgroundColor: `${item.specialtyColor}15`,
-                            borderColor: `${item.specialtyColor}40`,
+                    <LinearGradient
+                      colors={[
+                        `${item.specialtyColor}22`,
+                        '#121922',
+                        '#0a0e14',
+                      ]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.glassCardGradient}
+                    >
+                      {/* Top Header: Specialty Chip + Badge + Bookmark */}
+                      <View style={styles.cardHeaderRow}>
+                        <View style={styles.cardHeaderLeft}>
+                          <View
+                            style={[
+                              styles.specialtyPill,
+                              {
+                                backgroundColor: `${item.specialtyColor}20`,
+                                borderColor: `${item.specialtyColor}45`,
+                              },
+                            ]}
+                          >
+                            <Ionicons
+                              name={item.specialtyIcon as any}
+                              size={12}
+                              color={item.specialtyColor}
+                            />
+                            <Text
+                              style={[
+                                styles.specialtyPillText,
+                                { color: item.specialtyColor },
+                              ]}
+                            >
+                              {item.specialtyName}
+                            </Text>
+                          </View>
+
+                          {item.badge ? (
+                            <View style={styles.metricBadge}>
+                              <Text
+                                style={styles.metricBadgeText}
+                                numberOfLines={1}
+                              >
+                                {item.badge}
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
+
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            toggleBookmark(item.id);
                           }}
+                          activeOpacity={0.7}
+                          style={styles.bookmarkButton}
+                          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                         >
                           <Ionicons
-                            name={item.specialtyIcon as any}
-                            size={12}
-                            color={item.specialtyColor}
+                            name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
+                            size={15}
+                            color={isBookmarked ? Colors.gold : '#9ca3af'}
                           />
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Catchy Pearl Title */}
+                      <Text style={styles.pearlTitle} numberOfLines={2}>
+                        {item.title}
+                      </Text>
+
+                      {/* Key Rule / Summary Box */}
+                      <View
+                        style={[
+                          styles.ruleSummaryBox,
+                          { borderLeftColor: item.specialtyColor },
+                        ]}
+                      >
+                        <Text style={styles.ruleSummaryText} numberOfLines={2}>
                           <Text
-                            className="text-[10.5px] font-sans-bold uppercase tracking-wider"
-                            style={{ color: item.specialtyColor }}
+                            style={[
+                              styles.ruleHighlight,
+                              { color: item.specialtyColor },
+                            ]}
                           >
-                            {item.specialtyName}
+                            💡 Core Rule:{' '}
+                          </Text>
+                          {item.rule}
+                        </Text>
+                      </View>
+
+                      {/* Card Footer: Citation & View Protocol CTA */}
+                      <View style={styles.cardFooterRow}>
+                        <View style={styles.citationBox}>
+                          <Ionicons
+                            name="book-outline"
+                            size={12}
+                            color="#94a3b8"
+                          />
+                          <Text style={styles.citationText} numberOfLines={1}>
+                            {item.citation}
                           </Text>
                         </View>
 
-                        {item.badge ? (
-                          <View className="px-2 py-0.5 rounded-full bg-lime/10 border border-lime/30 flex-1 min-w-0">
-                            <Text
-                              className="text-[10px] font-mono font-bold text-lime"
-                              numberOfLines={1}
-                              ellipsizeMode="tail"
-                            >
-                              {item.badge}
-                            </Text>
-                          </View>
-                        ) : null}
+                        <View
+                          style={[
+                            styles.tapDetailsBadge,
+                            {
+                              borderColor: `${item.specialtyColor}55`,
+                              backgroundColor: `${item.specialtyColor}18`,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.tapDetailsText,
+                              { color: item.specialtyColor },
+                            ]}
+                          >
+                            View Protocol
+                          </Text>
+                          <Ionicons
+                            name="arrow-forward"
+                            size={11}
+                            color={item.specialtyColor}
+                          />
+                        </View>
                       </View>
-
-                      <TouchableOpacity
-                        onPress={() => toggleBookmark(item.id)}
-                        activeOpacity={0.7}
-                        className="w-8 h-8 rounded-full bg-white/[0.08] items-center justify-center flex-shrink-0"
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Ionicons
-                          name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
-                          size={15}
-                          color={isBookmarked ? Colors.gold : '#9ca3af'}
-                        />
-                      </TouchableOpacity>
-                    </View>
-
-                    {/* Pearl Title */}
-                    <Text className="text-[18.5px] font-sans-bold text-white tracking-tight leading-[24px] mb-3">
-                      {item.title}
-                    </Text>
-
-                    {/* SECTION 1: Core Clinical Rule & Evidence */}
-                    <View className="mb-3">
-                      <Text className="text-[13.5px] font-sans text-gray-200 leading-[21px]">
-                        <Text className="font-sans-bold text-turquoise">💡 Core Rule: </Text>
-                        {item.rule}
-                      </Text>
-                    </View>
-
-                    {/* SECTION 2: Immediate Action Protocol (Clean Airy Glass) */}
-                    <View className="bg-lime/[0.06] border border-lime/25 rounded-2xl p-3.5 mb-2.5">
-                      <View className="flex-row items-center gap-1.5 mb-1">
-                        <Ionicons name="flash" size={12} color={Colors.lime} />
-                        <Text className="text-[10.5px] font-sans-bold text-lime uppercase tracking-wider">
-                          Action Protocol
-                        </Text>
-                      </View>
-                      <Text className="text-[12.5px] font-sans text-gray-200 leading-[19px]">
-                        {item.action}
-                      </Text>
-                    </View>
-
-                    {/* SECTION 3: Pitfall Warning (Soft Rose Glass) */}
-                    {item.pitfall ? (
-                      <View className="bg-pink/[0.08] border border-pink/30 rounded-2xl px-3 py-2 mb-3 flex-row items-center gap-2">
-                        <Ionicons name="warning-outline" size={14} color={Colors.pink} />
-                        <Text className="text-[11.5px] font-sans-medium text-pink flex-1 leading-[17px]">
-                          {item.pitfall}
-                        </Text>
-                      </View>
-                    ) : null}
-
-                    {/* Footer: Citation + Consult AI Action */}
-                    <View className="flex-row items-center justify-between pt-3 border-t border-white/[0.08] mt-1">
-                      <Text
-                        className="text-[10.5px] font-mono text-gray-400 flex-1 mr-2"
-                        numberOfLines={1}
-                      >
-                        📚 {item.citation}
-                      </Text>
-
-                      <TouchableOpacity
-                        onPress={() => handleConsultAI(item)}
-                        activeOpacity={0.75}
-                        className="flex-row items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-turquoise/15 border border-turquoise/35"
-                      >
-                        <Ionicons name="sparkles" size={12} color={Colors.accent} />
-                        <Text className="text-turquoise text-[11.5px] font-sans-bold">
-                          Consult AI
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
+                    </LinearGradient>
+                  </TouchableOpacity>
                 );
               })}
             </ScrollStack>
           )}
         </View>
 
-        {/* Divider */}
         <View className="h-px bg-white/[0.08] mx-5 my-3.5" />
 
-        {/* ========================================================================= */}
-        {/* SECTION 2: MEDICAL UPDATES & BREAKTHROUGHS HORIZONTAL CAROUSEL            */}
-        {/* ========================================================================= */}
-        <MedicalUpdatesCarousel />
+        {/* Section 2: Medical Updates Carousel */}
+        <View className="mb-2">
+          <MedicalUpdatesCarousel />
+        </View>
 
-        {/* Divider */}
         <View className="h-px bg-white/[0.08] mx-5 my-3.5" />
 
-        {/* ========================================================================= */}
-        {/* SECTION 3: BOOKMARKS & SAVED CLINICAL DECKS                                */}
-        {/* ========================================================================= */}
+        {/* Section 3: Bookmarks & Saved Decks */}
         <View className="px-5">
           <View className="flex-row items-center justify-between mb-3.5">
             <View className="flex-row items-center gap-2">
@@ -435,12 +471,14 @@ export default function PearlsTab() {
             </ScrollView>
           )}
 
-          {/* Bookmarked Cards List or Empty State */}
+          {/* Bookmarked Cards List */}
           {filteredSavedPearls.length === 0 ? (
             <View className="p-6 rounded-2xl bg-white/[0.02] border border-white/10 items-center justify-center">
               <Ionicons name="bookmark-outline" size={26} color={Colors.grayMuted} />
               <Text className="text-white font-sans-bold text-[14px] mt-2 mb-1">
-                {savedPearlsList.length === 0 ? 'No Saved Pearls Yet' : 'No Pearls in this category'}
+                {savedPearlsList.length === 0
+                  ? 'No Saved Pearls Yet'
+                  : 'No Pearls in this category'}
               </Text>
               <Text className="text-gray-400 font-sans text-[12px] text-center max-w-[260px] leading-4.5">
                 {savedPearlsList.length === 0
@@ -451,8 +489,15 @@ export default function PearlsTab() {
           ) : (
             <View className="gap-3">
               {filteredSavedPearls.map((savedItem) => (
-                <View
+                <TouchableOpacity
                   key={savedItem.id}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    try {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                    setSelectedPearl(savedItem);
+                  }}
                   className="p-4 rounded-2xl bg-[#0c1017] border border-white/10"
                 >
                   <View className="flex-row items-center justify-between mb-2 gap-2">
@@ -472,7 +517,10 @@ export default function PearlsTab() {
                     </View>
 
                     <TouchableOpacity
-                      onPress={() => toggleBookmark(savedItem.id)}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        toggleBookmark(savedItem.id);
+                      }}
                       className="p-1 flex-shrink-0"
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
@@ -480,11 +528,14 @@ export default function PearlsTab() {
                     </TouchableOpacity>
                   </View>
 
-                  <Text className="text-white font-sans-bold text-[14.5px] mb-1.5">
+                  <Text className="text-white font-sans-bold text-[15px] mb-1.5">
                     {savedItem.title}
                   </Text>
 
-                  <Text className="text-gray-300 font-sans text-[12px] leading-4.5 mb-3">
+                  <Text
+                    className="text-gray-300 font-sans text-[12px] leading-4.5 mb-3"
+                    numberOfLines={2}
+                  >
                     {savedItem.rule}
                   </Text>
 
@@ -492,22 +543,232 @@ export default function PearlsTab() {
                     <Text className="text-[10px] font-mono text-gray-400" numberOfLines={1}>
                       {savedItem.citation}
                     </Text>
-                    <TouchableOpacity
-                      onPress={() => handleConsultAI(savedItem)}
-                      className="flex-row items-center gap-1 px-2.5 py-1 rounded-full bg-turquoise/15 border border-turquoise/30"
-                    >
-                      <Ionicons name="sparkles" size={10} color={Colors.accent} />
-                      <Text className="text-turquoise text-[10.5px] font-sans-semibold">
-                        Review AI
+                    <View className="flex-row items-center gap-1 px-2.5 py-1 rounded-full bg-main/15 border border-main/30">
+                      <Ionicons name="sparkles" size={10} color={Colors.main} />
+                      <Text className="text-main text-[10.5px] font-sans-semibold">
+                        View Details
                       </Text>
-                    </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           )}
         </View>
       </ScrollView>
+
+      {/* Detail Modal */}
+      <Modal
+        visible={!!selectedPearl}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedPearl(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdropDismiss}
+            activeOpacity={1}
+            onPress={() => setSelectedPearl(null)}
+          />
+
+          <View style={styles.modalSheetContainer}>
+            <View style={styles.modalPullHandle} />
+
+            {selectedPearl && (
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalScrollContent}
+              >
+                <View style={styles.modalTopBar}>
+                  <View
+                    style={[
+                      styles.modalSpecialtyPill,
+                      {
+                        backgroundColor: `${selectedPearl.specialtyColor}20`,
+                        borderColor: `${selectedPearl.specialtyColor}50`,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={selectedPearl.specialtyIcon as any}
+                      size={13}
+                      color={selectedPearl.specialtyColor}
+                    />
+                    <Text
+                      style={[
+                        styles.modalSpecialtyText,
+                        { color: selectedPearl.specialtyColor },
+                      ]}
+                    >
+                      {selectedPearl.specialtyName}
+                    </Text>
+                  </View>
+
+                  <View style={styles.modalTopActions}>
+                    <TouchableOpacity
+                      onPress={() => toggleBookmark(selectedPearl.id)}
+                      activeOpacity={0.7}
+                      style={styles.modalActionButton}
+                    >
+                      <Ionicons
+                        name={
+                          bookmarkedIds.includes(selectedPearl.id)
+                            ? 'bookmark'
+                            : 'bookmark-outline'
+                        }
+                        size={18}
+                        color={
+                          bookmarkedIds.includes(selectedPearl.id)
+                            ? Colors.gold
+                            : '#9ca3af'
+                        }
+                      />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => setSelectedPearl(null)}
+                      activeOpacity={0.7}
+                      style={styles.modalActionButton}
+                    >
+                      <Ionicons name="close" size={20} color="#cbd5e1" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <Text style={styles.modalTitle}>{selectedPearl.title}</Text>
+
+                {selectedPearl.badge ? (
+                  <View
+                    style={[
+                      styles.modalMetricBadge,
+                      { borderColor: `${selectedPearl.specialtyColor}40` },
+                    ]}
+                  >
+                    <Ionicons
+                      name="speedometer-outline"
+                      size={14}
+                      color={selectedPearl.specialtyColor}
+                    />
+                    <Text
+                      style={[
+                        styles.modalMetricText,
+                        { color: selectedPearl.specialtyColor },
+                      ]}
+                    >
+                      Key Metric: {selectedPearl.badge}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* Section 1: Core Rule */}
+                <View
+                  style={[
+                    styles.modalSectionCard,
+                    {
+                      borderLeftColor: Colors.teal,
+                      borderLeftWidth: 3.5,
+                      backgroundColor: 'rgba(109, 194, 189, 0.08)',
+                    },
+                  ]}
+                >
+                  <View style={styles.modalSectionHeader}>
+                    <Ionicons name="bulb" size={16} color={Colors.teal} />
+                    <Text
+                      style={[styles.modalSectionTitle, { color: Colors.teal }]}
+                    >
+                      Core Rule & Physiological Rationale
+                    </Text>
+                  </View>
+                  <Text style={styles.modalSectionBody}>
+                    {selectedPearl.rule}
+                  </Text>
+                </View>
+
+                {/* Section 2: Action Protocol */}
+                <View
+                  style={[
+                    styles.modalSectionCard,
+                    {
+                      borderLeftColor: Colors.main,
+                      borderLeftWidth: 3.5,
+                      backgroundColor: 'rgba(222, 255, 249, 0.06)',
+                    },
+                  ]}
+                >
+                  <View style={styles.modalSectionHeader}>
+                    <Ionicons name="flash" size={16} color={Colors.main} />
+                    <Text
+                      style={[styles.modalSectionTitle, { color: Colors.main }]}
+                    >
+                      Action Protocol & Precise Dosing
+                    </Text>
+                  </View>
+                  <Text style={styles.modalSectionBody}>
+                    {selectedPearl.action}
+                  </Text>
+                </View>
+
+                {/* Section 3: Pitfall */}
+                {selectedPearl.pitfall ? (
+                  <View
+                    style={[
+                      styles.modalSectionCard,
+                      {
+                        borderLeftColor: Colors.pink,
+                        borderLeftWidth: 3.5,
+                        backgroundColor: 'rgba(255, 195, 221, 0.08)',
+                      },
+                    ]}
+                  >
+                    <View style={styles.modalSectionHeader}>
+                      <Ionicons name="warning" size={16} color={Colors.pink} />
+                      <Text
+                        style={[
+                          styles.modalSectionTitle,
+                          { color: Colors.pink },
+                        ]}
+                      >
+                        High-Risk Pitfall & Warning
+                      </Text>
+                    </View>
+                    <Text style={[styles.modalSectionBody, { color: '#ffd6e7' }]}>
+                      {selectedPearl.pitfall}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* Section 4: Citation */}
+                <View style={styles.modalCitationBox}>
+                  <Ionicons name="book" size={14} color="#94a3b8" />
+                  <Text style={styles.modalCitationText}>
+                    Evidence Source: {selectedPearl.citation}
+                  </Text>
+                </View>
+
+                {/* Consult AI Button */}
+                <TouchableOpacity
+                  onPress={() => {
+                    const pearlToConsult = selectedPearl;
+                    setSelectedPearl(null);
+                    handleConsultAI(pearlToConsult);
+                  }}
+                  activeOpacity={0.85}
+                  style={[
+                    styles.modalConsultBtn,
+                    { backgroundColor: selectedPearl.specialtyColor },
+                  ]}
+                >
+                  <Ionicons name="sparkles" size={16} color={Colors.ink} />
+                  <Text style={styles.modalConsultBtnText}>
+                    Consult Specialist AI on this Pearl
+                  </Text>
+                  <Ionicons name="arrow-forward" size={16} color={Colors.ink} />
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* Upgrade / Daily Limit Modal */}
       <Modal
@@ -536,24 +797,40 @@ export default function PearlsTab() {
             </Text>
 
             <Text className="text-gray-400 font-sans text-[13px] text-center leading-5 mb-5">
-              You've used all <Text className="text-white font-sans-semibold">3 free daily shuffles</Text>. Your free quota resets every midnight at 00:00.
+              You've used all{' '}
+              <Text className="text-white font-sans-semibold">
+                3 free daily shuffles
+              </Text>
+              . Your free quota resets every midnight at 00:00.
             </Text>
 
             <View className="bg-white/[0.04] rounded-2xl p-3.5 border border-white/5 mb-5 gap-2">
               <View className="flex-row items-center gap-2">
-                <Ionicons name="checkmark-circle" size={16} color={Colors.gold} />
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={Colors.gold}
+                />
                 <Text className="text-gray-200 text-[12px] font-sans-medium">
                   Unlimited daily clinical shuffles
                 </Text>
               </View>
               <View className="flex-row items-center gap-2">
-                <Ionicons name="checkmark-circle" size={16} color={Colors.gold} />
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={Colors.gold}
+                />
                 <Text className="text-gray-200 text-[12px] font-sans-medium">
                   Custom specialty-specific pearl filtering
                 </Text>
               </View>
               <View className="flex-row items-center gap-2">
-                <Ionicons name="checkmark-circle" size={16} color={Colors.gold} />
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={Colors.gold}
+                />
                 <Text className="text-gray-200 text-[12px] font-sans-medium">
                   Unlimited saved bookmark study decks
                 </Text>
@@ -590,3 +867,294 @@ export default function PearlsTab() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  glassCardTouchable: {
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    backgroundColor: '#0c1017',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.45,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  glassCardGradient: {
+    padding: 16,
+    borderRadius: 24,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    gap: 8,
+  },
+  cardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  specialtyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  specialtyPillText: {
+    fontSize: 10,
+    fontFamily: 'PlexSans_700Bold',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  metricBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    maxWidth: 140,
+  },
+  metricBadgeText: {
+    fontSize: 9.5,
+    fontFamily: 'PlexMono_500Medium',
+    color: '#e2e8f0',
+    fontWeight: '600',
+  },
+  bookmarkButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  pearlTitle: {
+    color: '#ffffff',
+    fontFamily: 'PlexSans_700Bold',
+    fontSize: 16.5,
+    lineHeight: 22,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  ruleSummaryBox: {
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderLeftWidth: 3,
+    marginBottom: 10,
+  },
+  ruleSummaryText: {
+    color: '#cbd5e1',
+    fontFamily: 'PlexSans_400Regular',
+    fontSize: 12,
+    lineHeight: 16.5,
+  },
+  ruleHighlight: {
+    fontFamily: 'PlexSans_700Bold',
+    fontWeight: '700',
+  },
+  cardFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  citationBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+    marginRight: 8,
+  },
+  citationText: {
+    fontSize: 10,
+    fontFamily: 'PlexMono_500Medium',
+    color: '#94a3b8',
+  },
+  tapDetailsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  tapDetailsText: {
+    fontSize: 10.5,
+    fontFamily: 'PlexSans_700Bold',
+    fontWeight: '700',
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'flex-end',
+  },
+  modalBackdropDismiss: {
+    flex: 1,
+  },
+  modalSheetContainer: {
+    backgroundColor: '#0a0f14',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    maxHeight: '88%',
+    paddingBottom: Platform.OS === 'android' ? 24 : 36,
+  },
+  modalPullHandle: {
+    width: 40,
+    height: 4.5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  modalScrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  modalTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  modalSpecialtyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  modalSpecialtyText: {
+    fontSize: 11.5,
+    fontFamily: 'PlexSans_700Bold',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  modalTopActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalActionButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalTitle: {
+    color: '#ffffff',
+    fontFamily: 'PlexSans_700Bold',
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  modalMetricBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    marginBottom: 14,
+    alignSelf: 'flex-start',
+  },
+  modalMetricText: {
+    fontSize: 12,
+    fontFamily: 'PlexMono_500Medium',
+    fontWeight: '600',
+  },
+  modalSectionCard: {
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 12,
+  },
+  modalSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginBottom: 6,
+  },
+  modalSectionTitle: {
+    fontSize: 12.5,
+    fontFamily: 'PlexSans_700Bold',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  modalSectionBody: {
+    color: '#e2e8f0',
+    fontFamily: 'PlexSans_400Regular',
+    fontSize: 13.5,
+    lineHeight: 20,
+  },
+  modalCitationBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 16,
+  },
+  modalCitationText: {
+    color: '#94a3b8',
+    fontFamily: 'PlexMono_500Medium',
+    fontSize: 11,
+    flex: 1,
+  },
+  modalConsultBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 22,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  modalConsultBtnText: {
+    color: '#010101',
+    fontFamily: 'PlexSans_700Bold',
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+});

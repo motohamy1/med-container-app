@@ -6,8 +6,12 @@ import {
   ActivityIndicator,
   Animated,
   Modal,
+  ScrollView,
+  Platform,
+  StyleSheet,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
@@ -27,6 +31,7 @@ export const DailyClinicalPearls = () => {
   const [offset, setOffset] = useState(0);
   const [regensRemaining, setRegensRemaining] = useState(MAX_FREE_REGENS);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [selectedPearl, setSelectedPearl] = useState<ClinicalPearl | null>(null);
 
   // Rotation animation for the regenerate icon
   const spinAnim = useRef(new Animated.Value(0)).current;
@@ -169,12 +174,12 @@ export const DailyClinicalPearls = () => {
             <Ionicons
               name="sync"
               size={13}
-              color={regensRemaining > 0 ? Colors.accent : Colors.gold}
+              color={regensRemaining > 0 ? Colors.main : Colors.gold}
             />
           </Animated.View>
           <Text
             className="text-[11px] font-sans-semibold"
-            style={{ color: regensRemaining > 0 ? Colors.accent : Colors.gold }}
+            style={{ color: regensRemaining > 0 ? Colors.main : Colors.gold }}
           >
             {regensRemaining > 0 ? `Shuffle (${regensRemaining})` : 'Upgrade'}
           </Text>
@@ -184,7 +189,7 @@ export const DailyClinicalPearls = () => {
       {/* ScrollStack Deck */}
       {loading ? (
         <View className="py-20 items-center justify-center">
-          <ActivityIndicator size="small" color={Colors.accent} />
+          <ActivityIndicator size="small" color={Colors.main} />
           <Text className="text-gray-muted text-[12px] font-sans-medium mt-3">
             Loading today's clinical pearls deck...
           </Text>
@@ -192,102 +197,327 @@ export const DailyClinicalPearls = () => {
       ) : (
         <ScrollStack>
           {pearls.map((item) => (
-            <View
+            <TouchableOpacity
               key={item.id}
-              className="p-4 rounded-3xl bg-teal-medium border border-white/10"
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.5,
-                shadowRadius: 18,
-                elevation: 10,
+              activeOpacity={0.92}
+              onPress={() => {
+                try {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                } catch {}
+                setSelectedPearl(item);
               }}
+              style={[
+                styles.glassCardTouchable,
+                {
+                  borderColor: `${item.specialtyColor}50`,
+                },
+              ]}
             >
-              {/* Top Row: Specialty Badge + Key Threshold Badge */}
-              <View className="flex-row items-center justify-between mb-2">
+              <LinearGradient
+                colors={[
+                  `${item.specialtyColor}22`,
+                  '#121922',
+                  '#0a0e14',
+                ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.glassCardGradient}
+              >
+                {/* Top Row: Specialty Badge + Key Threshold Badge */}
+                <View style={styles.cardHeaderRow}>
+                  <View style={styles.cardHeaderLeft}>
+                    <View
+                      style={[
+                        styles.specialtyPill,
+                        {
+                          backgroundColor: `${item.specialtyColor}20`,
+                          borderColor: `${item.specialtyColor}45`,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name={item.specialtyIcon as any}
+                        size={12}
+                        color={item.specialtyColor}
+                      />
+                      <Text
+                        style={[
+                          styles.specialtyPillText,
+                          { color: item.specialtyColor },
+                        ]}
+                      >
+                        {item.specialtyName}
+                      </Text>
+                    </View>
+
+                    {item.badge ? (
+                      <View style={styles.metricBadge}>
+                        <Text style={styles.metricBadgeText} numberOfLines={1}>
+                          {item.badge}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+
+                  <View style={styles.pearlIconBox}>
+                    <Ionicons name="sparkles" size={14} color={item.specialtyColor} />
+                  </View>
+                </View>
+
+                {/* Catchy Title */}
+                <Text style={styles.pearlTitle} numberOfLines={2}>
+                  {item.title}
+                </Text>
+
+                {/* Summary / Rule Box */}
                 <View
-                  className="px-2.5 py-1 rounded-lg border flex-row items-center gap-1.5"
-                  style={{
-                    backgroundColor: `${item.specialtyColor}20`,
-                    borderColor: `${item.specialtyColor}45`,
-                  }}
+                  style={[
+                    styles.ruleSummaryBox,
+                    { borderLeftColor: item.specialtyColor },
+                  ]}
                 >
-                  <Ionicons name={item.specialtyIcon as any} size={12} color={item.specialtyColor} />
-                  <Text
-                    className="text-[10.5px] font-sans-bold uppercase tracking-wider"
-                    style={{ color: item.specialtyColor }}
+                  <Text style={styles.ruleSummaryText} numberOfLines={2}>
+                    <Text
+                      style={[
+                        styles.ruleHighlight,
+                        { color: item.specialtyColor },
+                      ]}
+                    >
+                      💡 Core Rule:{' '}
+                    </Text>
+                    {item.rule}
+                  </Text>
+                </View>
+
+                {/* Footer: Citation & View Protocol */}
+                <View style={styles.cardFooterRow}>
+                  <View style={styles.citationBox}>
+                    <Ionicons name="book-outline" size={12} color="#94a3b8" />
+                    <Text style={styles.citationText} numberOfLines={1}>
+                      {item.citation}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.tapDetailsBadge,
+                      {
+                        borderColor: `${item.specialtyColor}55`,
+                        backgroundColor: `${item.specialtyColor}18`,
+                      },
+                    ]}
                   >
-                    {item.specialtyName}
-                  </Text>
-                </View>
-
-                {item.badge ? (
-                  <View className="px-2.5 py-1 rounded-full bg-deep-teal border border-white/10 max-w-[150px] flex-shrink">
-                    <Text className="text-[10.5px] font-mono text-lime" numberOfLines={1}>
-                      {item.badge}
+                    <Text
+                      style={[
+                        styles.tapDetailsText,
+                        { color: item.specialtyColor },
+                      ]}
+                    >
+                      View Protocol
                     </Text>
+                    <Ionicons
+                      name="arrow-forward"
+                      size={11}
+                      color={item.specialtyColor}
+                    />
                   </View>
-                ) : (
-                  <View className="px-2.5 py-1 rounded-full bg-deep-teal border border-white/10">
-                    <Text className="text-[10.5px] font-sans-medium text-lavender">
-                      {item.category}
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Title */}
-              <Text className="text-[16.5px] font-sans-bold text-white tracking-tight leading-5 mb-2.5">
-                {item.title}
-              </Text>
-
-              {/* SECTION 1: 💡 Core Rule & Mechanism (Jewel Teal #6dc2bd) */}
-              <View className="bg-deep-teal/95 border border-white/5 border-l-2 border-l-turquoise rounded-xl p-2.5 mb-2">
-                <Text className="text-[12.5px] font-sans text-gray-200 leading-5">
-                  <Text className="font-sans-bold text-turquoise">💡 Core Rule: </Text>
-                  {item.rule}
-                </Text>
-              </View>
-
-              {/* SECTION 2: ⚡ Immediate Action & Dosing (Electric Lime #c4f230) */}
-              <View className="bg-white/[0.03] border border-white/[0.07] border-l-2 border-l-lime rounded-xl p-2.5 mb-2">
-                <Text className="text-[12px] font-sans text-gray-200 leading-4.5">
-                  <Text className="font-sans-bold text-lime">⚡ Action: </Text>
-                  {item.action}
-                </Text>
-              </View>
-
-              {/* SECTION 3: ⚠️ Danger Pitfall (Pastel Rose Pink #ffc3dd) */}
-              {item.pitfall ? (
-                <View className="bg-pink/10 border border-pink/30 rounded-xl px-2.5 py-1.5 mb-2.5 flex-row items-center gap-1.5">
-                  <Ionicons name="warning-outline" size={13} color={Colors.pink} />
-                  <Text className="text-[11.5px] font-sans-medium text-pink flex-1 leading-4">
-                    {item.pitfall}
-                  </Text>
                 </View>
-              ) : null}
-
-              {/* Footer Row: Reference + Consult AI Button */}
-              <View className="flex-row items-center justify-between pt-2 border-t border-white/5">
-                <Text className="text-[10.5px] font-mono text-gray-muted flex-1 mr-2" numberOfLines={1}>
-                  📚 {item.citation}
-                </Text>
-
-                <TouchableOpacity
-                  onPress={() => handleConsultAI(item)}
-                  activeOpacity={0.75}
-                  className="flex-row items-center gap-1 px-3 py-1.5 rounded-full bg-turquoise/15 border border-turquoise/35"
-                >
-                  <Ionicons name="sparkles" size={12} color={Colors.accent} />
-                  <Text className="text-turquoise text-[11px] font-sans-bold">
-                    Consult AI
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+              </LinearGradient>
+            </TouchableOpacity>
           ))}
         </ScrollStack>
       )}
+
+      {/* Comprehensive Pearl Details Modal */}
+      <Modal
+        visible={!!selectedPearl}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedPearl(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={styles.modalBackdropDismiss}
+            activeOpacity={1}
+            onPress={() => setSelectedPearl(null)}
+          />
+
+          <View style={styles.modalSheetContainer}>
+            <View style={styles.modalPullHandle} />
+
+            {selectedPearl && (
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalScrollContent}
+              >
+                <View style={styles.modalTopBar}>
+                  <View
+                    style={[
+                      styles.modalSpecialtyPill,
+                      {
+                        backgroundColor: `${selectedPearl.specialtyColor}20`,
+                        borderColor: `${selectedPearl.specialtyColor}50`,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={selectedPearl.specialtyIcon as any}
+                      size={13}
+                      color={selectedPearl.specialtyColor}
+                    />
+                    <Text
+                      style={[
+                        styles.modalSpecialtyText,
+                        { color: selectedPearl.specialtyColor },
+                      ]}
+                    >
+                      {selectedPearl.specialtyName}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={() => setSelectedPearl(null)}
+                    activeOpacity={0.7}
+                    style={styles.modalCloseButton}
+                  >
+                    <Ionicons name="close" size={20} color="#cbd5e1" />
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.modalTitle}>{selectedPearl.title}</Text>
+
+                {selectedPearl.badge ? (
+                  <View
+                    style={[
+                      styles.modalMetricBadge,
+                      { borderColor: `${selectedPearl.specialtyColor}40` },
+                    ]}
+                  >
+                    <Ionicons
+                      name="speedometer-outline"
+                      size={14}
+                      color={selectedPearl.specialtyColor}
+                    />
+                    <Text
+                      style={[
+                        styles.modalMetricText,
+                        { color: selectedPearl.specialtyColor },
+                      ]}
+                    >
+                      Key Metric: {selectedPearl.badge}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* SECTION 1: Core Rule */}
+                <View
+                  style={[
+                    styles.modalSectionCard,
+                    {
+                      borderLeftColor: Colors.teal,
+                      borderLeftWidth: 3.5,
+                      backgroundColor: 'rgba(109, 194, 189, 0.08)',
+                    },
+                  ]}
+                >
+                  <View style={styles.modalSectionHeader}>
+                    <Ionicons name="bulb" size={16} color={Colors.teal} />
+                    <Text
+                      style={[styles.modalSectionTitle, { color: Colors.teal }]}
+                    >
+                      Core Rule & Physiological Rationale
+                    </Text>
+                  </View>
+                  <Text style={styles.modalSectionBody}>
+                    {selectedPearl.rule}
+                  </Text>
+                </View>
+
+                {/* SECTION 2: Action Protocol */}
+                <View
+                  style={[
+                    styles.modalSectionCard,
+                    {
+                      borderLeftColor: Colors.main,
+                      borderLeftWidth: 3.5,
+                      backgroundColor: 'rgba(222, 255, 249, 0.06)',
+                    },
+                  ]}
+                >
+                  <View style={styles.modalSectionHeader}>
+                    <Ionicons name="flash" size={16} color={Colors.main} />
+                    <Text
+                      style={[styles.modalSectionTitle, { color: Colors.main }]}
+                    >
+                      Action Protocol & Precise Dosing
+                    </Text>
+                  </View>
+                  <Text style={styles.modalSectionBody}>
+                    {selectedPearl.action}
+                  </Text>
+                </View>
+
+                {/* SECTION 3: Pitfall */}
+                {selectedPearl.pitfall ? (
+                  <View
+                    style={[
+                      styles.modalSectionCard,
+                      {
+                        borderLeftColor: Colors.pink,
+                        borderLeftWidth: 3.5,
+                        backgroundColor: 'rgba(255, 195, 221, 0.08)',
+                      },
+                    ]}
+                  >
+                    <View style={styles.modalSectionHeader}>
+                      <Ionicons name="warning" size={16} color={Colors.pink} />
+                      <Text
+                        style={[
+                          styles.modalSectionTitle,
+                          { color: Colors.pink },
+                        ]}
+                      >
+                        High-Risk Pitfall & Warning
+                      </Text>
+                    </View>
+                    <Text style={[styles.modalSectionBody, { color: '#ffd6e7' }]}>
+                      {selectedPearl.pitfall}
+                    </Text>
+                  </View>
+                ) : null}
+
+                {/* SECTION 4: Citation */}
+                <View style={styles.modalCitationBox}>
+                  <Ionicons name="book" size={14} color="#94a3b8" />
+                  <Text style={styles.modalCitationText}>
+                    Evidence Source: {selectedPearl.citation}
+                  </Text>
+                </View>
+
+                {/* Consult AI Button */}
+                <TouchableOpacity
+                  onPress={() => {
+                    const pearlToConsult = selectedPearl;
+                    setSelectedPearl(null);
+                    handleConsultAI(pearlToConsult);
+                  }}
+                  activeOpacity={0.85}
+                  style={[
+                    styles.modalConsultBtn,
+                    { backgroundColor: selectedPearl.specialtyColor },
+                  ]}
+                >
+                  <Ionicons name="sparkles" size={16} color={Colors.ink} />
+                  <Text style={styles.modalConsultBtnText}>
+                    Consult Specialist AI on this Pearl
+                  </Text>
+                  <Ionicons name="arrow-forward" size={16} color={Colors.ink} />
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
 
       {/* Upgrade / Daily Limit Modal */}
       <Modal
@@ -307,7 +537,6 @@ export const DailyClinicalPearls = () => {
               elevation: 12,
             }}
           >
-            {/* Modal Icon Badge */}
             <View className="w-14 h-14 rounded-2xl bg-gold/20 border border-gold/40 items-center justify-center mx-auto mb-4">
               <Ionicons name="star" size={28} color={Colors.gold} />
             </View>
@@ -320,7 +549,6 @@ export const DailyClinicalPearls = () => {
               You've used all <Text className="text-white font-sans-semibold">3 free daily shuffles</Text>. Your free quota resets every midnight at 00:00.
             </Text>
 
-            {/* Pro Feature Highlights */}
             <View className="bg-deep-teal rounded-2xl p-3.5 border border-white/5 mb-5 gap-2">
               <View className="flex-row items-center gap-2">
                 <Ionicons name="checkmark-circle" size={16} color={Colors.gold} />
@@ -342,7 +570,6 @@ export const DailyClinicalPearls = () => {
               </View>
             </View>
 
-            {/* Modal Buttons */}
             <TouchableOpacity
               onPress={() => setShowUpgradeModal(false)}
               className="w-full py-3.5 rounded-full bg-gold items-center justify-center mb-2.5 active:opacity-90"
@@ -373,3 +600,286 @@ export const DailyClinicalPearls = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  glassCardTouchable: {
+    borderRadius: 24,
+    borderWidth: 1.5,
+    overflow: 'hidden',
+    backgroundColor: '#0c1017',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.45,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  glassCardGradient: {
+    padding: 16,
+    borderRadius: 24,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    gap: 8,
+  },
+  cardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  specialtyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  specialtyPillText: {
+    fontSize: 10,
+    fontFamily: 'PlexSans_700Bold',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  metricBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    maxWidth: 140,
+  },
+  metricBadgeText: {
+    fontSize: 9.5,
+    fontFamily: 'PlexMono_500Medium',
+    color: '#e2e8f0',
+    fontWeight: '600',
+  },
+  pearlIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pearlTitle: {
+    color: '#ffffff',
+    fontFamily: 'PlexSans_700Bold',
+    fontSize: 16.5,
+    lineHeight: 22,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  ruleSummaryBox: {
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderLeftWidth: 3,
+    marginBottom: 10,
+  },
+  ruleSummaryText: {
+    color: '#cbd5e1',
+    fontFamily: 'PlexSans_400Regular',
+    fontSize: 12,
+    lineHeight: 16.5,
+  },
+  ruleHighlight: {
+    fontFamily: 'PlexSans_700Bold',
+    fontWeight: '700',
+  },
+  cardFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  citationBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+    marginRight: 8,
+  },
+  citationText: {
+    fontSize: 10,
+    fontFamily: 'PlexMono_500Medium',
+    color: '#94a3b8',
+  },
+  tapDetailsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  tapDetailsText: {
+    fontSize: 10.5,
+    fontFamily: 'PlexSans_700Bold',
+    fontWeight: '700',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'flex-end',
+  },
+  modalBackdropDismiss: {
+    flex: 1,
+  },
+  modalSheetContainer: {
+    backgroundColor: '#0a0f14',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    maxHeight: '88%',
+    paddingBottom: Platform.OS === 'android' ? 24 : 36,
+  },
+  modalPullHandle: {
+    width: 40,
+    height: 4.5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  modalScrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  modalTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  modalSpecialtyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  modalSpecialtyText: {
+    fontSize: 11.5,
+    fontFamily: 'PlexSans_700Bold',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  modalCloseButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalTitle: {
+    color: '#ffffff',
+    fontFamily: 'PlexSans_700Bold',
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  modalMetricBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    marginBottom: 14,
+    alignSelf: 'flex-start',
+  },
+  modalMetricText: {
+    fontSize: 12,
+    fontFamily: 'PlexMono_500Medium',
+    fontWeight: '600',
+  },
+  modalSectionCard: {
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 12,
+  },
+  modalSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginBottom: 6,
+  },
+  modalSectionTitle: {
+    fontSize: 12.5,
+    fontFamily: 'PlexSans_700Bold',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  modalSectionBody: {
+    color: '#e2e8f0',
+    fontFamily: 'PlexSans_400Regular',
+    fontSize: 13.5,
+    lineHeight: 20,
+  },
+  modalCitationBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: 16,
+  },
+  modalCitationText: {
+    color: '#94a3b8',
+    fontFamily: 'PlexMono_500Medium',
+    fontSize: 11,
+    flex: 1,
+  },
+  modalConsultBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 22,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  modalConsultBtnText: {
+    color: '#010101',
+    fontFamily: 'PlexSans_700Bold',
+    fontSize: 13.5,
+    fontWeight: '700',
+  },
+});

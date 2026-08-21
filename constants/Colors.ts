@@ -30,17 +30,19 @@ export const Colors = {
   surfaceHover: '#1c2527',
 
   // Four Main Core Colors (User Palette)
-  accent: '#6dc2bd',       // Medical Jewel Teal / Cyan
-  lime: '#c4f230',         // Electric Lime / Chartreuse
-  lavender: '#c09ffa',     // Soft Lavender / Violet
-  pink: '#ffc3dd',         // Pastel Rose Pink
+  main: '#defff9',          // Main App Color — Luminous Frosted Aqua Mint
+  accent: '#defff9',        // Primary highlight / brand action color
+  teal: '#6dc2bd',          // Medical Jewel Teal / Cyan Contrast
+  lavender: '#dbd4fd',      // Soft Lavender / Periwinkle
+  pink: '#ffc3dd',          // Pastel Rose Pink
+  lime: '#defff9',          // Mapped to main #defff9 for backward compatibility
 
   // Harmonized Gradient & Functional Aliases
-  accentBright: '#8ad9d5',
-  accentDeep: '#5aa8a4',
-  gold: '#c4f230',         // Electric Lime for high-energy signal highlights & features
-  clinicalGold: '#c09ffa', // Soft Lavender for secondary clinical badges
-  terracotta: '#ffc3dd',   // Pastel Rose for alerts, pitfalls, and critical markers
+  accentBright: '#defff9',
+  accentDeep: '#6dc2bd',
+  gold: '#dbd4fd',          // Soft Lavender / Periwinkle for signal highlights & badges
+  clinicalGold: '#dbd4fd',  // Soft Lavender for secondary clinical badges
+  terracotta: '#ffc3dd',    // Pastel Rose for alerts, pitfalls, and critical markers
   terracottaDeep: '#e08ca9',
 
   // Text & utility neutrals
@@ -60,17 +62,18 @@ export const Colors = {
   islandBg: '#090d0e',
   tabIslandBg: '#040808',
 
-  // Specialty palette — harmonized using the 4 main palette colors
+  // Specialty palette — harmonized using the 4 main palette colors (#defff9, #ffc3dd, #dbd4fd, #6dc2bd)
   specialty: {
     cardiology: '#ffc3dd',  // Pastel Pink
-    git: '#c4f230',         // Electric Lime
+    git: '#defff9',         // Main Ice Mint
     infectious: '#6dc2bd',  // Jewel Teal
-    neurology: '#c09ffa',   // Soft Lavender
+    neurology: '#dbd4fd',   // Soft Lavender
     dermatology: '#ffc3dd', // Pastel Pink
-    obgyn: '#c09ffa',       // Soft Lavender
+    obgyn: '#dbd4fd',       // Soft Lavender
     pulmonology: '#6dc2bd', // Jewel Teal
-    more: '#c4f230',        // Electric Lime
+    more: '#defff9',        // Main Ice Mint
   },
 } as const;
 
 export type SpecialtyKey = keyof typeof Colors.specialty;
+

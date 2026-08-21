@@ -1,162 +1,270 @@
-import { useEffect, useRef } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { Tabs } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Dimensions,
+} from 'react-native';
+import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 import Animated, {
-  Easing,
-  interpolate,
-  interpolateColor,
-  useAnimatedStyle,
+  type SharedValue,
   useSharedValue,
+  useAnimatedProps,
+  useAnimatedStyle,
+  withSpring,
   withTiming,
-} from "react-native-reanimated";
-import { Colors } from "../../constants/Colors";
+} from 'react-native-reanimated';
+import { Colors } from '../../constants/Colors';
 
-// Dark glass island — matches the chat composer, vibrant active states
-const BAR_BG = '#080808';
-const BAR_BORDER = "rgba(255,255,255,0.1)";
-const ACTIVE_COLOR = Colors.lime;
-const INACTIVE_COLOR = Colors.graySubtle;
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-const ICON_SIZE = 24;
-const EASE = Easing.bezier(0.2, 0, 0, 1);
+export const DOCK_HEIGHT = 64;
+export const FAB_SIZE = 52;
+const CORNER_RADIUS = 26;
+const HORIZONTAL_MARGIN = 16;
 
-const TAB_ICONS: Record<
-  string,
-  { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }
-> = {
-  index: { active: "grid", inactive: "grid-outline" },
-  ChatTab: { active: "chatbubble-ellipses", inactive: "chatbubble-ellipses-outline" },
-  pearls: { active: "sparkles", inactive: "sparkles-outline" },
-  profile: { active: "person-circle", inactive: "person-circle-outline" },
+const SPRING_CONFIG = {
+  damping: 20,
+  stiffness: 220,
+  mass: 0.8,
 };
 
-function TabBarItem({
-  focused,
-  label,
-  activeName,
-  inactiveName,
-  onPress,
-  onLongPress,
-}: {
-  focused: boolean;
-  label: string;
-  activeName: keyof typeof Ionicons.glyphMap;
-  inactiveName: keyof typeof Ionicons.glyphMap;
-  onPress: () => void;
-  onLongPress: () => void;
-}) {
-  const progress = useSharedValue(focused ? 1 : 0);
-  const press = useSharedValue(1);
-  const isFirstRender = useRef(true);
+const TAB_CONFIG = [
+  { name: 'index', title: 'Med Center', activeIcon: 'grid', inactiveIcon: 'grid-outline' },
+  { name: 'ChatTab', title: 'Chat', activeIcon: 'chatbubble-ellipses', inactiveIcon: 'chatbubble-ellipses-outline' },
+  { name: 'pearls', title: 'Pearls', activeIcon: 'sparkles', inactiveIcon: 'sparkles-outline' },
+  { name: 'profile', title: 'Profile', activeIcon: 'person', inactiveIcon: 'person-outline' },
+] as const;
 
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      progress.value = focused ? 1 : 0;
-      return;
-    }
-    progress.value = withTiming(focused ? 1 : 0, { duration: 200, easing: EASE });
-  }, [focused, progress]);
-
-  const activeIconStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
-    transform: [{ scale: interpolate(progress.value, [0, 1], [0.25, 1]) }],
-  }));
-
-  const inactiveIconStyle = useAnimatedStyle(() => ({
-    opacity: 1 - progress.value,
-    transform: [{ scale: interpolate(progress.value, [0, 1], [1, 0.25]) }],
-  }));
-
-  const labelStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(progress.value, [0, 1], [INACTIVE_COLOR, ACTIVE_COLOR]),
-  }));
-
-  const dotStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
-    transform: [{ scale: interpolate(progress.value, [0, 1], [0.25, 1]) }],
-  }));
-
-  const pressStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: press.value }],
-  }));
-
-  return (
-    <Pressable
-      accessibilityRole="tab"
-      accessibilityState={{ selected: focused }}
-      onPress={onPress}
-      onLongPress={onLongPress}
-      onPressIn={() => {
-        // eslint-disable-next-line react-hooks/immutability -- Reanimated shared values are mutated by design
-        press.value = withTiming(0.96, { duration: 120, easing: EASE });
-      }}
-      onPressOut={() => {
-        // eslint-disable-next-line react-hooks/immutability -- Reanimated shared values are mutated by design
-        press.value = withTiming(1, { duration: 150, easing: EASE });
-      }}
-      style={styles.item}
-    >
-      <Animated.View style={[styles.itemContent, pressStyle]}>
-        <View style={styles.iconContainer}>
-          <Animated.View
-            collapsable={false}
-            style={[StyleSheet.absoluteFill, styles.iconLayer, inactiveIconStyle]}
-          >
-            <Ionicons name={inactiveName} color={INACTIVE_COLOR} size={ICON_SIZE} />
-          </Animated.View>
-          <Animated.View
-            collapsable={false}
-            style={[StyleSheet.absoluteFill, styles.iconLayer, activeIconStyle]}
-          >
-            <Ionicons name={activeName} color={ACTIVE_COLOR} size={ICON_SIZE} />
-          </Animated.View>
-        </View>
-        <Animated.Text style={[styles.label, labelStyle]}>{label}</Animated.Text>
-        <Animated.View style={[styles.dot, dotStyle]} />
-      </Animated.View>
-    </Pressable>
-  );
+interface DockBackgroundProps {
+  width: number;
+  height: number;
+  notchX: SharedValue<number>;
 }
 
-function FabricTabBar({ state, descriptors, navigation }: any) {
+const DockNotchBackground: React.FC<DockBackgroundProps> = ({
+  width,
+  height,
+  notchX,
+}) => {
+  const animatedProps = useAnimatedProps(() => {
+    'worklet';
+    const W = width;
+    const H = height;
+    const R = CORNER_RADIUS;
+    const x = notchX.value;
+
+    if (W <= 0) return { d: '' };
+
+    if (x < 0) {
+      // Rounded all 4 corners
+      return {
+        d: `M 0,${R} A ${R},${R} 0 0,1 ${R},0 L ${W - R},0 A ${R},${R} 0 0,1 ${W},${R} L ${W},${H - R} A ${R},${R} 0 0,1 ${W - R},${H} L ${R},${H} A ${R},${R} 0 0,1 0,${H - R} Z`,
+      };
+    }
+
+    const p0x = Math.max(R, x - 36);
+    const p1x = Math.min(W - R, x + 36);
+
+    const d = `
+      M 0,${R}
+      A ${R},${R} 0 0,1 ${R},0
+      L ${p0x},0
+      C ${x - 18},0 ${x - 20},26 ${x},26
+      C ${x + 20},26 ${x + 18},0 ${p1x},0
+      L ${W - R},0
+      A ${R},${R} 0 0,1 ${W},${R}
+      L ${W},${H - R}
+      A ${R},${R} 0 0,1 ${W - R},${H}
+      L ${R},${H}
+      A ${R},${R} 0 0,1 0,${H - R}
+      Z
+    `
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return { d };
+  });
+
   return (
-    <View style={styles.bar} pointerEvents="box-none">
-      {state.routes.map((route: any, index: number) => {
-        const { options } = descriptors[route.key];
-        const focused = state.index === index;
-        const icons = TAB_ICONS[route.name] ?? TAB_ICONS.index;
-        const label =
-          typeof options.title === "string" ? options.title : route.name;
+    <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
+      <AnimatedPath
+        animatedProps={animatedProps}
+        fill="#080808"
+        stroke="rgba(255, 255, 255, 0.12)"
+        strokeWidth={1}
+      />
+    </Svg>
+  );
+};
 
-        const onPress = () => {
-          const event = navigation.emit({
-            type: "tabPress",
-            target: route.key,
-            canPreventDefault: true,
-          });
-          if (!focused && !event.defaultPrevented) {
-            navigation.navigate(route.name, route.params);
+function NotchedTabBar({ state, descriptors, navigation }: any) {
+  const insets = useSafeAreaInsets();
+  const [barWidth, setBarWidth] = useState(
+    Dimensions.get('window').width - HORIZONTAL_MARGIN * 2
+  );
+
+  const notchX = useSharedValue(-100);
+  const bubbleScale = useSharedValue(1);
+  const activeIndex = state.index;
+
+  const totalTabs = state.routes.length;
+  const floatingBottom = insets.bottom > 0 ? insets.bottom : 10;
+
+  const getTabCenterX = (idx: number, width: number) => {
+    'worklet';
+    if (width <= 0) return 0;
+    const tabWidth = width / totalTabs;
+    return tabWidth * (idx + 0.5);
+  };
+
+  useEffect(() => {
+    if (barWidth > 0) {
+      const targetX = getTabCenterX(activeIndex, barWidth);
+      if (notchX.value < 0) {
+        notchX.value = targetX;
+      } else {
+        notchX.value = withSpring(targetX, SPRING_CONFIG);
+        bubbleScale.value = withTiming(0.82, { duration: 100 }, (finished) => {
+          if (finished) {
+            bubbleScale.value = withSpring(1, SPRING_CONFIG);
           }
-        };
+        });
+      }
+    }
+  }, [activeIndex, barWidth]);
 
-        const onLongPress = () => {
-          navigation.emit({ type: "tabLongPress", target: route.key });
-        };
+  const activeBubbleStyle = useAnimatedStyle(() => {
+    if (notchX.value < 0) {
+      return { opacity: 0 };
+    }
+    return {
+      opacity: 1,
+      transform: [
+        { translateX: notchX.value - FAB_SIZE / 2 },
+        { scale: bubbleScale.value },
+      ],
+    };
+  });
 
-        return (
-          <TabBarItem
-            key={route.key}
-            focused={focused}
-            label={label}
-            activeName={icons.active}
-            inactiveName={icons.inactive}
-            onPress={onPress}
-            onLongPress={onLongPress}
+  const activeConfig = TAB_CONFIG[activeIndex] ?? TAB_CONFIG[0];
+
+  return (
+    <View
+      style={[
+        styles.barWrapper,
+        {
+          bottom: floatingBottom,
+        },
+      ]}
+      pointerEvents="box-none"
+    >
+      <View
+        style={[
+          styles.dockContainer,
+          {
+            height: DOCK_HEIGHT,
+          },
+        ]}
+        onLayout={(e) => {
+          setBarWidth(e.nativeEvent.layout.width);
+        }}
+      >
+        {/* Scooped Notched SVG Background with 4 Rounded Corners */}
+        {barWidth > 0 && (
+          <DockNotchBackground
+            width={barWidth}
+            height={DOCK_HEIGHT}
+            notchX={notchX}
           />
-        );
-      })}
+        )}
+
+        {/* Elevated Floating Active Bubble */}
+        <Animated.View
+          style={[styles.activeBubble, activeBubbleStyle]}
+          pointerEvents="none"
+        >
+          <Ionicons
+            name={activeConfig.activeIcon as any}
+            size={24}
+            color="#010101"
+          />
+        </Animated.View>
+
+        {/* Tab Slots */}
+        <View style={styles.tabSlotsRow}>
+          {state.routes.map((route: any, index: number) => {
+            const isFocused = state.index === index;
+            const config = TAB_CONFIG[index] ?? {
+              name: route.name,
+              title: route.name,
+              activeIcon: 'help',
+              inactiveIcon: 'help-outline',
+            };
+
+            const onPress = () => {
+              try {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              } catch {}
+
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
+
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name, route.params);
+              }
+            };
+
+            const onLongPress = () => {
+              navigation.emit({ type: 'tabLongPress', target: route.key });
+            };
+
+            return (
+              <Pressable
+                key={route.key}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: isFocused }}
+                onPress={onPress}
+                onLongPress={onLongPress}
+                style={styles.tabSlot}
+              >
+                {/* Inactive Icon (Fades out when tab is active) */}
+                <View
+                  style={[
+                    styles.iconWrapper,
+                    { opacity: isFocused ? 0 : 1 },
+                  ]}
+                >
+                  <Ionicons
+                    name={config.inactiveIcon as any}
+                    size={22}
+                    color={Colors.graySubtle}
+                  />
+                </View>
+
+                {/* Tab Label */}
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    isFocused ? styles.tabLabelActive : styles.tabLabelInactive,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {config.title}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
     </View>
   );
 }
@@ -164,75 +272,87 @@ function FabricTabBar({ state, descriptors, navigation }: any) {
 export default function TabLayout() {
   return (
     <Tabs
-      tabBar={(props) => <FabricTabBar {...props} />}
+      tabBar={(props) => <NotchedTabBar {...props} />}
       screenOptions={{
         headerShown: false,
         tabBarAllowFontScaling: false,
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Med Center" }} />
-      <Tabs.Screen name="ChatTab" options={{ title: "Chat" }} />
-      <Tabs.Screen name="pearls" options={{ title: "Pearls" }} />
-      <Tabs.Screen name="profile" options={{ title: "Profile" }} />
+      <Tabs.Screen name="index" options={{ title: 'Med Center' }} />
+      <Tabs.Screen name="ChatTab" options={{ title: 'Chat' }} />
+      <Tabs.Screen name="pearls" options={{ title: 'Pearls' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  bar: {
-    position: "absolute",
+  barWrapper: {
+    position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 0,
-    marginHorizontal: 16,
-    height: 66,
-    flexDirection: "row",
-    paddingHorizontal: 10,
-    paddingTop: 8,
-    paddingBottom: 8,
-    elevation: 22,
-    shadowColor: "#000",
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    backgroundColor: BAR_BG,
-    borderRadius: 33,
-    borderWidth: 1,
-    borderColor: BAR_BORDER,
-    overflow: "hidden",
+    marginHorizontal: HORIZONTAL_MARGIN,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.55,
+    shadowRadius: 18,
+    elevation: 20,
   },
-  item: {
+  dockContainer: {
+    width: '100%',
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  activeBubble: {
+    position: 'absolute',
+    top: -16,
+    left: 0,
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    borderRadius: FAB_SIZE / 2,
+    backgroundColor: Colors.main,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.main,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 12,
+    zIndex: 50,
+  },
+  tabSlotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    height: DOCK_HEIGHT,
+  },
+  tabSlot: {
     flex: 1,
-    minWidth: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 4,
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
+    paddingBottom: 6,
   },
-  itemContent: {
-    justifyContent: "center",
-    alignItems: "center",
+  iconWrapper: {
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 3,
   },
-  iconContainer: {
-    width: ICON_SIZE,
-    height: ICON_SIZE,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  iconLayer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  label: {
+  tabLabel: {
     fontSize: 10,
-    fontFamily: "PlexSans_600SemiBold",
+    fontFamily: 'PlexSans_600SemiBold',
     lineHeight: 12,
-    textAlign: "center",
+    textAlign: 'center',
   },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: ACTIVE_COLOR,
-    marginTop: 3,
+  tabLabelActive: {
+    color: Colors.main,
+    fontWeight: '700',
+  },
+  tabLabelInactive: {
+    color: Colors.graySubtle,
+    fontWeight: '500',
   },
 });

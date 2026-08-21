@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
@@ -9,12 +10,100 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  ActivityIndicator
+  ActivityIndicator,
+  StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { dbService } from '../../../services/dbService';
 import { SpecialtyData, TopicItem, SPECIALTY_KNOWLEDGE } from '../../../constants/SpecialtyData';
 import { Colors } from '../../../constants/Colors';
+
+// Category theme config matching the 4-color base palette (#defff9, #6dc2bd, #dbd4fd, #ffc3dd)
+const getCategoryTheme = (categoryId: string, index: number) => {
+  switch (categoryId) {
+    case 'emergencies':
+      return {
+        color: '#ffc3dd', // Pastel Pink / Rose
+        gradient: ['#3e1628', '#240d18', '#14070e'] as const,
+        border: 'rgba(255, 195, 221, 0.45)',
+        iconBg: 'rgba(255, 195, 221, 0.22)',
+        iconBorder: 'rgba(255, 195, 221, 0.55)',
+        shadow: '#ffc3dd',
+        tag: 'EMERGENCY',
+      };
+    case 'clinical_topics':
+      return {
+        color: '#defff9', // Luminous Mint
+        gradient: ['#143836', '#0d2524', '#061716'] as const,
+        border: 'rgba(222, 255, 249, 0.45)',
+        iconBg: 'rgba(222, 255, 249, 0.22)',
+        iconBorder: 'rgba(222, 255, 249, 0.55)',
+        shadow: '#defff9',
+        tag: 'GUIDELINES',
+      };
+    case 'tools':
+      return {
+        color: '#6dc2bd', // Medical Jewel Teal
+        gradient: ['#123635', '#0b2423', '#051615'] as const,
+        border: 'rgba(109, 194, 189, 0.45)',
+        iconBg: 'rgba(109, 194, 189, 0.22)',
+        iconBorder: 'rgba(109, 194, 189, 0.55)',
+        shadow: '#6dc2bd',
+        tag: 'DIAGNOSTICS',
+      };
+    case 'research':
+      return {
+        color: '#dbd4fd', // Soft Lavender / Periwinkle
+        gradient: ['#292048', '#1a1432', '#0e0b1c'] as const,
+        border: 'rgba(219, 212, 253, 0.45)',
+        iconBg: 'rgba(219, 212, 253, 0.22)',
+        iconBorder: 'rgba(219, 212, 253, 0.55)',
+        shadow: '#dbd4fd',
+        tag: 'EVIDENCE',
+      };
+    default: {
+      const palette = [
+        {
+          color: '#defff9',
+          gradient: ['#143836', '#0d2524', '#061716'] as const,
+          border: 'rgba(222, 255, 249, 0.45)',
+          iconBg: 'rgba(222, 255, 249, 0.22)',
+          iconBorder: 'rgba(222, 255, 249, 0.55)',
+          shadow: '#defff9',
+          tag: 'SECTION',
+        },
+        {
+          color: '#6dc2bd',
+          gradient: ['#123635', '#0b2423', '#051615'] as const,
+          border: 'rgba(109, 194, 189, 0.45)',
+          iconBg: 'rgba(109, 194, 189, 0.22)',
+          iconBorder: 'rgba(109, 194, 189, 0.55)',
+          shadow: '#6dc2bd',
+          tag: 'SECTION',
+        },
+        {
+          color: '#dbd4fd',
+          gradient: ['#292048', '#1a1432', '#0e0b1c'] as const,
+          border: 'rgba(219, 212, 253, 0.45)',
+          iconBg: 'rgba(219, 212, 253, 0.22)',
+          iconBorder: 'rgba(219, 212, 253, 0.55)',
+          shadow: '#dbd4fd',
+          tag: 'SECTION',
+        },
+        {
+          color: '#ffc3dd',
+          gradient: ['#3e1628', '#240d18', '#14070e'] as const,
+          border: 'rgba(255, 195, 221, 0.45)',
+          iconBg: 'rgba(255, 195, 221, 0.22)',
+          iconBorder: 'rgba(255, 195, 221, 0.55)',
+          shadow: '#ffc3dd',
+          tag: 'SECTION',
+        },
+      ];
+      return palette[index % palette.length];
+    }
+  }
+};
 
 export default function SpecialtyDashboard() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -84,7 +173,7 @@ export default function SpecialtyDashboard() {
     return (
       <SafeAreaView className="flex-1 bg-background justify-center items-center">
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator size="large" color="#6ec2be" />
+        <ActivityIndicator size="large" color={Colors.main} />
       </SafeAreaView>
     );
   }
@@ -105,7 +194,7 @@ export default function SpecialtyDashboard() {
         </TouchableOpacity>
         <View className="flex-1 ml-3">
           <Text className="text-white text-xl font-sans-bold">{specialty.scientificName}</Text>
-          <Text className="text-turquoise text-xs font-sans-semibold uppercase tracking-wider">
+          <Text className="text-main text-xs font-sans-semibold uppercase tracking-wider">
             {specialty.name} Reference Hub
           </Text>
         </View>
@@ -127,23 +216,26 @@ export default function SpecialtyDashboard() {
               resizeMode="cover" 
             />
           )}
-          <View className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+          <LinearGradient
+            colors={['transparent', 'rgba(1,1,1,0.5)', Colors.background]}
+            style={StyleSheet.absoluteFill}
+          />
           
           <View className="absolute bottom-4 left-6 right-6">
              <View className="flex-row items-center gap-2 mb-1">
-               <View className="px-2.5 py-0.5 rounded-full bg-black/50 border border-white/10">
-                 <Text className="text-[10px] text-turquoise font-sans-bold uppercase">
+               <View className="px-2.5 py-0.5 rounded-full bg-black/60 border border-white/15">
+                 <Text className="text-[10px] text-main font-sans-bold uppercase">
                    {totalTopicsCount} Reference Protocols
                  </Text>
                </View>
              </View>
-             <Text className="text-white text-2xl font-black">{specialty.scientificName} Container</Text>
+             <Text className="text-white text-2xl font-black">{specialty.scientificName} Center</Text>
              <Text className="text-gray-300 text-xs leading-4 mt-0.5" numberOfLines={2}>{specialty.generalScope}</Text>
           </View>
         </View>
 
         {/* Live Search Bar */}
-        <View className="bg-[#181a1d] rounded-2xl flex-row items-center px-4 py-3 border border-white/10 mx-5 mt-4">
+        <View className="bg-[#121719] rounded-2xl flex-row items-center px-4 py-3 border border-white/10 mx-5 mt-4">
             <Ionicons name="search" size={20} color={specialty.color} />
             <TextInput
               className="flex-1 text-white ml-3 font-sans-medium text-sm"
@@ -172,33 +264,45 @@ export default function SpecialtyDashboard() {
 
             {filteredTopics.length > 0 ? (
               <View className="flex flex-col gap-2.5">
-                {filteredTopics.map((topic) => (
-                  <TouchableOpacity
-                    key={topic.id}
-                    onPress={() => handleTopicPress(topic.id)}
-                    className="bg-teal-medium/40 border border-white/10 p-3.5 rounded-2xl flex-row items-center justify-between active:opacity-70"
-                  >
-                    <View className="flex-1 mr-2">
-                      <View className="flex-row items-center gap-2 mb-1">
-                        <View 
-                          className="px-2 py-0.5 rounded border"
-                          style={{ backgroundColor: `${specialty.color}20`, borderColor: `${specialty.color}40` }}
-                        >
-                          <Text className="text-[9px] font-sans-bold uppercase" style={{ color: specialty.color }}>
-                            {topic.type}
-                          </Text>
+                {filteredTopics.map((topic, idx) => {
+                  const theme = getCategoryTheme(topic.categoryId, idx);
+                  return (
+                    <TouchableOpacity
+                      key={topic.id}
+                      onPress={() => handleTopicPress(topic.id)}
+                      activeOpacity={0.8}
+                      className="rounded-2xl overflow-hidden border"
+                      style={{ borderColor: theme.border }}
+                    >
+                      <LinearGradient
+                        colors={theme.gradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        className="p-3.5 flex-row items-center justify-between"
+                      >
+                        <View className="flex-1 mr-2">
+                          <View className="flex-row items-center gap-2 mb-1">
+                            <View 
+                              className="px-2 py-0.5 rounded border"
+                              style={{ backgroundColor: `${theme.color}20`, borderColor: `${theme.color}45` }}
+                            >
+                              <Text className="text-[9px] font-sans-bold uppercase" style={{ color: theme.color }}>
+                                {topic.type}
+                              </Text>
+                            </View>
+                            <Text className="text-gray-400 text-[10px]">{topic.categoryTitle}</Text>
+                          </View>
+                          <Text className="text-white font-sans-bold text-sm mb-0.5">{topic.title}</Text>
+                          <Text className="text-gray-300 text-xs" numberOfLines={1}>{topic.subtitle}</Text>
                         </View>
-                        <Text className="text-gray-400 text-[10px]">{topic.categoryTitle}</Text>
-                      </View>
-                      <Text className="text-white font-sans-bold text-sm mb-0.5">{topic.title}</Text>
-                      <Text className="text-gray-400 text-xs" numberOfLines={1}>{topic.subtitle}</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={specialty.color} />
-                  </TouchableOpacity>
-                ))}
+                        <Ionicons name="chevron-forward" size={18} color={theme.color} />
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             ) : (
-              <View className="p-6 rounded-2xl bg-teal-dark/30 border border-white/5 items-center">
+              <View className="p-6 rounded-3xl bg-[#0d1214] border border-white/10 items-center">
                 <Ionicons name="search" size={36} color={Colors.grayMuted} />
                 <Text className="text-white font-sans-bold text-base mt-2 text-center">
                   No direct topic found for "{searchText}"
@@ -211,6 +315,7 @@ export default function SpecialtyDashboard() {
                     pathname: `/specialty/${specialty.id}/general` as any,
                     params: { query: searchText }
                   })}
+                  activeOpacity={0.8}
                   className="px-5 py-2.5 rounded-full flex-row items-center gap-2"
                   style={{ backgroundColor: specialty.color }}
                 >
@@ -221,9 +326,9 @@ export default function SpecialtyDashboard() {
             )}
           </View>
         ) : (
-          /* Standard Categories Grid */
+          /* Standard Categories Grid with Rich Gradient Cards */
           <View className="px-5 pb-12 mt-5">
-            <View className="flex-row items-center justify-between mb-3">
+            <View className="flex-row items-center justify-between mb-3.5">
               <Text className="text-gray-400 text-xs font-sans-bold uppercase tracking-wider">
                 Specialized Categories
               </Text>
@@ -233,53 +338,96 @@ export default function SpecialtyDashboard() {
             </View>
 
             <View className="flex flex-row flex-wrap justify-between gap-y-3.5">
-              {specialty.categories.map((category) => {
-                const isEmergency = category.id === 'emergencies';
-                const bgColor = isEmergency ? 'rgba(194, 122, 78, 0.12)' : 'rgba(110, 194, 190, 0.08)';
-                const borderColor = isEmergency ? 'rgba(194, 122, 78, 0.4)' : 'rgba(255, 255, 255, 0.08)';
-                const iconColor = isEmergency ? Colors.terracotta : specialty.color;
+              {specialty.categories.map((category, index) => {
+                const theme = getCategoryTheme(category.id, index);
 
                 return (
                   <TouchableOpacity
                     key={category.id}
                     onPress={() => handleCategoryPress(category.id)}
-                    className="w-[48.5%] p-4 rounded-3xl items-start active:opacity-70 border"
-                    style={{ backgroundColor: bgColor, borderColor: borderColor }}
+                    activeOpacity={0.82}
+                    style={styles.cardTouchable}
                   >
-                    <View 
-                      className="w-11 h-11 rounded-full items-center justify-center mb-3 border"
-                      style={{ backgroundColor: `${iconColor}20`, borderColor: `${iconColor}40` }}
+                    <LinearGradient
+                      colors={theme.gradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={[styles.cardGradient, { borderColor: theme.border }]}
                     >
-                      <Ionicons name={category.icon} size={22} color={iconColor} />
-                    </View>
-                    <Text className="text-white font-sans-bold text-sm mb-1 leading-4" numberOfLines={2}>
-                      {category.title}
-                    </Text>
-                    <Text className="text-gray-400 text-[11px] leading-4" numberOfLines={2}>
-                      {category.description}
-                    </Text>
-                    
-                    {/* Topic Count Pill */}
-                    <View className="mt-3 px-2.5 py-0.5 rounded-full bg-black/40 border border-white/5">
-                       <Text className="text-[10px] text-gray-300 font-sans-bold">
-                         {category.topics?.length || 0} topics
-                       </Text>
-                    </View>
+                      {/* Top Row: Icon Badge + Forward Arrow */}
+                      <View style={styles.cardHeaderRow}>
+                        <View 
+                          style={[
+                            styles.cardIconBox,
+                            {
+                              backgroundColor: theme.iconBg,
+                              borderColor: theme.iconBorder,
+                            }
+                          ]}
+                        >
+                          <Ionicons name={category.icon} size={22} color={theme.color} />
+                        </View>
+
+                        <View 
+                          style={[
+                            styles.cardArrowBtn,
+                            {
+                              backgroundColor: theme.iconBg,
+                              borderColor: theme.iconBorder,
+                            }
+                          ]}
+                        >
+                          <Ionicons name="arrow-forward" size={13} color={theme.color} />
+                        </View>
+                      </View>
+
+                      {/* Middle Body: Title & Description */}
+                      <View style={styles.cardBody}>
+                        <Text style={styles.cardTitle} numberOfLines={2}>
+                          {category.title}
+                        </Text>
+                        <Text style={styles.cardDesc} numberOfLines={2}>
+                          {category.description}
+                        </Text>
+                      </View>
+                      
+                      {/* Bottom Row: Topic Count Pill */}
+                      <View style={styles.cardFooterRow}>
+                        <View style={styles.cardCountPill}>
+                          <View style={[styles.cardCountDot, { backgroundColor: theme.color }]} />
+                          <Text style={[styles.cardCountText, { color: theme.color }]}>
+                            {category.topics?.length || 0} topics
+                          </Text>
+                        </View>
+                      </View>
+                    </LinearGradient>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            {/* Ask General AI Button */}
+            {/* Ask General AI Button with Gradient Accent */}
             <TouchableOpacity 
               onPress={() => router.push(`/specialty/${specialty.id}/general` as any)}
-              className="flex-row items-center justify-center gap-2 py-3.5 rounded-2xl mx-1 mt-6"
-              style={{ backgroundColor: specialty.color }}
+              activeOpacity={0.85}
+              style={styles.aiButtonTouchable}
             >
-              <Ionicons name="chatbubbles" size={18} color={Colors.ink} />
-              <Text className="flex-1 text-ink text-sm font-sans-bold text-center leading-4" numberOfLines={2}>
-                Consult {specialty.scientificName} Specialist AI
-              </Text>
+              <LinearGradient
+                colors={[`${specialty.color}`, `${specialty.color}e6`]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.aiButtonGradient}
+              >
+                <View style={styles.aiButtonIconBadge}>
+                  <Ionicons name="sparkles" size={15} color={Colors.ink} />
+                </View>
+                <Text style={styles.aiButtonText} numberOfLines={2}>
+                  Consult {specialty.scientificName} Specialist AI
+                </Text>
+                <View style={styles.aiButtonArrowBadge}>
+                  <Ionicons name="arrow-forward" size={15} color={Colors.ink} />
+                </View>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
         )}
@@ -287,3 +435,138 @@ export default function SpecialtyDashboard() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  cardTouchable: {
+    width: '48.5%',
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  cardGradient: {
+    padding: 14,
+    borderRadius: 24,
+    borderWidth: 1.5,
+    minHeight: 180,
+    justifyContent: 'space-between',
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 8,
+  },
+  cardIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  cardArrowBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  cardBody: {
+    flex: 1,
+    justifyContent: 'center',
+    marginVertical: 4,
+  },
+  cardTitle: {
+    color: '#ffffff',
+    fontFamily: 'PlexSans_700Bold',
+    fontSize: 15.5,
+    lineHeight: 20,
+    marginBottom: 3,
+    fontWeight: '700',
+  },
+  cardDesc: {
+    color: '#d1d5db',
+    fontFamily: 'PlexSans_400Regular',
+    fontSize: 11.5,
+    lineHeight: 16,
+  },
+  cardFooterRow: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardCountPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  cardCountDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  cardCountText: {
+    fontSize: 11,
+    fontFamily: 'PlexMono_500Medium',
+    fontWeight: '700',
+  },
+  aiButtonTouchable: {
+    borderRadius: 20,
+    marginTop: 20,
+    marginHorizontal: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  aiButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  aiButtonIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  aiButtonText: {
+    flex: 1,
+    color: '#010101',
+    fontFamily: 'PlexSans_700Bold',
+    fontSize: 13.5,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  aiButtonArrowBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
+  },
+});

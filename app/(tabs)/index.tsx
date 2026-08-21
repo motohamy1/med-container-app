@@ -16,6 +16,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 import { TopicSearchResult } from '../../constants/SpecialtyData';
 import { dbService } from '../../services/dbService';
+import { SurgicalOrbitSection } from '../../components/SurgicalOrbitSection';
+import { ExpandedSpecialtiesGrid } from '../../components/ExpandedSpecialtiesGrid';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ORBIT_SIZE = Math.min(SCREEN_WIDTH * 0.78, 300);
@@ -175,14 +177,20 @@ const OrbitButton = ({
   size,
   top,
   left,
+  onPressMore,
 }: {
   category: SpecialtyCategory;
   size: number;
   top: DimensionValue;
   left: DimensionValue;
+  onPressMore?: () => void;
 }) => {
   const route = categoryRoutes[category.name];
   const handlePress = () => {
+    if (category.name === 'More' && onPressMore) {
+      onPressMore();
+      return;
+    }
     if (route) {
       router.push(route as any);
     }
@@ -222,7 +230,7 @@ const OrbitButton = ({
 };
 
 // Orbit Navigation Component
-const OrbitNavigation = () => {
+const OrbitNavigation = ({ onPressMore }: { onPressMore?: () => void }) => {
   const categories: SpecialtyCategory[] = [
     { id: '1', name: 'Cardiology', icon: 'heart', color: Colors.specialty.cardiology },
     { id: '2', name: 'GIT', icon: 'restaurant', color: Colors.specialty.git },
@@ -275,7 +283,7 @@ const OrbitNavigation = () => {
         <OrbitButton category={categories[4]} size={BUTTON_SIZE} top="100%" left="50%" />
         <OrbitButton category={categories[5]} size={BUTTON_SIZE} top="85.4%" left="18%" />
         <OrbitButton category={categories[6]} size={BUTTON_SIZE} top="50%" left="5%" />
-        <OrbitButton category={categories[7]} size={BUTTON_SIZE} top="14.6%" left="18%" />
+        <OrbitButton category={categories[7]} size={BUTTON_SIZE} top="14.6%" left="18%" onPressMore={onPressMore} />
       </View>
     </View>
   );
@@ -509,6 +517,8 @@ export default function Index() {
   const [search, setSearch] = useState<SearchState>(EMPTY_SEARCH);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reqIdRef = useRef(0);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const gridYRef = useRef<number>(850);
 
   const runSearch = useCallback(async (query: string) => {
     const trimmed = query.trim();
@@ -570,6 +580,11 @@ export default function Index() {
     runSearch(search.query);
   }, [runSearch, search.query]);
 
+  const handlePressMore = useCallback(() => {
+    // Scrolls down smoothly to the rounded cards section for expanded specialties
+    scrollViewRef.current?.scrollTo({ y: gridYRef.current || 850, animated: true });
+  }, []);
+
   const isSearching = search.query.trim().length > 0;
 
   return (
@@ -577,6 +592,7 @@ export default function Index() {
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
       <ScrollView
+        ref={scrollViewRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-40"
@@ -602,42 +618,13 @@ export default function Index() {
           />
         ) : (
           <>
-            <OrbitNavigation />
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => router.push('/(tabs)/pearls' as any)}
-              className="mx-6 mt-4 p-4 rounded-3xl bg-teal-medium border border-white/10 flex-row items-center justify-between"
-              style={{
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 10,
-                elevation: 6,
+            <OrbitNavigation onPressMore={handlePressMore} />
+            <SurgicalOrbitSection />
+            <ExpandedSpecialtiesGrid
+              onLayout={(e) => {
+                gridYRef.current = e.nativeEvent.layout.y;
               }}
-            >
-              <View className="flex-row items-center gap-3 flex-1 mr-2">
-                <View className="w-11 h-11 rounded-2xl bg-gold/15 border border-gold/30 items-center justify-center">
-                  <Ionicons name="sparkles" size={22} color={Colors.gold} />
-                </View>
-                <View className="flex-1">
-                  <View className="flex-row items-center gap-1.5 mb-0.5">
-                    <View className="w-1.5 h-1.5 rounded-full bg-lime" />
-                    <Text className="text-[10.5px] font-mono text-lime uppercase font-bold">
-                      Daily Briefing Ready
-                    </Text>
-                  </View>
-                  <Text className="text-[15px] font-sans-bold text-white tracking-tight">
-                    Clinical Pearls & Updates
-                  </Text>
-                  <Text className="text-[11.5px] font-sans text-gray-300" numberOfLines={1}>
-                    Swipe high-yield decks, trials & FDA approvals
-                  </Text>
-                </View>
-              </View>
-              <View className="w-8 h-8 rounded-full bg-white/10 items-center justify-center">
-                <Ionicons name="chevron-forward" size={16} color={Colors.accent} />
-              </View>
-            </TouchableOpacity>
+            />
           </>
         )}
       </ScrollView>

@@ -50,7 +50,7 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     name: 'Heart',
     scientificName: 'Cardiology',
     icon: 'heart',
-    color: '#c98c87',
+    color: '#ffc3dd',
     illustration: require('../assets/images/specialties/cardiology.jpg'),
     generalScope: 'Focus exclusively on cardiovascular pathology, acute coronary syndromes, heart failure, arrhythmias, vascular emergencies, and evidence-based interventions.',
     categories: [
@@ -262,7 +262,7 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     name: 'GIT',
     scientificName: 'Gastroenterology & Hepatology',
     icon: 'restaurant',
-    color: '#a9a069',
+    color: '#defff9',
     illustration: require('../assets/images/specialties/gastroenterology.jpg'),
     generalScope: 'Focus exclusively on the gastrointestinal tract, luminal disorders, hepatobiliary tree, pancreatitis, endoscopy, and liver cirrhosis.',
     categories: [
@@ -412,7 +412,7 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     name: 'Fever',
     scientificName: 'Infectious Disease & Critical Care',
     icon: 'thermometer',
-    color: '#79a3cb',
+    color: '#6dc2bd',
     illustration: require('../assets/images/specialties/infectious.jpg'),
     generalScope: 'Focus exclusively on severe systemic infections, sepsis, febrile illnesses, antibacterial stewardship, critical care resuscitation, and multi-drug resistance.',
     categories: [
@@ -545,7 +545,7 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
             aiScopeDescription: 'Focus on randomized controlled trials supporting shorter antibiotic durations in pneumonia, bacteremia, pyelonephritis, and intra-abdominal infections.',
             clinicalContent: [
               { title: 'Immediate Triage & Red Flags', content: 'Over-prolonged antibiotic courses drive antimicrobial resistance, Clostridioides difficile colitis, and adverse drug events without improving clinical cure rates.' },
-              { title: 'Diagnostic Criteria & Scoring Systems', content: 'Landmark Trial Evidence:\n• Community-Acquired Pneumonia (CAP): 3 to 5 days is non-inferior to 7-10 days once afebrile for ≥48 hours and clinically stable.\n• Uncomplicated Gram-Negative Bacteremia: 7 days is non-inferior to 14 days of therapy (JAMA 2019).\n• Uncomplicated Pyelonephritis: 5-7 days (Fluoroquinolones) or 7 days (Beta-lactams) is equivalent to 14 days.\n• Intra-Abdominal Infection (STOP-IT Trial): 4 days of antibiotics post-adequate source control achieved identical cure rates to 8-10 days (NEJM 2015).' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'Landmark Trial Evidence:\n• Community-Acquired Pneumonia (CAP): 3 to 5 days is non-inferior to 7-10 days once afebrile for ≥48 hours and clinically stable.\n• Uncomplicated Gram-Negative Bacteremia: 7 days is non-inferior to 14 days of therapy (JAMA 2019).\n• Uncomplicated Pyelonephritis: 5-7 days (Fluoroquinolones) or 7 days (Beta-lactams) is equivalent to 14 days.\n• Intra-Abdominal Infection (STOP-IT Trial): 4 days of antibiotics post-adequate source control achieved identical cure rates to 8-10 days (NEJM 2015).\n' },
               { title: 'First-Line Pharmacotherapy & Exact Dosing', content: 'Re-evaluate antibiotic duration daily. Discontinue antimicrobial therapy as soon as clinical stability criteria and protocolized duration are reached.' },
               { title: 'Stepwise Management Algorithm', content: 'Incorporate biomarker-guided stewardship: Discontinue antibiotics in lower respiratory tract infections when Procalcitonin drops by ≥80% from peak level or falls below <0.25-0.50 mcg/L.' },
               { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Short courses apply only to uncomplicated infections with adequate source control. Deep-seated, non-drainable infections (e.g. S. aureus endocarditis, vertebral osteomyelitis, un-drained empyema) still require traditional prolonged 4-6 week regimens.' },
@@ -562,7 +562,7 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     name: 'Neuro',
     scientificName: 'Neurology & Neurocritical Care',
     icon: 'pulse',
-    color: '#7dac86',
+    color: '#dbd4fd',
     illustration: require('../assets/images/specialties/neurology.jpg'),
     generalScope: 'Focus exclusively on central and peripheral nervous system pathology, ischemic and hemorrhagic stroke, status epilepticus, neuromuscular emergencies, and neuroimaging.',
     categories: [
@@ -711,7 +711,7 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     name: 'Skin',
     scientificName: 'Dermatology & Cutaneous Medicine',
     icon: 'body',
-    color: '#9d97ca',
+    color: '#ffc3dd',
     illustration: require('../assets/images/specialties/dermatology.jpg'),
     generalScope: 'Focus exclusively on dermatologic diseases, severe cutaneous adverse reactions, inflammatory dermatoses, skin oncology, and dermoscopy.',
     categories: [
@@ -890,7 +890,7 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     name: 'Gynacology',
     scientificName: 'OB/GYN',
     icon: 'woman',
-    color: '#bc8db1',
+    color: '#dbd4fd',
     illustration: require('../assets/images/specialties/gynecology.jpg'),
     generalScope: 'Focus exclusively on obstetric emergencies, hypertensive pregnancy disorders, intrapartum fetal monitoring, gynecologic oncology, and reproductive endocrinology.',
     categories: [
@@ -1039,7 +1039,7 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
     name: 'Lungs',
     scientificName: 'Pulmonology & Respiratory Medicine',
     icon: 'leaf',
-    color: '#63aeaa',
+    color: '#6dc2bd',
     illustration: require('../assets/images/specialties/pulmonology.jpg'),
     generalScope: 'Focus exclusively on respiratory pathology, pulmonary embolism, ARDS, mechanical ventilation, asthma, COPD, and thoracic interventions.',
     categories: [
@@ -1176,6 +1176,598 @@ export const SPECIALTY_KNOWLEDGE: Record<string, SpecialtyData> = {
               { title: 'Stepwise Management Algorithm', content: 'Transition symptomatic patients with persistent exacerbations on dual bronchodilation (LAMA/LABA) to single-inhaler triple therapy.' },
               { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Single-inhaler devices achieve significantly higher patient compliance and lower device error rates compared to multiple separate inhalers.' },
               { title: 'Exact Reference & Guideline Citations', content: 'IMPACT Trial (NEJM 2018); ETHOS Trial (NEJM 2020); GOLD 2024 Guidelines.' }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  surgery: {
+    id: 'surgery',
+    name: 'Surgery',
+    scientificName: 'General Surgery & Operative Suite',
+    icon: 'cut',
+    color: '#ffc3dd',
+    illustration: require('../assets/images/specialties/surgery.jpg'),
+    generalScope: 'Comprehensive operative surgery reference: acute surgical abdomen, step-by-step operative techniques, energy platforms, surgical instruments, ERAS protocols, damage control resuscitation, and perioperative surgical clearance.',
+    categories: [
+      {
+        id: 'surgical_cases',
+        title: 'Operative Cases & Scenarios',
+        description: 'Acute abdomen, appendicitis, cholecystitis, bowel obstruction, peptic perforations, and diverticulitis',
+        icon: 'bandage',
+        topics: [
+          {
+            id: 'acute_appendicitis_surg',
+            title: 'Acute Appendicitis',
+            subtitle: 'Alvarado & AIR Score, Triage & Laparoscopic Technique',
+            type: 'Surgical Protocol',
+            aiScopeDescription: 'Focus on acute appendicitis definition, Alvarado and AIR scoring, sonographic criteria, antibiotic prophylaxis, and 3-port laparoscopic appendectomy.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Acute luminal obstruction of the vermiform appendix (most commonly by a fecalith, lymphoid hyperplasia, or neoplasm) resulting in mucosal ischemia, bacterial overgrowth, transmural gangrene, and potential perforation.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Periumbilical visceral pain migrating to somatic right lower quadrant (RLQ - McBurney point), low-grade fever, anorexia ("hamburger sign"), and vomiting. Red Flags: Generalized guarding/rigidity, high spiking fever >38.5°C, marked leukocytosis >15k with left shift, or hemodynamic instability indicating free perforation and diffuse peritonitis.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: '• Alvarado Score (0-10): RLQ tenderness (2), Leukocytosis >10k (2), Migratory pain (1), Anorexia (1), N/V (1), Rebound (1), Elevated temp (1), Left shift (1). Score ≥7 = High probability.\n• AIR Score (Appendicitis Inflammatory Response Score): Superior specificity in borderline cases.\n• Imaging: Graded compression ultrasound (blind-ending non-compressible tubular structure >6 mm in diameter, target sign, appendicolith, periappendiceal fat hyperechogenicity); CT Abdomen/Pelvis with IV contrast is 98% sensitive in adults.' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Pre-Op Prophylactic Antibiotics (Within 60 mins of incision):\n  IV Cefoxitin 2 g OR Cefazolin 2 g + Metronidazole 500 mg (Ciprofloxacin + Metronidazole if severe penicillin anaphylaxis).\n• IV Crystalloid fluid resuscitation (Lactated Ringer’s 20-30 mL/kg).\n• Laparoscopic Appendectomy (3-port technique):\n  1. 10mm umbilical port (camera), 5mm suprapubic port, 5mm left lower quadrant working port.\n  2. Identify cecal pole and follow taenia coli to appendiceal base.\n  3. Create mesenteric window at base; skeletonize mesoappendix with bipolar/harmonic.\n  4. Apply two Endoloops on base (proximal) and one distal; divide with laparoscopic scissors.\n  5. Retrieve in Endocatch bag to avoid wound infection.' },
+              { title: 'Stepwise Management Algorithm', content: '1. Uncomplicated Appendicitis: Urgent Laparoscopic Appendectomy within 12-24 hours of diagnosis.\n2. Perforated Appendicitis with Phlegmon/Abscess: Initial non-operative IV antibiotics (Piperacillin-Tazobactam) + CT-guided percutaneous drainage if abscess >3 cm, followed by interval appendectomy at 6-8 weeks.\n3. Postoperative Care: Discontinue antibiotics within 24 hours in uncomplicated cases; advance diet on POD 0.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Never discharge a female patient of reproductive age with RLQ pain without a urine pregnancy test to exclude ruptured ectopic pregnancy and pelvic ultrasound to evaluate for ovarian torsion.' },
+              { title: 'Exact Reference & Guideline Citations', content: '2020 WSES Jerusalem Guidelines on Diagnosis and Treatment of Acute Appendicitis; SAGES Diagnostic and Treatment Guidelines.' }
+            ]
+          },
+          {
+            id: 'acute_cholecystitis_surg',
+            title: 'Acute Calculous Cholecystitis',
+            subtitle: 'Tokyo Guidelines (TG18), US Criteria & Emergent Lap Chole',
+            type: 'Surgical Protocol',
+            aiScopeDescription: 'Focus on acute cholecystitis definition, Tokyo Guidelines 2018 grading, sonographic Murphy sign, and emergent vs interval laparoscopic cholecystectomy.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Acute chemical and bacterial inflammation of the gallbladder initiated by persistent cystic duct obstruction by gallstones, leading to luminal distension, mucosal ischemia, and secondary bacterial infection (E. coli, Klebsiella, Enterococcus).' },
+              { title: 'Immediate Triage & Red Flags', content: 'RUQ epigastric postprandial pain radiating to the right scapula/shoulder, sonographic Murphy sign, fever, leukocytosis. Red Flags: Sepsis/shock, palpable tender gallbladder mass, jaundice (suggests choledocholithiasis or Mirizzi syndrome), emphysematous cholecystitis (gas in gallbladder wall on CT).' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'Tokyo Guidelines 2018 (TG18) Diagnostic Criteria:\n• Local Signs: Murphy sign, RUQ tenderness/mass.\n• Systemic Signs: Fever, elevated CRP, leukocytosis.\n• Imaging Findings: Gallbladder wall thickening >4 mm, pericholecystic fluid, gallstones impacted in neck, sonographic Murphy sign.\n• TG18 Severity Grading:\n  - Grade I (Mild): Healthy, no organ dysfunction.\n  - Grade II (Moderate): WBC >18k, palpable RUQ mass, symptom duration >72h, local gangrenous inflammation.\n  - Grade III (Severe): Associated organ dysfunction (Cardiovascular, Renal, Hepatic, Neurologic, Respiratory, Coagulation).' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Antibiotic Therapy: Grade I: Cefazolin 2 g IV q8h OR Ceftriaxone 1 g IV daily. Grade II/III: Piperacillin-Tazobactam 4.5 g IV q6h OR Meropenem 1 g IV q8h.\n• NSAIDs: IV Ketorolac 15-30 mg for acute biliary colic pain relief.\n• Early Laparoscopic Cholecystectomy: Strongly recommended within <72 hours of symptom onset (decreases hospital stay and complication rates compared to interval surgery).' },
+              { title: 'Stepwise Management Algorithm', content: '1. Grade I and II in operable patients: Urgent Laparoscopic Cholecystectomy with Critical View of Safety (CVS).\n2. Grade III or surgically unfit patients: Ultrasound-guided Percutaneous Cholecystostomy (PC) tube placement + IV broad-spectrum antibiotics.\n3. Intraoperative Difficulty: If Calot triangle frozen by severe inflammation, do NOT perform dangerous blunt dissection. Convert to Subtotal Fenestrating Cholecystectomy or open cholecystectomy.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Forcing dissection in an obscured Calot triangle is the leading cause of catastrophic iatrogenic common bile duct transection; subtotal cholecystectomy is the standard of care "bailout" procedure.' },
+              { title: 'Exact Reference & Guideline Citations', content: 'Tokyo Guidelines 2018 (TG18): Diagnostic criteria and severity grading of acute cholecystitis (J Hepatobiliary Pancreat Sci 2018); SAGES Safe Cholecystectomy Program.' }
+            ]
+          },
+          {
+            id: 'small_bowel_obstruction_surg',
+            title: 'Small Bowel Obstruction (SBO)',
+            subtitle: 'Adhesive SBO, Closed-Loop Strangulation & Gastrografin Protocol',
+            type: 'Surgical Protocol',
+            aiScopeDescription: 'Focus on mechanical SBO definition, distinguishing simple adhesive vs strangulated closed-loop obstruction, Gastrografin challenge, and emergency laparotomy.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Mechanical impedance to the aboral transit of intestinal contents through the small intestine, most frequently caused by postoperative adhesions (65-75%), incarcerated hernias (15%), or neoplasms.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Colicky abdominal pain, obstipation (complete absence of stool/flatus), bilious vomiting, progressive abdominal distension, high-pitched "musical" tinkling sounds. Red Flags for Strangulation / Ischemia: Continuous focal unremitting pain, localized peritoneal signs, fever >38.0°C, tachycardia, leukocytosis >15k, and serum lactate >2.0 mmol/L.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: '• Abdominal CT with IV & Oral Contrast (Definitive):\n  - Small bowel loop dilation >3 cm with distal collapsed bowel (<2.5 cm) at the transition point.\n  - "Small bowel feces sign" at transition zone.\n  - Signs of Closed-Loop Obstruction & Strangulation: "Beak sign", mesenteric swirl/whirl sign, bowel wall thickening >3 mm, submucosal hemorrhage, reduced mucosal enhancement, pneumatosis intestinalis, portal venous gas.' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Immediate Resuscitation: Aggressive IV Lactated Ringer’s bolus followed by maintenance to restore intravascular volume.\n• Nasogastric (NG) Decompression: Large-bore Salem Sump tube on low continuous suction (relieves vomiting, reduces intraluminal pressure, prevents aspiration).\n• Water-Soluble Contrast Challenge (Gastrografin Protocol):\n  Administer 100 mL of Gastrografin (with 50 mL water) via NG tube; clamp tube for 2 hours, obtain plain abdominal radiograph at 8 and 24 hours (contrast in colon within 24h predicts 96% non-operative resolution and accelerates bowel recovery).' },
+              { title: 'Stepwise Management Algorithm', content: '1. If peritonitis, closed-loop obstruction, ischemia, or strangulated hernia -> Immediate Emergency Exploratory Laparotomy.\n2. In stable adhesive SBO -> Non-operative management with NG decompression and Gastrografin for up to 48-72 hours.\n3. If Gastrografin fails to reach cecum at 24 hours, NG output remains >500 mL/day, or clinical deterioration occurs -> Proceed to operative exploration.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Closed-loop obstruction (where a segment is occluded at two points by a single band or internal hernia) can rapidly progress to gangrene and perforation with normal laboratory markers; clinical suspicion warrants prompt laparotomy.' },
+              { title: 'Exact Reference & Guideline Citations', content: '2023 WSES Guidelines on Diagnosis and Management of Adhesive Small Bowel Obstruction (ASBO).' }
+            ]
+          },
+          {
+            id: 'perforated_peptic_ulcer_surg',
+            title: 'Perforated Peptic Ulcer',
+            subtitle: 'Free Air Triage, Graham Patch Omentopexy & Sepsis Resuscitation',
+            type: 'Surgical Protocol',
+            aiScopeDescription: 'Focus on perforated gastric and duodenal ulcers, subdiaphragmatic free air, Graham patch omentopexy, and perioperative anti-ulcer therapy.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Full-thickness transmural erosion of the gastric or duodenal wall secondary to acid-peptic injury (frequently exacerbated by NSAIDs or H. pylori infection), releasing chemical gastroduodenal contents into the peritoneal cavity followed by bacterial peritonitis and septic shock.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Sudden onset "thunderclap" severe epigastric pain that rapidly generalizes across the entire abdomen, board-like abdominal rigidity ("peritonisme"), shallow thoracic breathing. Red Flags: Septic shock (hypotension, tachycardia), oliguria, lactic acidosis, marked leukocytosis.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: '• Upright Chest X-ray: Subdiaphragmatic free air (pneumoperitoneum - crescent of gas under right hemidiaphragm in 75-85% of cases).\n• CT Abdomen/Pelvis with IV Contrast: 98% sensitive for subtle free air, discontinuity of duodenal/gastric wall, periduodenal fluid/phlegmon.\n• Boey Score (0-3): Severe medical illness (1), Preoperative shock (1), Perforation duration >24h (1). Boey score 0 = 1% mortality; Boey score 3 = 38% mortality.' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Immediate Resuscitation: IV crystalloid boluses (Lactated Ringer’s 30 mL/kg) + Sepsis 1-Hour Bundle.\n• Broad-Spectrum IV Antibiotics: Ceftriaxone 2 g IV + Metronidazole 500 mg IV OR Piperacillin-Tazobactam 4.5 g IV q6h.\n• High-Dose IV PPI: Pantoprazole 80 mg IV bolus followed by 8 mg/hr continuous infusion.\n• Graham Patch Omentopexy Technique (Laparoscopic or Open):\n  1. Identify perforation (usually anterior first portion of duodenum or pylorus, typically 5-10 mm).\n  2. Place 3 full-thickness interrupted 2-0 or 3-0 Vicryl/PDS sutures across the perforation without tying.\n  3. Mobilize a vascularized pedicle of greater omentum and lay it over the defect.\n  4. Tie the sutures over the omental tongue snugly without strangulating the omental blood supply.\n  5. Copious 4-6 liter warm saline peritoneal lavage.' },
+              { title: 'Stepwise Management Algorithm', content: '1. Emergent exploratory laparoscopy or laparotomy within <6 hours of presentation.\n2. Graham patch repair + extensive irrigation of subphrenic and pelvic spaces.\n3. Biopsy edge of gastric ulcers (mandatory to rule out gastric adenocarcinoma; duodenal ulcer biopsy not routinely required).\n4. Post-op: Continue IV PPI for 72 hours, test and treat for H. pylori once oral intake resumes.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Never omit the mandatory endoscopic biopsy of gastric ulcers post-operatively (perforated gastric ulcers have a 5-10% malignancy rate); schedule follow-up endoscopy at 6-8 weeks to confirm mucosal healing.' },
+              { title: 'Exact Reference & Guideline Citations', content: '2020 WSES Guidelines for the Management of Perforated and Bleeding Peptic Ulcers; SURG Journal Evidence Review.' }
+            ]
+          },
+          {
+            id: 'acute_diverticulitis_surg',
+            title: 'Acute Diverticulitis & Hinchey Staging',
+            subtitle: 'Hinchey Classification, Percutaneous Drainage & Hartmann Procedure',
+            type: 'Surgical Protocol',
+            aiScopeDescription: 'Focus on acute left colonic diverticulitis definition, Hinchey classification I-IV, outpatient vs inpatient management, percutaneous drainage, and Hartmann procedure.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Micro- or macro-perforation of a colonic diverticulum (most commonly in the sigmoid colon) secondary to increased intraluminal pressure and inspissated fecal material, causing localized phlegmon, abscess formation, or diffuse feculent/purulent peritonitis.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Left lower quadrant (LLQ) constant pain, fever, nausea, constipation or diarrhea, localized LLQ tenderness. Red Flags: Diffuse abdominal peritonitis (guarding, rebound), hemodynamic instability, septic shock, fecaluria/pneumaturia (colovesical fistula).' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: '• Abdominal CT with IV & Oral Contrast (Gold Standard):\n  Sigmoid wall thickening (>4 mm), pericolic fat stranding, diverticula, extraluminal air bubbles, or fluid collections.\n• Hinchey Classification (Modified):\n  - Stage 0: Clinically mild diverticulitis / diverticulosis.\n  - Stage Ia: Confined pericolic inflammation / phlegmon.\n  - Stage Ib: Confined pericolic abscess (<4-5 cm).\n  - Stage II: Pelvic, retroperitoneal, or distant intra-abdominal abscess.\n  - Stage III: Generalized purulent peritonitis (ruptured abscess).\n  - Stage IV: Generalized feculent peritonitis (free colonic perforation).' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Uncomplicated (Hinchey 0/Ia) Outpatient: Oral Ciprofloxacin 500 mg BID + Metronidazole 500 mg TID OR Amoxicillin-Clavulanate 875/125 mg BID for 7 days + Clear liquid diet (mild cases in immunocompetent patients may be managed without antibiotics).\n• Complicated (Hinchey Ib/II) Inpatient: IV Piperacillin-Tazobactam 3.375 g q6h OR Ceftriaxone 1 g IV + Metronidazole 500 mg IV q8h.\n• CT-Guided Percutaneous Drainage: Indicated for Hinchey Ib/II abscesses ≥3-4 cm (converts emergent surgery into elective single-stage resection).\n• Emergent Hartmann Procedure (Hinchey III/IV):\n  1. Midline laparotomy, mobilize descending and sigmoid colon.\n  2. Resect diseased sigmoid colon to healthy rectal stump.\n  3. Close distal rectal stump (Hartmann pouch) and mature proximal end-colostomy in left iliac fossa.\n  4. Copious peritoneal lavage.' },
+              { title: 'Stepwise Management Algorithm', content: '1. Hinchey Ia: Outpatient oral therapy or observation.\n2. Hinchey Ib/II: IV antibiotics + CT-guided drainage if abscess ≥3-4 cm.\n3. Hinchey III/IV: Emergent Hartmann procedure or primary resection with loop ileostomy.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Never perform colonoscopy during an acute episode of diverticulitis (high risk of converting a microperforation into free colonic blowout perforation); colonoscopy should be deferred for 6-8 weeks post-resolution to rule out occult colorectal cancer.' },
+              { title: 'Exact Reference & Guideline Citations', content: '2020 ASCRS Clinical Practice Guidelines for the Treatment of Left-Sided Colonic Diverticulitis; WSES Guidelines 2020.' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'operative_steps',
+        title: 'Operative Steps & Techniques',
+        description: 'Stepwise dissection planes, critical safety views, and procedural execution',
+        icon: 'construct',
+        topics: [
+          {
+            id: 'lap_chole_cvs',
+            title: 'Lap Cholecystectomy (Critical View of Safety)',
+            subtitle: 'Strasberg 3-Step CVS, Calot Dissection & Infundibular Trap',
+            type: 'Operative Technique',
+            aiScopeDescription: 'Focus on laparoscopic cholecystectomy operative steps, Strasberg Critical View of Safety criteria, Calot triangle dissection, and preventing bile duct injury.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Minimally invasive surgical excision of the gallbladder using laparoscopic instrumentation, requiring rigorous anatomical identification of the cystic duct and cystic artery via the Critical View of Safety (CVS) to prevent catastrophic biliary and vascular injuries.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Anatomical variants: Aberrant right hepatic artery crossing cystic duct, short/absent cystic duct, accessory bile ducts of Luschka, or severe chronic "porcelain" sclerosing cholecystitis distorting landmarks.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'The Strasberg Critical View of Safety (CVS) requires ALL THREE criteria:\n1. Hepatocystic triangle cleared of fat and fibrous tissue (common bile duct is NOT exposed).\n2. Lower third of the gallbladder dissected off the cystic plate (liver bed).\n3. Exactly TWO and only TWO structures seen entering the gallbladder (cystic duct and cystic artery).' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Port Placement: 10mm umbilical (camera), 10mm subxiphoid (working right hand), two 5mm right subcostal (retraction).\n• Stepwise Operative Sequence:\n  1. Retract gallbladder fundus cephalad over the liver dome.\n  2. Retract infundibulum laterally and inferiorly to open the hepatocystic triangle.\n  3. Incise the anterior and posterior peritoneal serosa covering the infundibulum.\n  4. Dissect the lower third of the gallbladder off the liver bed to expose the cystic plate.\n  5. Obtain 360-degree anterior and posterior "double view" confirming CVS.\n  6. Clip cystic duct with 2 proximal clips and 1 distal clip; divide with laparoscopic shears.\n  7. Clip cystic artery (2 proximal, 1 distal); divide.\n  8. Dissect remaining gallbladder off liver bed with hook cautery in the subserosal plane.\n  9. Retrieve in Endocatch bag, inspect liver bed for hemostasis and bile leak.' },
+              { title: 'Stepwise Management Algorithm', content: 'Adhere strictly to the SAGES Safe Cholecystectomy "Universal Safety Rules". If CVS cannot be achieved due to dense inflammation, perform a subtotal fenestrating cholecystectomy or convert to open procedure.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Beware the "Infundibular Trap" (visual illusion where the common bile duct is aligned with the cystic duct due to excessive medial retraction and mistakenly clipped); CVS requires visualizing the cystic plate behind the structures before applying any clips.' },
+              { title: 'Exact Reference & Guideline Citations', content: 'SAGES Safe Cholecystectomy Program; Strasberg SM. J Am Coll Surg 2010; Tokyo Guidelines TG18.' }
+            ]
+          },
+          {
+            id: 'lichtenstein_hernia',
+            title: 'Lichtenstein Inguinal Hernioplasty',
+            subtitle: 'Tension-Free Polypropylene Mesh, Nerve Preservation & Floor Repair',
+            type: 'Operative Technique',
+            aiScopeDescription: 'Focus on Lichtenstein open inguinal hernia repair, anatomy of the inguinal canal, nerve identification, mesh fixation, and preventing chronic groin pain.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Open, tension-free surgical repair of primary and recurrent indirect, direct, and pantaloon inguinal hernias using a prosthetic polypropylene mesh to reinforce the transversalis fascia (floor of the inguinal canal).' },
+              { title: 'Immediate Triage & Red Flags', content: 'Differentiate direct (medial to inferior epigastric vessels, through Hesselbach triangle) vs indirect (lateral to inferior epigastric vessels, through deep inguinal ring) vs femoral hernia (below inguinal ligament).' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'Anatomical Boundaries of Inguinal Canal:\n• Anterior Wall: External oblique aponeurosis.\n• Posterior Wall: Transversalis fascia and conjoint tendon.\n• Roof: Internal oblique and transversus abdominis arching fibers.\n• Floor: Inguinal (Poupart) ligament and lacunar ligament.' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Anesthesia & Prophylaxis: Local field infiltration (0.5% Bupivacaine + 1% Lidocaine) or spinal. Single dose IV Cefazolin 2 g pre-op.\n• Stepwise Operative Sequence:\n  1. 5-6 cm skin incision 2 cm above and parallel to the medial half of the inguinal ligament.\n  2. Divide Scarpa fascia and incise external oblique aponeurosis along the line of its fibers, entering the superficial inguinal ring.\n  3. Identify and preserve the Ilioinguinal nerve (runs on anterior surface of spermatic cord) and Iliohypogastric nerve (runs superior to conjoint tendon).\n  4. Mobilize spermatic cord at the pubic tubercle and encircle with a moist Penrose drain; identify and preserve the Genital branch of the Genitofemoral nerve on the posterior cord surface.\n  5. Dissect indirect hernia sac off cord structures and reduce into preperitoneal space (or ligate and excise); imbricate direct hernia sac with 2-0 PDS.\n  6. Mesh Sizing & Fixation: Use a 7.5 x 15 cm Polypropylene mesh. Anchor medial corner to the anterior rectus sheath over the pubic tubercle with continuous 2-0 Prolene (overlap tubercle by 2 cm to prevent medial recurrence).\n  7. Suture inferior edge of mesh to shelving edge of inguinal ligament with continuous 2-0 Prolene, stopping just lateral to internal ring.\n  8. Slit mesh laterally to create upper (2/3) and lower (1/3) tails around the cord; cross tails around cord and suture to internal ring.\n  9. Suture superior edge to internal oblique with interrupted absorbable sutures.' },
+              { title: 'Stepwise Management Algorithm', content: '1. Infiltration of local anesthetic before incision.\n2. Complete dissection and reduction of hernia sacs.\n3. Tension-free mesh positioning with adequate medial overlap.\n4. Closure of external oblique aponeurosis and skin with subcuticular monocryl.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Never entrap the Ilioinguinal, Iliohypogastric, or Genital branch of Genitofemoral nerves with mesh fixation sutures (the leading cause of devastating chronic neuropathic inguinodynia); nerve injury or entrapment requires triple neurectomy.' },
+              { title: 'Exact Reference & Guideline Citations', content: 'European Hernia Society (EHS) Guidelines for the Treatment of Inguinal Hernias in Adult Patients (Hernia 2018); Lichtenstein IL et al. Am J Surg.' }
+            ]
+          },
+          {
+            id: 'exploratory_laparotomy_closure',
+            title: 'Exploratory Laparotomy & Mass Closure',
+            subtitle: 'Midline Incision, Systemic Evisceration & 4:1 Suture-to-Wound Ratio',
+            type: 'Operative Technique',
+            aiScopeDescription: 'Focus on emergency exploratory laparotomy, 4-quadrant packing, trauma evisceration, and continuous mass abdominal closure with 4:1 suture ratio.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Surgical opening of the peritoneal cavity via a rapid midline incision to diagnose and manage life-threatening intra-abdominal pathology, acute hemoperitoneum, gastrointestinal perforations, or penetrating trauma, followed by anatomical mass abdominal closure.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Hypovolemic shock, penetrating abdominal trauma with shock, evisceration, generalized peritonitis, or abdominal compartment syndrome (intra-abdominal pressure >20 mmHg with organ failure).' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'Indications for Emergent Laparotomy:\n1. Penetrating abdominal injury with hemodynamic instability.\n2. Blunt trauma with positive FAST and unstable hemodynamics.\n3. Generalized peritonitis with free air on CT/X-ray.\n4. Intestinal ischemia or gangrene.' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Pre-Op Prophylaxis: IV Piperacillin-Tazobactam 4.5 g or Cefazolin 2 g + Metronidazole 500 mg.\n• Stepwise Operative Sequence:\n  1. Vertical Midline Incision: From xiphoid process to pubic symphysis, curving around left of umbilicus.\n  2. Incise linea alba; enter peritoneum under direct vision to avoid bowel laceration.\n  3. 4-Quadrant Packing: Rapidly place laparotomy sponges in Morrison pouch (RUQ), left subphrenic space (LUQ), left paracolic gutter/pelvis, and right paracolic gutter.\n  4. Systematic Evisceration & Inspection: Eviscerate small bowel to right; examine aorta, celiac trunk, and mesenteric root; run small bowel from ligament of Treitz to ileocecal valve on both mesenteric and antimesenteric borders; examine colon, stomach, pancreas, and liver.\n  5. Mass Abdominal Closure (Israelsson 4:1 Rule):\n     - Use continuous running single-layer monofilament loop suture (e.g. #1 or #2 PDS/Maxon).\n     - Take bites 5-8 mm from fascial edge with 5 mm travel between stitches ("small bite" technique).\n     - Suture length MUST be at least 4 times the wound length (4:1 SL:WL ratio) to distribute intra-abdominal pressure without tissue necrosis.' },
+              { title: 'Stepwise Management Algorithm', content: '1. Rapid entry and hemostatic packing.\n2. Control surgical bleeding and gastrointestinal contamination.\n3. Definitive reconstruction or abbreviated damage control closure (Bogota bag / VAC pack).\n4. Continuous small-bite mass fascial closure.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Closing abdominal fascia under excessive tension in a critically ill, resuscitated patient causes Abdominal Compartment Syndrome (ACS) and renal/respiratory collapse; when in doubt, leave the abdomen open with a temporary vacuum dressing (ABTHERA/VAC pack).' },
+              { title: 'Exact Reference & Guideline Citations', content: 'STITCH Trial: Small bites versus large bites for closure of abdominal midline incisions (Lancet 2015); Israelsson LA. Br J Surg.' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'instruments_energy',
+        title: 'Instruments & Energy Devices',
+        description: 'Surgical hardware, scalpel blades, energy platforms, retractors, and sutures',
+        icon: 'hardware-chip',
+        topics: [
+          {
+            id: 'surgical_energy_platforms',
+            title: 'Advanced Energy Platforms',
+            subtitle: 'Monopolar vs Bipolar vs Harmonic vs LigaSure Vessel Sealing',
+            type: 'Instrument Guide',
+            aiScopeDescription: 'Focus on electrosurgery physics, monopolar cut vs coag, advanced bipolar impedance-controlled vessel fusion (LigaSure), and ultrasonic cavitation (Harmonic Scalpel).',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Application of high-frequency electrical current or ultrasonic mechanical energy to human tissue to achieve controlled thermal heating, protein denaturation, vaporization (cutting), and collagen-elastin fusion (vessel coagulation/sealing).' },
+              { title: 'Immediate Triage & Red Flags', content: 'Complications of energy devices: Capacitive coupling, direct coupling, insulation failure in laparoscopy, lateral thermal spread to adjacent ureters or bowel, and ground pad dispersive electrode contact burns.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'Comparison of Surgical Energy Platforms:\n• Monopolar Electrosurgery: Current flows from active blade tip through patient body to return dispersive pad. Cut mode = continuous low voltage wave (vaporization); Coag mode = pulsed high voltage wave (fulguration/desiccation). Lateral thermal spread: 3-5 mm.\n• Ultrasonic Energy (Harmonic Scalpel): 55,500 Hz mechanical vibrations break hydrogen bonds, simultaneously cutting and coagulating vessels up to 5 mm without electrical current flowing through patient. Lateral thermal spread: <1-2 mm.\n• Advanced Bipolar (LigaSure / EnSeal): Combines high compressive mechanical force with continuous tissue impedance sensing to melt collagen and elastin, permanently sealing vessels up to 7 mm (withstands 3x normal systolic pressure). Lateral thermal spread: <2-3 mm.' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Pre-procedure Verification: Check dispersive return pad placement on vascular muscular area (thigh) avoiding bony prominences.\n• Laparoscopic Safety Checks: Inspect laparoscopic instrument shafts for microscopic insulation tears prior to insertion.\n• Stepwise Operational Rules:\n  1. Use low-voltage "cut" mode for delicate adhesiolysis near bowel.\n  2. Avoid prolonged continuous activation (>5 seconds) to prevent thermal build-up.\n  3. Cool active device tips against saline lap sponges before touching adjacent viscera.' },
+              { title: 'Stepwise Management Algorithm', content: 'Select device based on surgical goals: Harmonic for fine dissection and lymphadenectomy; LigaSure for major mesenteric vessel pedicles up to 7 mm; Monopolar for rapid subcutaneous hemostasis.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Never activate monopolar electrosurgery in close proximity (<5 mm) to surgical clips or metal retractors (direct coupling causes unobserved distant thermal visceral perforation).' },
+              { title: 'Exact Reference & Guideline Citations', content: 'SAGES Fundamental Use of Surgical Energy (FUSE) Curriculum and Safety Guidelines; Feldman LS et al.' }
+            ]
+          },
+          {
+            id: 'suture_matrix_needles',
+            title: 'Surgical Suture Matrix & Needle Geometry',
+            subtitle: 'Tensile Strength, Absorption Profiles & Taper vs Cutting Needles',
+            type: 'Instrument Guide',
+            aiScopeDescription: 'Focus on surgical suture materials (PDS, Vicryl, Monocryl, Prolene, Silk), absorption half-lives, needle anatomy, and tissue-specific selection.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Biomaterials engineered to approximate divided tissues and ligate blood vessels until intrinsic biological wound healing establishes sufficient tensile strength to resist mechanical stress.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Suture breakdown, knot slippage, foreign body granuloma, tissue tearing from mismatched needle geometry, and bacterial colonization of braided multifilament sutures in contaminated wounds.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'Suture Classification Matrix:\n• Monofilament vs Multifilament (Braided):\n  - Monofilament: Smooth passage, low tissue drag, minimal bacterial wicking (PDS, Monocryl, Prolene, Nylon).\n  - Braided: High knot security, flexible handling, higher risk of harboring bacteria in infected fields (Vicryl, Silk).\n• Absorbable vs Non-Absorbable:\n  - Monocryl (Poliglecaprone 25): Rapidly absorbable (50% strength at 1-2 weeks, absorbed in 90-120 days) - ideal for subcuticular skin closure.\n  - Vicryl (Polyglactin 910): Medium absorbable (50% strength at 3 weeks, absorbed in 60-90 days) - ideal for bowel anastomosis, subcutaneous fat.\n  - PDS II (Polydioxanone): Slowly absorbable (50% strength at 4-6 weeks, absorbed in 180-210 days) - ideal for abdominal fascia and biliary duct.\n  - Prolene (Polypropylene): Non-absorbable, inert, highest permanent tensile strength - gold standard for vascular anastomoses and hernia mesh fixation.' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Needle Anatomy & Selection:\n  1. Taper Point (Round body): Pushes tissue aside without cutting (used for bowel, peritoneum, biliary tract, blood vessels).\n  2. Cutting / Reverse Cutting (Triangular body): Sharp apex cuts through dense tough tissue (used for skin and subcuticular closure).\n  3. Blunt Taper: For friable parenchymal organs (liver, spleen) to prevent needle-stick vascular tearing.' },
+              { title: 'Stepwise Management Algorithm', content: 'Match suture half-life to tissue healing rate: Skin (rapid healing -> Monocryl 4-0); Bowel (medium healing -> Vicryl 3-0); Fascia (slow healing -> PDS #1); Blood vessels (permanent support -> Prolene 5-0/6-0).' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Never use braided sutures (e.g. Silk, Vicryl) in contaminated or infected tissue (braided filaments act as a wick for bacterial micro-abscesses); use monofilament sutures (PDS, Monocryl, Prolene) instead.' },
+              { title: 'Exact Reference & Guideline Citations', content: 'ACS Surgical Principles of Wound Closure and Suture Selection; Ethicon Wound Closure Manual.' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'postop_eras',
+        title: 'Post-Op Critical Care & ERAS',
+        description: 'Enhanced recovery after surgery, drain management, post-op fever, and wound dehiscence',
+        icon: 'pulse',
+        topics: [
+          {
+            id: 'eras_protocol_surg',
+            title: 'Enhanced Recovery After Surgery (ERAS)',
+            subtitle: 'Multimodal Analgesia, Zero-Balance Fluids & Early Feeding',
+            type: 'Clinical Protocol',
+            aiScopeDescription: 'Focus on ERAS society guidelines definition, multimodal opioid-sparing analgesia, goal-directed fluid therapy, and early post-op mobilization.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Evidence-based multimodal perioperative care pathway designed to attenuate the surgical stress response, maintain postoperative physiological homeostasis, reduce surgical complications, and accelerate functional recovery.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Postoperative fluid overload (pulmonary edema, peripheral edema, anastomotic bowel edema), refractory postoperative nausea and vomiting (PONV), and opioid-induced respiratory depression / ileus.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'Key ERAS Pillars Across Perioperative Phases:\n• Preoperative:\n  1. Carbohydrate loading drinks up to 2 hours prior to induction of anesthesia.\n  2. Avoidance of routine prolonged mechanical bowel preparation in elective colon surgery.\n  3. Pre-emptive multimodal non-opioid analgesia (Acetaminophen + Celecoxib + Gabapentin).\n• Intraoperative:\n  1. Goal-Directed Fluid Therapy (GDFT): Target zero-fluid balance using stroke volume variation (SVV) monitoring.\n  2. Avoidance of routine nasogastric tubes and prophylactic abdominal drains.\n  3. Short-acting anesthetic agents and regional blocks (TAP block, rectus sheath block, epidural).\n• Postoperative:\n  1. Early oral liquid/solid intake on Day 0.\n  2. Chewing gum (sham feeding stimulates vagal cephalic-vagal reflex to restore GI motility).\n  3. Early out-of-bed mobilization within 24 hours (target ≥2 hours out of bed on POD 1).\n  4. Early removal of urinary catheters on POD 1.' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Multimodal Analgesic Regimen: IV Acetaminophen 1000 mg q6h + IV Ketorolac 15 mg q6h (for 48h) + Oral Celecoxib 200 mg daily + Transversus Abdominis Plane (TAP) block with Liposomal Bupivacaine (Exparel).\n• PONV Prophylaxis: Triple therapy with Dexamethasone 4-8 mg IV + Ondansetron 4 mg IV + Aprepitant 80 mg PO.\n• Post-Op Ileus Prevention: Oral Alvimopan 12 mg PO BID (selective peripheral mu-opioid receptor antagonist).' },
+              { title: 'Stepwise Management Algorithm', content: 'Implement standardized clinical pathways to reduce hospital length of stay by 30-50% and decrease surgical site infections and cardiopulmonary complications.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Overzealous intravenous fluid administration during major gastrointestinal surgery increases intestinal edema, delays return of bowel function, and triples anastomotic leak rates; restrict fluids to zero-balance targets.' },
+              { title: 'Exact Reference & Guideline Citations', content: 'ERAS Society Guidelines for Perioperative Care in Elective Colorectal Surgery (World J Surg 2019); Gustafsson UO et al.' }
+            ]
+          },
+          {
+            id: 'postop_fever_5ws',
+            title: 'Postoperative Fever Workup ("5 Ws")',
+            subtitle: 'Wind, Water, Wound, Walking & Wonder Drugs Timeline',
+            type: 'Clinical Protocol',
+            aiScopeDescription: 'Focus on postoperative fever definition, physiologic vs infectious etiology, the 5 Ws diagnostic timeline, and targeted workup.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Elevation of body temperature ≥38.0°C (100.4°F) occurring after a surgical procedure, categorized chronologically by the classic physiological and infectious timeline of the "5 Ws".' },
+              { title: 'Immediate Triage & Red Flags', content: 'Malignant Hyperthermia (within hours of general anesthesia), necrotizing fasciitis / group A strep wound infection (within 24-48 hours - "bronze skin, dishwater fluid"), septic shock, and pulmonary embolism with tachycardia.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'The Classic 5 Ws Chronological Timeline:\n1. POD 1-2: Wind (Atelectasis, Aspiration, Early Pneumonia) - most common early cause, treated with incentive spirometry.\n2. POD 3: Water (Urinary Tract Infection) - associated with indwelling Foley catheter, diagnosed by catheter urinalysis and urine culture.\n3. POD 4-6: Walking (Deep Vein Thrombosis & Pulmonary Embolism) - diagnosed by duplex ultrasound or CT pulmonary angiogram.\n4. POD 5-7: Wound (Surgical Site Infection) - erythema, induration, purulent drainage, requires opening the wound.\n5. POD 7+: Wonder Drugs & Deep Abscess (Drug fever, heparin-induced thrombocytopenia, intra-abdominal anastomotic leak/abscess).' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• POD 1-2 (Wind): Aggressive chest physiotherapy, incentive spirometry (10 breaths/hour), early mobilization. Do NOT administer empiric antibiotics for uncomplicated atelectasis.\n• POD 3 (Water): Remove urinary catheter immediately; start Ceftriaxone 1 g IV or Nitrofurantoin 100 mg PO if symptomatic UTI.\n• POD 5-7 (Wound): Remove surgical staples/sutures over area of maximal fluctuance; evacuate hematoma/purulence; pack with moist saline gauze. Reserve systemic antibiotics for surrounding cellulitis >2 cm or systemic sepsis.\n• Deep Abscess / Leak: CT Abdomen/Pelvis with IV and oral/rectal contrast; perform image-guided percutaneous drainage + broad-spectrum IV antibiotics (Piperacillin-Tazobactam 4.5 g q6h).' },
+              { title: 'Stepwise Management Algorithm', content: 'Target workup specifically to the postoperative day and physical exam findings rather than ordering unselective "pan-culture" panels on POD 1.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Fever presenting within 24 to 48 hours accompanied by severe pain out of proportion and skin discoloration is NOT atelectasis; rule out life-threatening Clostridial or Group A Streptococcal necrotizing soft tissue infection requiring immediate surgical debridement.' },
+              { title: 'Exact Reference & Guideline Citations', content: 'ACS Guidelines on Postoperative Fever; Pile JC. Evaluating postoperative fever. Cleve Clin J Med.' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'preop_risk',
+        title: 'Pre-Op Risk & Perioperative Clearance',
+        description: 'Cardiac risk indices, anticoagulation bridging, difficult airway, and glycemic optimization',
+        icon: 'fitness',
+        topics: [
+          {
+            id: 'rcri_cardiac_clearance',
+            title: 'Revised Cardiac Risk Index (RCRI)',
+            subtitle: 'Lee Index Criteria, METs Functional Capacity & Beta-Blocker Protocol',
+            type: 'Clinical Protocol',
+            aiScopeDescription: 'Focus on perioperative cardiac risk assessment definition, Revised Cardiac Risk Index (RCRI/Lee Criteria), functional capacity in METs, and preoperative testing.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Systematic clinical risk stratification to quantify the 30-day risk of major adverse cardiac events (MACE: myocardial infarction, pulmonary edema, ventricular fibrillation, complete heart block, cardiac arrest) in patients undergoing non-cardiac surgery.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Active unstable cardiac conditions requiring surgery cancellation/delay: Unstable angina, recent MI (<60 days), decompensated heart failure (NYHA Class IV), severe symptomatic aortic stenosis (valve area <1.0 cm²), high-grade AV block.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'The 6 Predictors of the Revised Cardiac Risk Index (RCRI / Lee Criteria):\n1. High-risk surgery (Intraperitoneal, intrathoracic, or suprainguinal vascular surgery).\n2. History of ischemic heart disease (MI, positive stress test, angina, nitrate use).\n3. History of congestive heart failure (pulmonary edema, PND, S3 gallop, EF <40%).\n4. History of cerebrovascular disease (stroke or TIA).\n5. Diabetes mellitus requiring insulin therapy.\n6. Preoperative serum creatinine >2.0 mg/dL (177 µmol/L).\n• Risk of Major Cardiac Event:\n  - 0 Predictors (Class I): 0.4% MACE risk (Very Low)\n  - 1 Predictor (Class II): 0.9% MACE risk (Low)\n  - 2 Predictors (Class III): 6.6% MACE risk (Moderate)\n  - ≥3 Predictors (Class IV): >11.0% MACE risk (High)\n• Functional Capacity (METs):\n  - ≥4 METs (Able to climb 2 flights of stairs, walk up a hill, carry groceries) = Good functional reserve; proceeds to surgery without cardiac stress testing.\n  - <4 METs with RCRI ≥2 = Indications for Pharmacologic Stress Echocardiography or Nuclear Perfusion Scan.' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Perioperative Beta-Blockers: Continue chronic beta-blocker therapy without interruption. Do NOT initiate high-dose beta-blockers on the morning of surgery (POISE trial proved acute beta-blockade increases stroke and all-cause mortality).\n• Statins: Continue chronic statins throughout perioperative period.' },
+              { title: 'Stepwise Management Algorithm', content: '1. Determine surgical urgency (emergent surgery proceeds immediately with invasive monitoring).\n2. Check for active acute coronary syndrome / decompensated heart failure.\n3. Calculate RCRI and assess functional capacity (>4 METs).\n4. If RCRI ≥2 with <4 METs and surgery is elective -> Order stress testing if it would change clinical management.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Never clear a patient with undiagnosed severe symptomatic aortic stenosis (harsh systolic ejection murmur radiating to carotids with exertional syncope/dyspnea) for elective surgery without a transthoracic echocardiogram; intraoperative vasodilation causes fatal refractory cardiac arrest.' },
+              { title: 'Exact Reference & Guideline Citations', content: '2024 AHA/ACC Guideline on Perioperative Cardiovascular Evaluation and Management for Noncardiac Surgery; Lee TH et al. Circulation.' }
+            ]
+          },
+          {
+            id: 'anticoagulation_bridging_matrix',
+            title: 'Perioperative Anticoagulation & Bridging',
+            subtitle: 'Warfarin, DOACs, High vs Low Thromboembolic Risk & Resumption Timing',
+            type: 'Clinical Protocol',
+            aiScopeDescription: 'Focus on perioperative management of anticoagulants definition, Warfarin cessation and bridging criteria, DOAC last-dose timing, and postoperative resumption.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Management algorithms balancing the perioperative risk of surgical hemorrhage against the risk of arterial or venous thromboembolism during temporary interruption of anticoagulant and antiplatelet pharmacotherapy.' },
+              { title: 'Immediate Triage & Red Flags', content: 'High Thromboembolic Risk Conditions requiring Warfarin Bridging:\n1. Mechanical mitral valve prosthesis (or older caged-ball/tilting disc aortic valve).\n2. Recent stroke or TIA within past 3 months.\n3. Atrial fibrillation with high CHA₂DS₂-VASc score (≥7-8).\n4. Recent VTE within past 3 months or severe thrombophilia (antiphospholipid syndrome).' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'Preoperative Interruption Schedule:\n• Warfarin (Coumadin):\n  - Discontinue 5 days prior to surgery (target INR ≤1.5 on day of surgery).\n  - If High Thromboembolic Risk -> Initiate therapeutic Low Molecular Weight Heparin (Enoxaparin 1 mg/kg SC BID) 3 days pre-op; administer last dose 24 hours prior to surgery.\n• Direct Oral Anticoagulants (DOACs: Apixaban, Rivaroxaban, Edoxaban, Dabigatran):\n  - Low Bleeding Risk Surgery: Stop 24-48 hours pre-op (no bridging required!).\n  - High Bleeding Risk Surgery (Intracranial, spinal, major abdominal/vascular): Stop 48-72 hours pre-op (extend to 96 hours for Dabigatran if CrCl <50 mL/min).' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Postoperative Resumption:\n  - Low Bleed Risk: Resume prophylactic LMWH or DOAC at 24 hours post-op.\n  - High Bleed Risk / Major Surgery: Resume therapeutic anticoagulation at 48-72 hours post-op once surgical hemostasis is secure.\n• Emergency Reversal for Urgent Surgery:\n  - Warfarin: 4-Factor Prothrombin Complex Concentrate (4F-PCC: Kcentra 25-50 units/kg IV) + IV Vitamin K 10 mg (reverses INR in <15 minutes).\n  - Dabigatran: Idarucizumab (Praxbind 5 g IV).\n  - Factor Xa Inhibitors (Apixaban/Rivaroxaban): Andexanet alfa OR 4F-PCC (50 units/kg IV).' },
+              { title: 'Stepwise Management Algorithm', content: '1. Classify patient thromboembolic risk (High, Moderate, Low).\n2. Classify procedure bleeding risk.\n3. Apply drug-specific interruption window.\n4. Avoid routine bridging in DOAC patients (BRIDGE trial and PAUSE study demonstrated bridging increases major bleeding without reducing stroke).' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Bridging DOACs with LMWH is a severe clinical error (DOACs have a rapid onset/offset of 12 hours; bridging DOACs triples major postoperative bleeding without reducing thromboembolism).' },
+              { title: 'Exact Reference & Guideline Citations', content: '2022 ACCP Chest Guidelines on Perioperative Management of Antithrombotic Therapy; PAUSE Study (JAMA Intern Med 2019); BRIDGE Trial (NEJM 2015).' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'damage_control',
+        title: 'Emergency & Damage Control Surgery',
+        description: 'Damage control laparotomy, FAST ultrasound, thoracostomy, and massive transfusion',
+        icon: 'warning',
+        topics: [
+          {
+            id: 'damage_control_laparotomy',
+            title: 'Damage Control Laparotomy (DCL)',
+            subtitle: 'Abbreviated Laparotomy, The Lethal Triad & ICU Resuscitation',
+            type: 'Emergency Protocol',
+            aiScopeDescription: 'Focus on damage control laparotomy definition, the lethal triad of trauma (hypothermia, acidosis, coagulopathy), 3-stage approach, and temporary abdominal closure.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Abbreviated emergency surgical approach in severely injured, exsanguinating trauma patients that sacrifices anatomical perfection in favor of rapid control of hemorrhage and contamination to halt the physiological "lethal triad" (hypothermia, acidosis, coagulopathy).' },
+              { title: 'Immediate Triage & Red Flags', content: 'The Lethal Triad (Indications to abort definitive surgery and initiate DCL):\n1. Hypothermia: Core body temperature <35.0°C.\n2. Metabolic Acidosis: Arterial pH <7.20 or base deficit >-8 mEq/L.\n3. Coagulopathy: Clinical non-mechanical microvascular oozing or INR >1.5.\n4. Hemodynamic Instability requiring >10 units of blood transfusion.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'The 3 Distinct Stages of Damage Control Surgery:\n• Stage 1 (Operating Room - Target <60 minutes):\n  - Rapid midline laparotomy, 4-quadrant packing, arrest major surgical hemorrhage (vessel shunting, ligation, or balloon occlusion).\n  - Control contamination: Staple off divided bowel ends (leave bowel in discontinuity; do NOT perform anastomoses!).\n  - Temporary Abdominal Closure (ABTHERA / negative pressure vacuum pack).\n• Stage 2 (Intensive Care Unit Resuscitation - 24 to 48 hours):\n  - Active rewarming with forced-air and blood warmers (target temp >36.0°C).\n  - Correction of acidosis and reversal of coagulopathy with MTP guided by TEG/ROTEM.\n  - Optimization of ventilator support and tissue perfusion.\n• Stage 3 (Return to Operating Room for Definitive Surgery):\n  - Planned re-exploration at 24-48 hours once physiology is restored.\n  - Remove surgical packs, perform definitive gastrointestinal anastomoses, and achieve permanent fascial closure.' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Temporary Abdominal Closure (TAC) Technique:\n  1. Place non-adherent fenestrated polyethylene sheet over viscera, tucking deeply into lateral gutters.\n  2. Place polyurethane sponge foam in midline.\n  3. Apply occlusive adhesive drape and connect to continuous -125 mmHg suction.\n• Hemostatic Resuscitation: 1:1:1 ratio of Packed Red Blood Cells (PRBC), Fresh Frozen Plasma (FFP), and Platelets + IV Tranexamic Acid (TXA 1 g IV bolus).' },
+              { title: 'Stepwise Management Algorithm', content: 'Recognize physiological exhaustion early in the operating room; abort definitive surgery before coagulopathy becomes irreversible.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Attempting complex time-consuming reconstructions or bowel anastomoses in a hypothermic, acidotic, coagulopathic trauma patient carries near 100% mortality from anastomotic breakdown and exsanguination.' },
+              { title: 'Exact Reference & Guideline Citations', content: 'Eastern Association for the Surgery of Trauma (EAST) Practice Management Guidelines for Damage Control Laparotomy; Rotondo MF et al. J Trauma.' }
+            ]
+          },
+          {
+            id: 'fast_ultrasound_trauma',
+            title: 'FAST Ultrasound Protocol in Trauma',
+            subtitle: 'Focused Assessment with Sonography for Trauma (4 Acoustic Views)',
+            type: 'Emergency Protocol',
+            aiScopeDescription: 'Focus on FAST exam definition, the 4 standard acoustic windows, E-FAST for pneumothorax/hemothorax, and integrating findings with hemodynamic stability.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Rapid, non-invasive point-of-care ultrasound examination performed during the primary survey of trauma resuscitation to detect free intraperitoneal, pericardial, and pleural fluid (hemoperitoneum, hemopericardium, hemothorax) and pneumothorax.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Unstable blunt trauma with positive FAST -> Immediate Emergency Laparotomy. Penetrating trauma with positive pericardial window (cardiac tamponade) -> Immediate Emergency Sternotomy / Thoracotomy.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'The 4 Standard Acoustic Windows (+ E-FAST Windows):\n1. Perihepatic (Morison Pouch / RUQ): Between liver and right kidney - the most sensitive dependent space for detecting intraperitoneal fluid (can detect as little as 100-200 mL free fluid).\n2. Perisplenic (LUQ): Between spleen and left kidney and subdiaphragmatic space (fluid often collects subdiaphragmatic first).\n3. Pelvic (Suprapubic): Longitudinal and transverse views behind pubic symphysis (in recto-vesical pouch in males; recto-uterine pouch of Douglas in females).\n4. Pericardial (Subxiphoid / Subcostal): Identifies anechoic fluid strip between anterior and posterior pericardial layers and myocardium.\n• Extended FAST (E-FAST) Windows:\n  5. Anterior Thoracic: Lung sliding & "seashore sign" on M-mode (loss of lung sliding with "barcode / stratosphere sign" indicates Pneumothorax).\n  6. Dependent Hemithorax: Pleural effusion / Hemothorax at costophrenic angles.' },
+              { title: 'First-Line Pharmacotherapy & Procedural Steps', content: '• Probe Selection: 2.5-5.0 MHz phased-array or curvilinear low-frequency probe.\n• Execution Steps:\n  1. Subxiphoid window: Direct probe toward left shoulder to clear cardiac tamponade.\n  2. RUQ Morison pouch: Sweep from diaphragm to inferior renal pole.\n  3. LUQ Splenorenal: Place probe at posterior axillary line 8th-10th intercostal space.\n  4. Suprapubic window: Position probe superior to pubic symphysis before Foley catheter decompression.' },
+              { title: 'Stepwise Management Algorithm', content: '1. Hemodynamically Unstable + Positive FAST -> Emergent Exploratory Laparotomy / Sternotomy.\n2. Hemodynamically Stable + Positive FAST -> Abdominal CT with IV Contrast for organ injury grading.\n3. Hemodynamically Unstable + Negative FAST -> Search for extra-abdominal blood loss (pelvic fracture, chest, extremities) or repeat FAST.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'A negative FAST does NOT rule out retroperitoneal bleeding, mesenteric tears, or hollow viscus bowel perforation; maintain high clinical suspicion and proceed to CT in stable patients.' },
+              { title: 'Exact Reference & Guideline Citations', content: 'American College of Emergency Physicians (ACEP) Ultrasound Guidelines; ATLS 10th Edition.' }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  nephrology: {
+    id: 'nephrology',
+    name: 'Renal',
+    scientificName: 'Nephrology & Renal Medicine',
+    icon: 'water',
+    color: '#defff9',
+    illustration: require('../assets/images/specialties/nephrology.jpg'),
+    generalScope: 'Focus on acute kidney injury staging, dialysis indications, glomerular diseases, fluid/electrolyte management, and severe hyperkalemia.',
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'Urgent dialysis indications, severe hyperkalemia, and acute renal shutdown',
+        icon: 'warning',
+        topics: [
+          {
+            id: 'hyperkalemia_emergencies',
+            title: 'Severe Hyperkalemia Protocol',
+            subtitle: 'ECG Signs, Membrane Stabilization, Shifting & Elimination',
+            type: 'Emergency Protocol',
+            aiScopeDescription: 'Focus on severe hyperkalemia definition, ECG manifestations, calcium membrane stabilization, insulin-glucose shifting, and elimination.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Serum potassium concentration >6.5 mEq/L (or any potassium elevation accompanied by ECG changes), representing a life-threatening cardiac electrophysiological emergency that predisposes to lethal ventricular arrhythmias and asystole.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Serum K+ >6.5 mEq/L or any K+ with ECG changes: Peaked symmetrical T waves, PR prolongation, loss of P waves, QRS widening, Sine-wave pattern, and cardiac arrest (PEA/VF).' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'Rule out pseudohyperkalemia (hemolyzed blood sample, prolonged tourniquet time, thrombocytosis >1 million, extreme leukocytosis).' },
+              { title: 'First-Line Pharmacotherapy & Exact Dosing', content: '• Step 1 (Membrane Stabilization - Immediate within 2 mins):\n  IV Calcium Gluconate 10% 10-20 mL over 3 mins (repeat in 5 mins if ECG abnormal).\n• Step 2 (Intracellular Shift - 15-30 mins):\n  1. Regular Insulin 10 units IV bolus + 50 mL D50W (25 g glucose) IV.\n  2. Albuterol 10-20 mg nebulized in 4 mL saline over 15 mins.\n  3. Sodium Bicarbonate 50 mEq IV over 5 mins (if metabolic acidosis pH <7.20).\n• Step 3 (Potassium Elimination - Hours):\n  1. IV Furosemide 40-80 mg (if residual renal function).\n  2. Sodium Zirconium Cyclosilicate (Lokelma) 10 g PO TID or Patiromer 8.4 g PO daily.\n  3. Emergent Hemodialysis for refractory hyperkalemia.' },
+              { title: 'Stepwise Management Algorithm', content: 'Place on continuous telemetry immediately. Repeat serum K+ at 2 and 4 hours post-shifting.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'IV Calcium protects the myocardium for only 30 to 60 minutes; never rely on calcium alone without simultaneously administering shifting and elimination agents.' },
+              { title: 'Exact Reference & Guideline Citations', content: '2023 KDIGO Consensus on Hyperkalemia Management; AHA Emergency Cardiovascular Care.' }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'clinical_topics',
+        title: 'Clinical Topics',
+        description: 'KDIGO AKI staging, glomerulonephritis, and nephrotic syndrome',
+        icon: 'book',
+        topics: [
+          {
+            id: 'kdigo_aki_staging',
+            title: 'Acute Kidney Injury (KDIGO)',
+            subtitle: 'Prerenal vs ATN, FeNa/FeUrea & Fluid Challenge',
+            type: 'Clinical Guideline',
+            aiScopeDescription: 'Focus on KDIGO criteria definition for AKI, FeNa, FeUrea, urine microscopy, and renal recovery.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Abrupt decline in glomerular filtration rate occurring over hours to days, leading to the retention of nitrogenous waste products (urea, creatinine) and dysregulation of extracellular fluid volume and electrolytes.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Oliguria (<0.5 mL/kg/h for >6h), rising serum creatinine, uremic pericardial friction rub, encephalopathy, and refractory volume overload.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: '• KDIGO Staging:\n  - Stage 1: Serum creatinine 1.5-1.9x baseline or increase ≥0.3 mg/dL within 48h; urine <0.5 mL/kg/h for 6-12h.\n  - Stage 2: Serum creatinine 2.0-2.9x baseline; urine <0.5 mL/kg/h for ≥12h.\n  - Stage 3: Serum creatinine 3.0x baseline, SCr ≥4.0 mg/dL, initiation of RRT, or anuria for ≥12h.' },
+              { title: 'First-Line Pharmacotherapy & Exact Dosing', content: 'Stop nephrotoxic medications (NSAIDs, ACEi/ARBs, Aminoglycosides, Vancomycin). Treat volume depletion with balanced crystalloids (Lactated Ringer’s).' },
+              { title: 'Stepwise Management Algorithm', content: 'Check FeNa: <1% indicates prerenal azotemia; >2% indicates Acute Tubular Necrosis (ATN). Use FeUrea (<35% = prerenal) if patient is on loop diuretics.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Avoid hydroxyethyl starches and excessive 0.9% Normal Saline (causes hyperchloremic metabolic acidosis and renal vasoconstriction; use Lactated Ringer’s).' },
+              { title: 'Exact Reference & Guideline Citations', content: 'KDIGO Clinical Practice Guideline for Acute Kidney Injury.' }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  endocrinology: {
+    id: 'endocrinology',
+    name: 'Endo',
+    scientificName: 'Endocrinology & Metabolism',
+    icon: 'speedometer',
+    color: '#ffc3dd',
+    illustration: require('../assets/images/specialties/endocrinology.jpg'),
+    generalScope: 'Focus on diabetic ketoacidosis (DKA), hyperosmolar hyperglycemic state (HHS), thyroid storm, adrenal crisis, and inpatient glycemic protocols.',
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'DKA/HHS protocols, thyroid storm, and adrenal crisis resuscitation',
+        icon: 'warning',
+        topics: [
+          {
+            id: 'dka_hhs_emergency',
+            title: 'Diabetic Ketoacidosis (DKA)',
+            subtitle: 'Anion Gap Resolution, Insulin Infusion & Potassium Repletion',
+            type: 'Emergency Protocol',
+            aiScopeDescription: 'Focus on DKA definition, two-bag fluid protocol, regular insulin infusion, serum potassium thresholds, and transition to subcutaneous basal insulin.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Acute metabolic crisis characterized by the triad of hyperglycemia, high anion gap metabolic acidosis, and ketonemia resulting from absolute or relative insulin deficiency and counter-regulatory hormone surge (glucagon, catecholamines, cortisol).' },
+              { title: 'Immediate Triage & Red Flags', content: 'Kussmaul deep breathing (fruity acetone odor), severe dehydration, abdominal pain, nausea/vomiting, altered mentation. Red Flags: Serum K+ <3.3 mEq/L (hold insulin until K+ repleted >3.3), severe acidosis pH <6.9, cerebral edema in young patients.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'Diagnostic Triad:\n1. Hyperglycemia: Blood glucose >250 mg/dL.\n2. Metabolic Acidosis: Arterial pH ≤7.30 and serum bicarbonate ≤18 mEq/L.\n3. Positive Ketones: Elevated serum beta-hydroxybutyrate >3.0 mmol/L and urine ketones.' },
+              { title: 'First-Line Pharmacotherapy & Exact Dosing', content: '• Step 1 (Fluids): 0.9% Normal Saline 1000-1500 mL/hr for first 1-2 hours, then switch to 0.45% Saline at 250-500 mL/hr.\n• Step 2 (Insulin): Regular Insulin 0.1 units/kg IV bolus followed by 0.1 units/kg/hr continuous infusion (target glucose drop 50-75 mg/dL/hr).\n• Step 3 (Dextrose): Add D5W to fluids when blood glucose reaches <200 mg/dL while continuing insulin to clear the anion gap!\n• Step 4 (Potassium): Add 20-30 mEq K+ per liter of IV fluid once K+ is <5.2 mEq/L.' },
+              { title: 'Stepwise Management Algorithm', content: 'DKA is resolved when: Blood glucose <200 mg/dL AND two of the following: Serum bicarbonate ≥18 mEq/L, Venous pH >7.30, Anion gap ≤12. Administer Subcutaneous Basal Insulin 2 hours BEFORE stopping the IV insulin infusion!' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Never stop the IV insulin infusion when blood glucose normalizes if the anion gap is still open (add dextrose to fluids and continue insulin to clear ketoacidosis); stopping insulin causes immediate rebound ketoacidosis.' },
+              { title: 'Exact Reference & Guideline Citations', content: '2024 American Diabetes Association (ADA) Standards of Care in Diabetes.' }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  critical_care: {
+    id: 'critical_care',
+    name: 'ICU',
+    scientificName: 'Emergency & Critical Care Medicine',
+    icon: 'medkit',
+    color: '#6dc2bd',
+    illustration: require('../assets/images/specialties/critical_care.jpg'),
+    generalScope: 'Focus on undifferentiated shock, mechanical ventilation in ARDS, rapid sequence intubation (RSI) in shock, and vasoactive drug titration.',
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'RUSH protocol, hemodynamically unstable intubation, and refractory shock',
+        icon: 'warning',
+        topics: [
+          {
+            id: 'undifferentiated_shock_rush',
+            title: 'Undifferentiated Shock & RUSH Protocol',
+            subtitle: 'The Pump, The Tank & The Pipes Ultrasound Algorithm',
+            type: 'Emergency Protocol',
+            aiScopeDescription: 'Focus on undifferentiated shock definition, rapid ultrasound in shock (RUSH), differentiating cardiogenic, hypovolemic, distributive, and obstructive shock.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Acute systemic state of profound circulatory failure resulting in inadequate cellular oxygen delivery and utilization, tissue hypoperfusion, and cellular dysoxia leading to irreversible end-organ damage.' },
+              { title: 'Immediate Triage & Red Flags', content: 'MAP <65 mmHg, serum lactate >2.0 mmol/L, altered mental status, oliguria, cold/mottled extremities, delayed capillary refill >3 seconds.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'RUSH Ultrasound Protocol:\n1. The Pump: Hyperdynamic heart (distributive/hypovolemic), dilated hypo-contractile LV (cardiogenic), RV strain / McConnell sign (massive PE), pericardial effusion with tamponade.\n2. The Tank: Collapsible IVC >50% (hypovolemic), Plethoric IVC (cardiogenic/tamponade/PE), Morison pouch fluid (hemoperitoneum), Lung sliding & B-lines (pulmonary edema vs pneumothorax).\n3. The Pipes: Abdominal aortic aneurysm (>3 cm) or dissection flap, femoral/popliteal DVT.' },
+              { title: 'First-Line Pharmacotherapy & Exact Dosing', content: 'First-Line Vasopressor: Norepinephrine infusion 0.05-0.5 mcg/kg/min (target MAP ≥65 mmHg). Add Vasopressin 0.03 units/min as second-line agent.' },
+              { title: 'Stepwise Management Algorithm', content: 'Classify shock within 10 minutes at bedside to direct fluid boluses vs inotropes vs emergent pericardiocentesis/chest tube.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Giving large fluid boluses to patients in cardiogenic shock or massive pulmonary embolism worsens right ventricular overload and precipitates cardiac arrest.' },
+              { title: 'Exact Reference & Guideline Citations', content: 'Society of Critical Care Medicine (SCCM) Point-of-Care Ultrasound Guidelines.' }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  hematology_oncology: {
+    id: 'hematology_oncology',
+    name: 'Heme-Onc',
+    scientificName: 'Hematology & Medical Oncology',
+    icon: 'fitness',
+    color: '#dbd4fd',
+    illustration: require('../assets/images/specialties/hematology_oncology.jpg'),
+    generalScope: 'Focus on febrile neutropenia, tumor lysis syndrome, sickle cell vaso-occlusive crisis, and heparin-induced thrombocytopenia.',
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'Febrile neutropenia 1-hour bundle, tumor lysis, and acute coagulopathy',
+        icon: 'warning',
+        topics: [
+          {
+            id: 'febrile_neutropenia_heme',
+            title: 'Febrile Neutropenia Emergency',
+            subtitle: 'MASCC Risk Index, 1-Hour Antibiotics & Anti-Pseudomonal Regimens',
+            type: 'Emergency Protocol',
+            aiScopeDescription: 'Focus on febrile neutropenia definition, ANC <500, MASCC score, empiric Cefepime/Meropenem, and sepsis management.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Oncologic emergency defined as a single oral temperature measurement of ≥38.3°C (101°F) or ≥38.0°C sustained over 1 hour in a patient with an Absolute Neutrophil Count (ANC) <500 cells/µL (or anticipated to fall <500 cells/µL within 48 hours).' },
+              { title: 'Immediate Triage & Red Flags', content: 'Fever in post-chemotherapy patient. Red Flags: Hemodynamic instability (shock), altered mentation, rigors, hypothermia <36.0°C, and respiratory distress.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'MASCC Risk Index (Score ≥21 = Low risk for outpatient oral therapy; Score <21 = High risk requiring inpatient IV antibiotics).' },
+              { title: 'First-Line Pharmacotherapy & Exact Dosing', content: '• High-Risk Inpatient (Within 60 mins of arrival - Door-to-Antibiotic <1h):\n  1. Cefepime 2 g IV q8h OR\n  2. Piperacillin-Tazobactam 4.5 g IV q6h OR\n  3. Meropenem 1 g IV q8h (if penicillin anaphylaxis or ESBL history).\n• Add Vancomycin 15-20 mg/kg only if: Hemodynamic instability, central venous catheter infection, suspected pneumonia, or MRSA colonization.' },
+              { title: 'Stepwise Management Algorithm', content: 'Draw 2 sets of blood cultures (one peripheral, one from central line) and start anti-pseudomonal monotherapy immediately.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Never perform a digital rectal examination (DRE) or administer rectal suppositories in a neutropenic patient (micro-tears in the rectal mucosa introduce enteric bacteria directly into the bloodstream, triggering fatal gram-negative bacteremia).' },
+              { title: 'Exact Reference & Guideline Citations', content: '2023 ASCO/IDSA Clinical Practice Guideline on Antimicrobial Prophylaxis and Outpatient Management of Fever and Neutropenia.' }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  rheumatology: {
+    id: 'rheumatology',
+    name: 'Rheum',
+    scientificName: 'Rheumatology & Autoimmune Diseases',
+    icon: 'body',
+    color: '#ffc3dd',
+    illustration: require('../assets/images/specialties/rheumatology.jpg'),
+    generalScope: 'Focus on autoimmune connective tissue diseases, inflammatory arthritis, lupus flares, and giant cell arteritis.',
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'Giant cell arteritis, acute septic joint, and catastrophic lupus flares',
+        icon: 'warning',
+        topics: [
+          {
+            id: 'giant_cell_arteritis_rheum',
+            title: 'Giant Cell Arteritis (GCA)',
+            subtitle: 'Temporal Artery Biopsy, Vision Loss & High-Dose Steroid Emergency',
+            type: 'Emergency Protocol',
+            aiScopeDescription: 'Focus on giant cell arteritis definition, ESR >50, jaw claudication, emergent IV methylprednisolone, and preventing permanent bilateral blindness.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Granulomatous medium- and large-vessel systemic vasculitis predominantly affecting the branches of the ophthalmic and carotid arteries in patients over 50 years of age, representing a medical emergency due to the risk of irreversible ischemic optic neuropathy and bilateral blindness.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Age >50, new unprovoked headache, temporal artery tenderness/thickening, jaw claudication with chewing, amaurosis fugax, or acute painless visual loss.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'ESR >50 mm/h (often >100 mm/h) and elevated CRP. Color Doppler Ultrasound shows "halo sign" around temporal arteries. Definitive diagnosis: Temporal artery biopsy (≥2 cm length).' },
+              { title: 'First-Line Pharmacotherapy & Exact Dosing', content: '• Threatened or Active Visual Loss: IV Methylprednisolone 1000 mg daily for 3 consecutive days, then oral Prednisone 1 mg/kg/day (60-80 mg daily).\n• No Visual Symptoms: Oral Prednisone 60 mg daily immediately.' },
+              { title: 'Stepwise Management Algorithm', content: 'Initiate corticosteroids immediately upon clinical suspicion. Schedule temporal artery biopsy within 2-4 weeks.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Never wait for biopsy results or ophthalmology consultation before starting systemic corticosteroids; treatment within hours prevents permanent irreversible blindness in the unaffected eye.' },
+              { title: 'Exact Reference & Guideline Citations', content: '2021 ACR/Vasculitis Foundation Guideline for the Management of Giant Cell Arteritis.' }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  pediatrics: {
+    id: 'pediatrics',
+    name: 'Peds',
+    scientificName: 'Pediatrics & Neonatal Care',
+    icon: 'happy',
+    color: '#defff9',
+    illustration: require('../assets/images/specialties/pediatrics.jpg'),
+    generalScope: 'Focus on pediatric emergency resuscitation, febrile infants <60 days, croup, bronchiolitis, and weight-based fluid dosing.',
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'Febrile neonate sepsis, pediatric resuscitation PALS, and acute stridor',
+        icon: 'warning',
+        topics: [
+          {
+            id: 'febrile_infant_peds',
+            title: 'Febrile Infant Workup (<60 Days)',
+            subtitle: 'Age-Stratified Sepsis Protocol, CSF Analysis & Empiric Antibiotics',
+            type: 'Emergency Protocol',
+            aiScopeDescription: 'Focus on febrile infant definition in neonates <28 days and infants 29-60 days, PECARN low-risk criteria, lumbar puncture, and IV Ampicillin/Gentamicin.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Rectal temperature measurement of ≥38.0°C (100.4°F) in an infant 0 to 60 days of age, representing a medical emergency due to the high risk of Invasive Bacterial Infection (IBI: bacteremia, bacterial meningitis) from immature neonatal immune responses.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Rectal temperature ≥38.0°C. Red Flags: Lethargy, poor feeding, tachypnea, grunting, bulging fontanelle, petechial rash, or hypothermia (<36.0°C).' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: '• Age 0-28 Days (High Risk):\n  Full Sepsis Workup (CBC, Blood cultures, Catheter Urinalysis/Culture, Lumbar Puncture CSF cell count/protein/glucose/culture/PCR).\n• Age 29-60 Days (AAP 2021 Algorithm):\n  Check Inflammatory Biomarkers: Procalcitonin (>0.5 ng/mL), CRP (>20 mg/L), ANC (>4000/µL), Urinalysis (leukocyte esterase/nitrites). If all normal and infant looks well -> safe for close outpatient follow-up.' },
+              { title: 'First-Line Pharmacotherapy & Exact Dosing', content: '• Infants 0-28 Days: IV Ampicillin 50 mg/kg q8h (covers Listeria monocytogenes) + IV Ceftazidime 50 mg/kg q8h OR Gentamicin 4 mg/kg IV daily (avoid Ceftriaxone in neonates due to biliary sludging and bilirubin displacement).\n• Infants 29-60 Days (if high risk): IV Ceftriaxone 50 mg/kg daily.' },
+              { title: 'Stepwise Management Algorithm', content: 'Admit all febrile neonates (0-28 days) to the hospital on empiric IV antibiotics pending 48-hour culture results.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Never use Ceftriaxone in neonates under 28 days of age (binds albumin, displacing bilirubin and triggering kernicterus; causes insoluble calcium-ceftriaxone precipitates in kidneys and lungs).' },
+              { title: 'Exact Reference & Guideline Citations', content: '2021 AAP Clinical Practice Guideline: Evaluation and Management of Well-Appearing Febrile Infants 8 to 60 Days Old.' }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  psychiatry: {
+    id: 'psychiatry',
+    name: 'Psych',
+    scientificName: 'Psychiatry & Behavioral Health',
+    icon: 'sparkles',
+    color: '#6dc2bd',
+    illustration: require('../assets/images/specialties/psychiatry.jpg'),
+    generalScope: 'Focus on acute agitation de-escalation, rapid chemical tranquilization, serotonin syndrome, neuroleptic malignant syndrome, and CIWA-Ar.',
+    categories: [
+      {
+        id: 'emergencies',
+        title: 'Emergencies',
+        description: 'Acute agitation tranquilization, serotonin syndrome, and CIWA-Ar protocol',
+        icon: 'warning',
+        topics: [
+          {
+            id: 'acute_agitation_psych',
+            title: 'Acute Agitation & Chemical Tranquilization',
+            subtitle: 'Project BETA Guidelines, "5 and 2" Regimen & Ketamine Protocol',
+            type: 'Emergency Protocol',
+            aiScopeDescription: 'Focus on acute agitation definition, verbal de-escalation, oral vs IM second-generation antipsychotics, and monitoring respiratory status.',
+            clinicalContent: [
+              { title: 'Clinical Definition & Overview', content: 'Acute behavioral emergency characterized by severe motor restlessness, emotional tension, verbal aggressiveness, and uncooperativeness, posing an imminent danger to the safety of the patient, medical staff, and bystanders.' },
+              { title: 'Immediate Triage & Red Flags', content: 'Aggressive/violent combative behavior. Rule out organic medical etiologies: Hypoglycemia, hypoxia, acute traumatic intracranial hemorrhage, encephalitis/meningitis, or substance intoxication/withdrawal.' },
+              { title: 'Diagnostic Criteria & Scoring Systems', content: 'Richmond Agitation-Sedation Scale (RASS: +1 to +4 indicating combative agitation; target RASS 0 to -1).' },
+              { title: 'First-Line Pharmacotherapy & Exact Dosing', content: '• Mild-to-Moderate (Cooperative): Oral Lorazepam 1-2 mg + Oral Olanzapine 5-10 mg ODT (Zydis) or Risperidone 1-2 mg.\n• Severe / Combative (Uncooperative):\n  1. Combination IM: Haloperidol 5 mg + Lorazepam 2 mg + Diphenhydramine 50 mg ("5, 2, and 50" prevents extrapyramidal dystonia) OR\n  2. IM Olanzapine 10 mg (do NOT co-administer IM benzodiazepines with IM Olanzapine due to fatal respiratory arrest risk) OR\n  3. IM Ketamine 4-5 mg/kg (for severe excited delirium with hyperthermia/rhabdomyolysis).' },
+              { title: 'Stepwise Management Algorithm', content: '1. Verbal de-escalation in a quiet environment.\n2. Offer voluntary oral medications.\n3. If violence refractory: Administer IM rapid tranquilization; place on continuous pulse oximetry, cardiac telemetry, and side-lying recovery position.' },
+              { title: 'Clinical Pitfalls & Malpractice Warnings', content: 'Never administer parenteral Haloperidol without an ECG checking the QTc interval (prolongation >500 ms carries high risk of Torsades de Pointes; use Lorazepam or Olanzapine instead).' },
+              { title: 'Exact Reference & Guideline Citations', content: 'American Association for Emergency Psychiatry (AAEP) Project BETA Consensus Guidelines.' }
             ]
           }
         ]
