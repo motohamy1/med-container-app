@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Colors } from '../constants/Colors';
 import {
   EXPANDED_MEDICINE_SPECIALTIES,
   MedicineSpecialtyItem,

@@ -10,7 +10,6 @@ import {
   View,
   type DimensionValue,
 } from 'react-native';
-import { Colors } from '../constants/Colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ORBIT_SIZE = Math.min(SCREEN_WIDTH * 0.78, 300);
@@ -249,16 +248,16 @@ export const SurgicalOrbitSection: React.FC = () => {
         {/* Center hub — elevated Surgical Suite AI Advisor in Rose/Pastel Pink */}
         <TouchableOpacity
           onPress={handleCenterHubPress}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full items-center justify-center border-4 border-[#010101] z-20 px-2 text-center"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full items-center justify-center border-4 border-[#010101] z-10 px-2 text-center"
           style={{
             width: CENTER_SIZE,
             height: CENTER_SIZE,
             backgroundColor: '#ffc3dd',
             shadowColor: '#ffc3dd',
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.65,
-            shadowRadius: 20,
-            elevation: 14,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.5,
+            shadowRadius: 12,
+            elevation: 8,
           }}
           activeOpacity={0.85}
         >

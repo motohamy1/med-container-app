@@ -81,29 +81,29 @@ const Header = () => {
   };
 
   return (
-    <View className="flex-row items-center justify-between px-6 pt-6 pb-2">
+    <View className="flex-row items-center justify-between px-6 pt-2 pb-1">
       <View>
-        <View className="flex-row items-center gap-1.5 mb-1">
-          <Ionicons name="medical" size={15} color={Colors.lime} />
-          <Text className="text-[13px] text-lime font-sans-bold tracking-wide">{getGreeting()}</Text>
+        <View className="flex-row items-center gap-1.5 mb-0.5">
+          <Ionicons name="medical" size={14} color={Colors.lime} />
+          <Text className="text-[12.5px] text-lime font-sans-bold tracking-wide">{getGreeting()}</Text>
         </View>
-        <Text className="text-[24px] font-sans-bold leading-tight text-white tracking-tight">Dr. Alex Doe</Text>
+        <Text className="text-[22px] font-sans-bold leading-tight text-white tracking-tight">Dr. Alex Doe</Text>
       </View>
 
       {/* Profile Avatar / Quick Access with Depth */}
       <TouchableOpacity
         onPress={() => router.push('/(tabs)/profile')}
-        className="w-11 h-11 rounded-full bg-[#0a0a0a] border border-white/10 items-center justify-center"
+        className="w-10 h-10 rounded-full bg-[#0a0a0a] border border-white/10 items-center justify-center"
         style={{
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
+          shadowOffset: { width: 0, height: 3 },
           shadowOpacity: 0.35,
-          shadowRadius: 8,
-          elevation: 6,
+          shadowRadius: 6,
+          elevation: 4,
         }}
         hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
       >
-        <Ionicons name="person" size={18} color={Colors.lavender} />
+        <Ionicons name="person" size={17} color={Colors.lavender} />
       </TouchableOpacity>
     </View>
   );
@@ -122,7 +122,7 @@ const SearchBar = ({
   loading: boolean;
 }) => {
   return (
-    <View className="px-6 py-4">
+    <View className="px-6 pt-1 pb-0">
       <View
         className="flex-row items-center h-14 bg-[#080808] rounded-2xl px-4 border border-white/10"
         style={{
@@ -243,10 +243,10 @@ const OrbitNavigation = ({ onPressMore }: { onPressMore?: () => void }) => {
   ];
 
   return (
-    <View className="px-6 pt-8 pb-8">
+    <View className="px-6 pb-8" style={{ paddingTop: 12 }}>
       <View
-        className="mx-auto mt-6 mb-10 relative"
-        style={{ width: ORBIT_SIZE, height: ORBIT_SIZE }}
+        className="mx-auto mb-10 relative"
+        style={{ width: ORBIT_SIZE, height: ORBIT_SIZE, marginTop: BUTTON_SIZE / 2 }}
       >
         <View
           className="mx-10 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/5 border-dashed"
@@ -261,15 +261,15 @@ const OrbitNavigation = ({ onPressMore }: { onPressMore?: () => void }) => {
         {/* Center hub — elevated medical AI focal point in Electric Lime */}
         <TouchableOpacity
           onPress={() => router.push('/(tabs)/ChatTab')}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-lime rounded-full items-center justify-center border-4 border-[#010101] z-20 px-2 text-center"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-lime rounded-full items-center justify-center border-4 border-[#010101] z-10 px-2 text-center"
           style={{
             width: CENTER_SIZE,
             height: CENTER_SIZE,
             shadowColor: Colors.lime,
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.65,
-            shadowRadius: 20,
-            elevation: 14,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.5,
+            shadowRadius: 12,
+            elevation: 8,
           }}
         >
           <Ionicons name="medical" size={26} color="#010101" />
@@ -602,23 +602,24 @@ export default function Index() {
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
+      {/* Top Header & Search Bar firmly anchored above the scroll content */}
+      <View style={{ backgroundColor: Colors.background, zIndex: 50, elevation: 10 }}>
+        <Header />
+        <SearchBar
+          value={search.query}
+          onChangeText={handleSearchChange}
+          onSubmit={handleSubmit}
+          loading={search.loading}
+        />
+      </View>
+
       <ScrollView
         ref={scrollViewRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerClassName="pb-40"
-        stickyHeaderIndices={[1]}
         keyboardShouldPersistTaps="handled"
       >
-        <Header />
-        <View className="bg-background/95">
-          <SearchBar
-            value={search.query}
-            onChangeText={handleSearchChange}
-            onSubmit={handleSubmit}
-            loading={search.loading}
-          />
-        </View>
         {isSearching ? (
           <SearchResults
             results={search.results}

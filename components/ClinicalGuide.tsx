@@ -141,6 +141,7 @@ export default function ClinicalGuide({ topicData, themeColor, specialtyIllustra
 
 function getIconForSection(title: string): keyof typeof Ionicons.glyphMap {
   const lower = title.toLowerCase();
+  if (lower.includes('definition') || lower.includes('overview') || lower.includes('introduction')) return 'book-outline';
   if (lower.includes('operative step') || lower.includes('surgical technique') || lower.includes('dissection')) return 'cut';
   if (lower.includes('instrument') || lower.includes('equipment') || lower.includes('device') || lower.includes('suture')) return 'hardware-chip';
   if (lower.includes('preoperative') || lower.includes('pre-op') || lower.includes('clearance') || lower.includes('risk')) return 'shield-checkmark';
@@ -157,6 +158,17 @@ function getIconForSection(title: string): keyof typeof Ionicons.glyphMap {
 
 function getSectionCardStyle(title: string, themeColor: string) {
   const lower = title.toLowerCase();
+
+  // Clinical Definition & Overview (Clean Lavender / Indigo)
+  if (lower.includes('definition') || lower.includes('overview') || lower.includes('introduction')) {
+    return {
+      cardBg: 'rgba(219, 212, 253, 0.08)',
+      cardBorder: 'rgba(219, 212, 253, 0.4)',
+      iconBg: 'rgba(219, 212, 253, 0.2)',
+      iconBorder: 'rgba(219, 212, 253, 0.55)',
+      iconColor: '#dbd4fd',
+    };
+  }
 
   // Operative Steps & Techniques (Surgical Cut - Vibrant Mint/Teal)
   if (lower.includes('operative step') || lower.includes('surgical technique') || lower.includes('dissection')) {
@@ -180,18 +192,51 @@ function getSectionCardStyle(title: string, themeColor: string) {
     };
   }
 
-  // Complications & Red Flags / Emergency (Alert - Coral Red)
-  if (lower.includes('complication') || lower.includes('triage') || lower.includes('red flag') || lower.includes('emergency')) {
+  // Clinical Pitfalls & Malpractice Warnings / Critical Alerts (Pastel Rose Pink)
+  if (lower.includes('pitfall') || lower.includes('malpractice') || lower.includes('warning') || lower.includes('complication') || lower.includes('triage') || lower.includes('red flag') || lower.includes('emergency')) {
     return {
-      cardBg: 'rgba(217, 83, 79, 0.08)',
-      cardBorder: 'rgba(217, 83, 79, 0.35)',
-      iconBg: 'rgba(217, 83, 79, 0.2)',
-      iconBorder: 'rgba(217, 83, 79, 0.5)',
-      iconColor: '#e06c75',
+      cardBg: 'rgba(255, 195, 221, 0.08)',
+      cardBorder: 'rgba(255, 195, 221, 0.35)',
+      iconBg: 'rgba(255, 195, 221, 0.2)',
+      iconBorder: 'rgba(255, 195, 221, 0.5)',
+      iconColor: '#ffc3dd',
     };
   }
 
-  // Post-Op Critical Care & ERAS (Pulse - Lavender)
+  // Exact Reference & Guideline Citations / Evidence (Soft Lavender)
+  if (lower.includes('citation') || lower.includes('reference') || lower.includes('guideline') || lower.includes('trial')) {
+    return {
+      cardBg: 'rgba(219, 212, 253, 0.07)',
+      cardBorder: 'rgba(219, 212, 253, 0.35)',
+      iconBg: 'rgba(219, 212, 253, 0.18)',
+      iconBorder: 'rgba(219, 212, 253, 0.5)',
+      iconColor: '#dbd4fd',
+    };
+  }
+
+  // Diagnostic Criteria, Scoring Systems & Workup (Jewel Teal)
+  if (lower.includes('diagnostic') || lower.includes('criteria') || lower.includes('scoring') || lower.includes('scale') || lower.includes('investigation') || lower.includes('workup')) {
+    return {
+      cardBg: 'rgba(109, 194, 189, 0.07)',
+      cardBorder: 'rgba(109, 194, 189, 0.35)',
+      iconBg: 'rgba(109, 194, 189, 0.18)',
+      iconBorder: 'rgba(109, 194, 189, 0.5)',
+      iconColor: '#6dc2bd',
+    };
+  }
+
+  // Pharmacotherapy, Dosing & Medications (Aqua Mint)
+  if (lower.includes('pharmacotherapy') || lower.includes('dosing') || lower.includes('medication') || lower.includes('drug')) {
+    return {
+      cardBg: 'rgba(222, 255, 249, 0.07)',
+      cardBorder: 'rgba(222, 255, 249, 0.35)',
+      iconBg: 'rgba(222, 255, 249, 0.18)',
+      iconBorder: 'rgba(222, 255, 249, 0.5)',
+      iconColor: '#defff9',
+    };
+  }
+
+  // Post-Op Critical Care & ERAS (Soft Lavender)
   if (lower.includes('post-operative') || lower.includes('post-op') || lower.includes('critical care') || lower.includes('eras')) {
     return {
       cardBg: 'rgba(219, 212, 253, 0.07)',
@@ -202,7 +247,7 @@ function getSectionCardStyle(title: string, themeColor: string) {
     };
   }
 
-  // Surgical Instruments & Equipment (Hardware - Jewel Teal)
+  // Surgical Instruments & Equipment (Jewel Teal)
   if (lower.includes('instrument') || lower.includes('equipment') || lower.includes('device') || lower.includes('suture')) {
     return {
       cardBg: 'rgba(109, 194, 189, 0.07)',
@@ -213,36 +258,14 @@ function getSectionCardStyle(title: string, themeColor: string) {
     };
   }
 
-  // Pharmacotherapy & Dosing
-  if (lower.includes('pharmacotherapy') || lower.includes('dosing') || lower.includes('drug')) {
+  // Management Algorithm & Stepwise Protocols (Aqua Mint)
+  if (lower.includes('algorithm') || lower.includes('stepwise') || lower.includes('management') || lower.includes('protocol')) {
     return {
-      cardBg: 'rgba(110, 194, 190, 0.08)',
-      cardBorder: 'rgba(110, 194, 190, 0.35)',
-      iconBg: 'rgba(110, 194, 190, 0.2)',
-      iconBorder: 'rgba(110, 194, 190, 0.5)',
-      iconColor: Colors.accent,
-    };
-  }
-
-  // Pitfalls & Malpractice
-  if (lower.includes('pitfall') || lower.includes('malpractice') || lower.includes('warning')) {
-    return {
-      cardBg: 'rgba(230, 150, 60, 0.08)',
-      cardBorder: 'rgba(230, 150, 60, 0.35)',
-      iconBg: 'rgba(230, 150, 60, 0.2)',
-      iconBorder: 'rgba(230, 150, 60, 0.5)',
-      iconColor: '#f0ad4e',
-    };
-  }
-
-  // Citations & Evidence
-  if (lower.includes('citation') || lower.includes('reference') || lower.includes('guideline')) {
-    return {
-      cardBg: 'rgba(201, 168, 124, 0.06)',
-      cardBorder: 'rgba(201, 168, 124, 0.25)',
-      iconBg: 'rgba(201, 168, 124, 0.15)',
-      iconBorder: 'rgba(201, 168, 124, 0.4)',
-      iconColor: Colors.gold,
+      cardBg: 'rgba(222, 255, 249, 0.07)',
+      cardBorder: 'rgba(222, 255, 249, 0.35)',
+      iconBg: 'rgba(222, 255, 249, 0.18)',
+      iconBorder: 'rgba(222, 255, 249, 0.5)',
+      iconColor: '#defff9',
     };
   }
 

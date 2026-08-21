@@ -151,6 +151,80 @@ export interface Database {
                     }
                 ]
             }
+            devices: {
+                Row: {
+                    id: string
+                    user_id: string
+                    token: string
+                    platform: 'ios' | 'android'
+                    active: boolean
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    token: string
+                    platform: 'ios' | 'android'
+                    active?: boolean
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    token?: string
+                    platform?: 'ios' | 'android'
+                    active?: boolean
+                    created_at?: string
+                    updated_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "devices_user_id_fkey"
+                        columns: ["user_id"]
+                        referencedRelation: "profiles"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
+            user_notifications: {
+                Row: {
+                    id: string
+                    user_id: string
+                    title: string | null
+                    body: string | null
+                    data: Json | null
+                    read: boolean
+                    created_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    title?: string | null
+                    body?: string | null
+                    data?: Json | null
+                    read?: boolean
+                    created_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    title?: string | null
+                    body?: string | null
+                    data?: Json | null
+                    read?: boolean
+                    created_at?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "user_notifications_user_id_fkey"
+                        columns: ["user_id"]
+                        referencedRelation: "profiles"
+                        referencedColumns: ["id"]
+                    }
+                ]
+            }
             drug_database: Database['public']['Tables']['drugs'],
         }
         Views: {

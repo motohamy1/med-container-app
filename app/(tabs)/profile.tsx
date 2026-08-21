@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUserProfile } from '../../hooks/useUserProfile';
+import { usePushToken } from '../../hooks/usePushToken';
 import { Colors } from '../../constants/Colors';
 
 // Types
@@ -242,9 +243,26 @@ const MenuSection = ({
 
 // (Removed local BottomNavigation — global Tabs from app/(tabs)/_layout.tsx provide the tab bar)
 
+// Push token debug indicator (remove in production)
+const PushTokenIndicator = ({ token, error }: { token: string | null; error: string | null }) => {
+  if (!token && !error) return null;
+  return (
+    <View className="px-4 py-2">
+      {error ? (
+        <Text className="text-[10px] text-amber-200">Push: {error}</Text>
+      ) : (
+        <Text className="text-[10px] text-gray-muted" numberOfLines={1} ellipsizeMode="middle">
+          Push token: {token?.substring(0, 20)}...
+        </Text>
+      )}
+    </View>
+  );
+};
+
 // Main Profile Component
 const Profile = () => {
   const { profile, loading } = useUserProfile();
+  const { token: pushToken, error: pushError } = usePushToken();
   const [voiceOutput, setVoiceOutput] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
   const navigation = useNavigation();
@@ -330,6 +348,12 @@ const Profile = () => {
       setVoiceOutput(!voiceOutput);
       Haptics.selectionAsync();
     }
+    if (itemId === 'notifications') {
+      // Future: present the notification preferences / notification center screen.
+      // For now, the Notifications menu item navigates nowhere (reserved for the
+      // notification center that will consume the user_notifications table).
+      Haptics.selectionAsync();
+    }
   };
 
   return (
@@ -346,9 +370,10 @@ const Profile = () => {
         <TopAppBar />
         <ProfileHeader profile={profile} loading={loading} />
         <StatsSection />
+        <PushTokenIndicator token={pushToken} error={pushError} />
         <MenuSection title="My Health" items={healthItems} />
         <MenuSection title="AI Settings" icon="sparkles" items={aiItems} onToggle={handleToggle} />
-        <MenuSection title="General" items={generalItems} />
+        <MenuSection title="General" items={generalItems} onToggle={handleToggle} />
 
         {/* Danger Zone */}
         <View className="p-6 flex-col items-center gap-4 mt-4">

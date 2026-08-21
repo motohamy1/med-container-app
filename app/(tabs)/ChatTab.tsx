@@ -46,6 +46,8 @@ const MOTION = { enter: 250, stagger: 60 } as const;
 const TURQUOISE = Colors.accent;
 const INK = Colors.ink;
 
+import { getDailyPromptBatches, QuickPrompt } from "../../constants/ClinicalPresetsData";
+
 // Types
 type Message = {
   id: string;
@@ -58,141 +60,6 @@ type Message = {
   isError?: boolean;
   failedQuery?: string;
 };
-
-type QuickPrompt = {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  subtitle: string;
-  prompt: string;
-  color: string;
-};
-
-const PROMPT_BATCHES: QuickPrompt[][] = [
-  // Batch 1: Acute Emergencies & Resuscitation
-  [
-    {
-      icon: "heart-outline",
-      title: "ACS Protocol",
-      subtitle: "STEMI vs NSTEMI workup",
-      prompt: "Provide the acute coronary syndrome (ACS) STEMI vs NSTEMI initial emergency workup, diagnostic criteria, and catheterization timing.",
-      color: Colors.pink,
-    },
-    {
-      icon: "flash-outline",
-      title: "Sepsis 1-Hr Bundle",
-      subtitle: "qSOFA & resuscitation",
-      prompt: "Detail the Surviving Sepsis Campaign 1-hour resuscitation bundle, qSOFA scoring, and antibiotic timing.",
-      color: Colors.lime,
-    },
-    {
-      icon: "speedometer-outline",
-      title: "Hypertensive Crisis",
-      subtitle: "Urgency vs emergency BP",
-      prompt: "Explain the management of Hypertensive Urgency vs Emergency, including IV drug choices and target blood pressure reduction rates.",
-      color: Colors.accent,
-    },
-    {
-      icon: "analytics-outline",
-      title: "Liver Scoring",
-      subtitle: "Child-Pugh vs MELD-Na",
-      prompt: "Compare Child-Pugh vs MELD-Na scoring systems for chronic liver failure and surgical mortality risk assessment.",
-      color: Colors.lavender,
-    },
-  ],
-  // Batch 2: Neuro & Pulmonary Care
-  [
-    {
-      icon: "git-network-outline",
-      title: "Acute Stroke Triage",
-      subtitle: "tPA & thrombectomy window",
-      prompt: "Outline the acute ischemic stroke thrombolysis (tPA/TNK) eligibility criteria, BP targets, and endovascular thrombectomy window.",
-      color: Colors.lime,
-    },
-    {
-      icon: "fitness-outline",
-      title: "ARDS Ventilation",
-      subtitle: "6 mL/kg lung protection",
-      prompt: "Detail the ARDS low tidal volume ventilation strategy (6 mL/kg PBW), plateau pressure limits, and driving pressure targets.",
-      color: Colors.accent,
-    },
-    {
-      icon: "flame-outline",
-      title: "DKA Management",
-      subtitle: "Insulin & Potassium protocol",
-      prompt: "Provide the Diabetic Ketoacidosis (DKA) resuscitation protocol, IV insulin infusion titration, and potassium repletion thresholds.",
-      color: Colors.pink,
-    },
-    {
-      icon: "shield-checkmark-outline",
-      title: "Anaphylaxis Dosing",
-      subtitle: "IM Epinephrine algorithm",
-      prompt: "Outline the emergency anaphylaxis algorithm, intramuscular epinephrine 1:1000 dosing, refractory shock IV infusions, and airway rescue.",
-      color: Colors.lavender,
-    },
-  ],
-  // Batch 3: Critical Nephro, Cardio & GI
-  [
-    {
-      icon: "pulse-outline",
-      title: "PE Thrombolysis",
-      subtitle: "Massive vs Submassive PE",
-      prompt: "Explain the risk stratification for Acute Pulmonary Embolism (massive vs submassive), PESI score, and systemic vs catheter-directed thrombolysis indications.",
-      color: Colors.pink,
-    },
-    {
-      icon: "water-outline",
-      title: "Hyperkalemia Shift",
-      subtitle: "Calcium & Insulin protocol",
-      prompt: "Detail the emergent severe hyperkalemia management protocol: cardiac membrane stabilization with Calcium Gluconate, cellular shift with insulin/dextrose, and removal agents.",
-      color: Colors.lime,
-    },
-    {
-      icon: "medkit-outline",
-      title: "Upper GI Bleed",
-      subtitle: "PPI, Octreotide & Scope",
-      prompt: "Detail the initial resuscitation and pharmacotherapy (IV PPI, Octreotide, Ceftriaxone) for acute Upper GI Bleeding and endoscopy timing within 24 hours.",
-      color: Colors.accent,
-    },
-    {
-      icon: "hardware-chip-outline",
-      title: "Status Epilepticus",
-      subtitle: "Benzos & 2nd-line AEDs",
-      prompt: "Outline the emergent status epilepticus treatment ladder: 0-5 min Lorazepam/Midazolam, 5-20 min Levetiracetam/Fosphenytoin, and refractory general anesthesia.",
-      color: Colors.lavender,
-    },
-  ],
-  // Batch 4: Infectious & Cardiopulmonary Triage
-  [
-    {
-      icon: "bandage-outline",
-      title: "Meningitis Workup",
-      subtitle: "LP, Steroids & Antibiotics",
-      prompt: "Detail the acute bacterial meningitis workup: LP timing, empiric Ceftriaxone + Vancomycin + Ampicillin, and Dexamethasone timing before or with 1st antibiotic dose.",
-      color: Colors.lime,
-    },
-    {
-      icon: "warning-outline",
-      title: "Acute Pancreatitis",
-      subtitle: "Fluids & BISAP score",
-      prompt: "Explain the initial management of Acute Pancreatitis: goal-directed Lactated Ringer's resuscitation, BISAP/Ranson risk stratification, and enteral nutrition timing.",
-      color: Colors.pink,
-    },
-    {
-      icon: "radio-outline",
-      title: "Afib Rate Control",
-      subtitle: "Beta-blocker vs Diltiazem",
-      prompt: "Compare initial IV Beta-blocker vs Diltiazem vs Amiodarone for rapid atrial fibrillation rate control, with consideration of HFrEF vs preserved ejection fraction.",
-      color: Colors.accent,
-    },
-    {
-      icon: "help-buoy-outline",
-      title: "Syncope Risk Rules",
-      subtitle: "San Francisco & Canadian",
-      prompt: "Detail the clinical decision rules (San Francisco Syncope Rule and Canadian Syncope Risk Score) for outpatient vs inpatient admission of syncopal episodes.",
-      color: Colors.lavender,
-    },
-  ],
-];
 
 // Medical section config for structured AI rendering — harmonized with 4 main colors (#defff9, #6dc2bd, #dbd4fd, #ffc3dd)
 const SECTION_CONFIG: Record<
@@ -694,27 +561,27 @@ const ChatTab = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [dailyBatches, setDailyBatches] = useState<QuickPrompt[][]>(() => getDailyPromptBatches());
   const [batchIndex, setBatchIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const reducedMotion = useReducedMotion();
   const lastAutoQueryRef = useRef<string | null>(null);
 
-  // Automatically cycle preset prompt batches every 6.5 seconds
+  // Refresh daily batches on mount if calendar day changed
   useEffect(() => {
-    const interval = setInterval(() => {
-      setBatchIndex((prev) => (prev + 1) % PROMPT_BATCHES.length);
-    }, 6500);
-    return () => clearInterval(interval);
+    setDailyBatches(getDailyPromptBatches());
   }, []);
 
   const handleManualShuffle = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {}
-    setBatchIndex((prev) => (prev + 1) % PROMPT_BATCHES.length);
+    if (dailyBatches.length > 0) {
+      setBatchIndex((prev) => (prev + 1) % dailyBatches.length);
+    }
   };
 
-  const activeBatch = PROMPT_BATCHES[batchIndex];
+  const activeBatch = dailyBatches[batchIndex] || dailyBatches[0] || [];
 
   // Header collapses once a conversation starts (question sent or messages present)
   const chatActive = messages.length > 0 || isTyping;
@@ -996,12 +863,12 @@ const ChatTab = () => {
               >
                 <Ionicons name="shuffle" size={12} color={Colors.lime} />
                 <Text className="text-lime text-[10.5px] font-sans-bold">
-                  Cycle {batchIndex + 1}/{PROMPT_BATCHES.length}
+                  Cycle {batchIndex + 1}/{dailyBatches.length}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Dynamic Symmetrical 2-Column Grid (Cycles automatically every 6.5s) */}
+            {/* Dynamic Symmetrical 2-Column Grid (Manually shuffled by user) */}
             <Animated.View
               key={batchIndex}
               entering={reducedMotion ? undefined : FadeInUp.duration(350).easing(EASE_HEAVY)}
@@ -1082,56 +949,11 @@ const ChatTab = () => {
           />
         )}
 
-        {/* Floating Composer Island (With Dynamic Above-Input Suggestion Pill) */}
+        {/* Floating Composer Island */}
         <View
           className="absolute left-4 right-4"
           style={{ bottom: composerBottom }}
         >
-          {/* Dynamic Suggestion Pill Above Composer during active conversation */}
-          {messages.length > 0 && !isTyping && (
-            <Animated.View
-              key={activeBatch[0].title}
-              entering={reducedMotion ? undefined : FadeInUp.duration(300).easing(EASE_HEAVY)}
-              className="mb-2 flex-row items-center justify-between"
-            >
-              <TouchableOpacity
-                onPress={() => handleTextSend(activeBatch[0].prompt)}
-                activeOpacity={0.75}
-                className="flex-row items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0c1017] border border-white/[0.12] flex-1 mr-2"
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.35,
-                  shadowRadius: 6,
-                  elevation: 4,
-                }}
-              >
-                <View
-                  className="w-5 h-5 rounded-full items-center justify-center border"
-                  style={{
-                    backgroundColor: activeBatch[0].color + "20",
-                    borderColor: activeBatch[0].color + "45",
-                  }}
-                >
-                  <Ionicons name={activeBatch[0].icon} size={11} color={activeBatch[0].color} />
-                </View>
-                <Text className="text-gray-300 text-[12px] font-sans flex-1" numberOfLines={1}>
-                  Prompt: <Text className="font-sans-bold text-white">{activeBatch[0].title}</Text>
-                </Text>
-                <Ionicons name="arrow-up" size={12} color={Colors.lime} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={handleManualShuffle}
-                activeOpacity={0.7}
-                className="w-8 h-8 rounded-full bg-[#0c1017] border border-white/[0.12] items-center justify-center"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="shuffle" size={14} color={Colors.lime} />
-              </TouchableOpacity>
-            </Animated.View>
-          )}
-
           <View
             className="flex-row items-center rounded-[28px] px-4 py-2 border border-white/[0.12]"
             style={{

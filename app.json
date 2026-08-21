@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "med-arena",
-    "slug": "med-arena",
+    "name": "Medical Arena",
+    "slug": "medical-arena",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.medarena"
+      "bundleIdentifier": "com.medicalarena.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +20,12 @@
       },
       "softwareKeyboardLayoutMode": "pan",
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.medarena"
+      "package": "com.medicalarena.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "output": "static",
@@ -41,7 +46,6 @@
           }
         }
       ],
-      "expo-av",
       "expo-asset",
       "expo-font",
       "expo-image",
@@ -50,8 +54,13 @@
       "expo-secure-store"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5aab975e-8c37-4390-987c-804b35bff65c"
+      }
     }
   }
 }
