@@ -5,6 +5,8 @@ import {
   Pressable,
   StyleSheet,
   Dimensions,
+  Keyboard,
+  Platform,
 } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -113,6 +115,23 @@ function NotchedTabBar({ state, descriptors, navigation }: any) {
   const bubbleScale = useSharedValue(1);
   const activeIndex = state.index;
 
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      () => setKeyboardVisible(true)
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardVisible(false)
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   const totalTabs = state.routes.length;
   const floatingBottom = insets.bottom > 0 ? insets.bottom : 10;
 
@@ -153,6 +172,10 @@ function NotchedTabBar({ state, descriptors, navigation }: any) {
   });
 
   const activeConfig = TAB_CONFIG[activeIndex] ?? TAB_CONFIG[0];
+
+  if (isKeyboardVisible) {
+    return null;
+  }
 
   return (
     <View

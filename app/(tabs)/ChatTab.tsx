@@ -6,7 +6,6 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Alert,
-  Clipboard,
   FlatList,
   Keyboard,
   KeyboardAvoidingView,
@@ -556,7 +555,19 @@ const ChatTab = () => {
   const DOCK_BAR_HEIGHT = 64;
   const ACTIVE_BUBBLE_OVERFLOW = 16;
   const COMPOSER_CLEARANCE = 14;
-  const composerBottom = floatingBottom + DOCK_BAR_HEIGHT + ACTIVE_BUBBLE_OVERFLOW + COMPOSER_CLEARANCE;
+  
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  const composerBottom = isKeyboardVisible ? 10 : floatingBottom + DOCK_BAR_HEIGHT + ACTIVE_BUBBLE_OVERFLOW + COMPOSER_CLEARANCE;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
@@ -644,9 +655,14 @@ const ChatTab = () => {
     };
   }, []);
 
-  const handleCopyText = (text: string) => {
-    Clipboard.setString(text);
-    Alert.alert("Copied", "Clinical response copied to clipboard.");
+  const handleCopyText = async (text: string) => {
+    try {
+      const Clipboard = await import('expo-clipboard');
+      await Clipboard.setStringAsync(text);
+      Alert.alert("Copied", "Clinical response copied to clipboard.");
+    } catch {
+      Alert.alert("Copy", "Unable to copy text.");
+    }
   };
 
   const handleTextSend = async (queryOverride?: string) => {

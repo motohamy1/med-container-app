@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
-  Clipboard,
   FlatList,
   Keyboard,
   Text,
@@ -191,10 +190,15 @@ export default function TopicChat({
     return () => keyboardShowListener.remove();
   }, []);
 
-  const handleCopyText = (text: string) => {
-    Clipboard.setString(text);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert("Copied", "Clinical response copied to clipboard.");
+  const handleCopyText = async (text: string) => {
+    try {
+      const Clipboard = await import('expo-clipboard');
+      await Clipboard.setStringAsync(text);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Copied", "Clinical response copied to clipboard.");
+    } catch {
+      Alert.alert("Copy", "Unable to copy text.");
+    }
   };
 
   const handleTextSend = async (queryOverride?: string) => {

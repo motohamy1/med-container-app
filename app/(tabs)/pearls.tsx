@@ -917,6 +917,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 12,
     borderWidth: 1,
+    flexShrink: 0,
   },
   specialtyPillText: {
     fontSize: 10,
@@ -932,7 +933,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
-    maxWidth: 140,
+    maxWidth: 160,
+    flexShrink: 1,
   },
   metricBadgeText: {
     fontSize: 9.5,

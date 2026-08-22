@@ -9,6 +9,9 @@ type Props = {
   fontSize?: number;
 };
 
+// Regex to detect RTL characters (Arabic, Hebrew, etc.)
+const rtlRegex = /[\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+
 /**
  * Parses inline markdown: **bold text**, [1] or 【1】 citations, and regular text
  */
@@ -92,6 +95,10 @@ export default function FormattedClinicalText({
           return <View key={`empty-${lineIndex}`} style={styles.paragraphSpacer} />;
         }
 
+        const isRTL = rtlRegex.test(line);
+        const textAlign = isRTL ? 'right' : 'left';
+        const writingDirection = isRTL ? 'rtl' : 'ltr';
+
         // Bullet point: • or - or *
         const bulletMatch = line.match(/^([•\-\*]|\d+\.)\s+(.*)$/);
         if (bulletMatch) {
@@ -99,16 +106,23 @@ export default function FormattedClinicalText({
           const content = bulletMatch[2];
 
           return (
-            <View key={`line-${lineIndex}`} style={styles.bulletRow}>
+            <View key={`line-${lineIndex}`} style={[styles.bulletRow, isRTL && { flexDirection: 'row-reverse' }]}>
               <Text
                 style={[
                   styles.bulletSymbol,
-                  { color: themeColor, fontSize: bulletSymbol === '•' ? fontSize + 4 : fontSize - 1 }
+                  { 
+                    color: themeColor, 
+                    fontSize: bulletSymbol === '•' ? fontSize + 4 : fontSize - 1,
+                    textAlign: isRTL ? 'right' : 'left',
+                    marginLeft: isRTL ? 8 : 0,
+                    marginRight: isRTL ? 0 : 8,
+                    width: 'auto',
+                  }
                 ]}
               >
                 {bulletSymbol}
               </Text>
-              <Text style={[styles.bulletText, { fontSize, lineHeight: fontSize * 1.55 }]}>
+              <Text style={[styles.bulletText, { fontSize, lineHeight: fontSize * 1.55, textAlign, writingDirection }]}>
                 {renderInlineContent(content, `b-${lineIndex}`, themeColor, baseColor, fontSize)}
               </Text>
             </View>
@@ -118,8 +132,8 @@ export default function FormattedClinicalText({
         // Subheader line (e.g. "Initial Workup:" or starts with bold heading on single line)
         if (line.endsWith(':') && line.length < 50) {
           return (
-            <View key={`line-${lineIndex}`} style={styles.subHeaderRow}>
-              <Text style={[styles.subHeaderText, { color: themeColor, fontSize: fontSize + 0.5 }]}>
+            <View key={`line-${lineIndex}`} style={[styles.subHeaderRow, isRTL && { alignItems: 'flex-end' }]}>
+              <Text style={[styles.subHeaderText, { color: themeColor, fontSize: fontSize + 0.5, textAlign, writingDirection }]}>
                 {line}
               </Text>
             </View>
@@ -137,6 +151,8 @@ export default function FormattedClinicalText({
                 fontSize,
                 lineHeight: fontSize * 1.55,
                 marginBottom: 6,
+                textAlign,
+                writingDirection
               }
             ]}
           >
@@ -162,8 +178,6 @@ const styles = StyleSheet.create({
     paddingRight: 6,
   },
   bulletSymbol: {
-    width: 16,
-    textAlign: 'left',
     marginTop: -1,
     fontFamily: 'PlexSans_700Bold',
   },

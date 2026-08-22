@@ -1,5 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { SPECIALTY_KNOWLEDGE, TopicSearchResult } from '../constants/SpecialtyData';
+import { SPECIALTY_KNOWLEDGE } from '../constants/SpecialtyData';
+import type { TopicSearchResult } from '../constants/SpecialtyData';
 
 const BACKEND_URL =
   process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3001';
@@ -49,9 +49,9 @@ Critical warnings, malpractice traps, and contraindicated combinations.
 /**
  * Direct Groq API execution (Fast inference)
  */
-async function callGroqDirect(prompt: string): Promise<string | null> {
+async function callGroqDirect(prompt: string, context?: string): Promise<string | null> {
   if (!GROQ_KEY) return null;
-  const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+  const models = ['groq/compound', 'qwen/qwen3.6-27b'];
 
   for (const model of models) {
     try {
@@ -64,7 +64,7 @@ async function callGroqDirect(prompt: string): Promise<string | null> {
         body: JSON.stringify({
           model,
           messages: [
-            { role: 'system', content: CLINICAL_SYSTEM_PROMPT },
+            { role: 'system', content: CLINICAL_SYSTEM_PROMPT + (context ? `\n\nDATABASE CONTEXT TO USE:\n${context}` : '') },
             { role: 'user', content: prompt },
           ],
           temperature: 0.2,
@@ -89,21 +89,49 @@ async function callGroqDirect(prompt: string): Promise<string | null> {
 /**
  * Direct Gemini API execution
  */
-async function callGeminiDirect(prompt: string): Promise<string | null> {
+async function callGeminiDirect(prompt: string, context?: string): Promise<string | null> {
   if (!GEMINI_KEY) return null;
   try {
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(GEMINI_KEY);
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-3.1-pro-preview',
       generationConfig: { temperature: 0.2, maxOutputTokens: 3500 },
     });
-    const fullPrompt = `${CLINICAL_SYSTEM_PROMPT}\n\nCLINICAL QUESTION:\n${prompt}`;
+    const fullPrompt = `${CLINICAL_SYSTEM_PROMPT}${context ? `\n\nDATABASE CONTEXT TO USE:\n${context}` : ''}\n\nCLINICAL QUESTION:\n${prompt}`;
     const result = await model.generateContent(fullPrompt);
     return result.response.text().trim();
   } catch (err) {
     console.warn('[Direct Gemini]', err);
     return null;
   }
+}
+
+function findLocalContext(query: string): string | null {
+  const q = query.toLowerCase();
+  let matchedTopic: any = null;
+
+  for (const spec of Object.values(SPECIALTY_KNOWLEDGE)) {
+    for (const cat of spec.categories || []) {
+      for (const topic of cat.topics || []) {
+        if (q.includes(topic.title.toLowerCase()) || topic.title.toLowerCase().includes(q)) {
+          matchedTopic = topic;
+          break;
+        }
+      }
+      if (matchedTopic) break;
+    }
+    if (matchedTopic) break;
+  }
+
+  if (matchedTopic && matchedTopic.clinicalContent) {
+    let sectionsText = '';
+    matchedTopic.clinicalContent.forEach((s: any) => {
+      sectionsText += `## ${s.title.toUpperCase()} ##\n${s.content}\n\n`;
+    });
+    return sectionsText;
+  }
+  return null;
 }
 
 /**
@@ -206,8 +234,11 @@ export const aiService = {
       // Backend not available or timed out — fallback to direct cloud AI
     }
 
+    // Determine RAG context for direct calls
+    const resolvedContext = categoryContext || findLocalContext(message) || undefined;
+
     // 2. Try Direct Groq API
-    const groqReply = await callGroqDirect(message);
+    const groqReply = await callGroqDirect(message, resolvedContext);
     if (groqReply) {
       let suggestions: string[] = [];
       let replyText = groqReply;
@@ -223,7 +254,7 @@ export const aiService = {
     }
 
     // 3. Try Direct Gemini API
-    const geminiReply = await callGeminiDirect(message);
+    const geminiReply = await callGeminiDirect(message, resolvedContext);
     if (geminiReply) {
       let suggestions: string[] = [];
       let replyText = geminiReply;

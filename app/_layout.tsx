@@ -11,12 +11,48 @@ import {
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
+import { View, Text } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./global.css";
 
-SplashScreen.preventAutoHideAsync();
+// Catch any splash screen error in release APK
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
+// ---------------------------------------------------------------------------
+// ErrorBoundary — prevents white-screen-of-death on production APK
+// ---------------------------------------------------------------------------
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, backgroundColor: "#010101", justifyContent: "center", alignItems: "center", padding: 24 }}>
+          <Text style={{ color: "#ffc3dd", fontSize: 20, fontWeight: "700", marginBottom: 12 }}>
+            Medical Arena
+          </Text>
+          <Text style={{ color: "#999", fontSize: 14, textAlign: "center" }}>
+            Something went wrong. Please restart the app.
+          </Text>
+          <Text style={{ color: "#555", fontSize: 11, textAlign: "center", marginTop: 8 }}>
+            {this.state.error?.message || "Unknown error"}
+          </Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -29,33 +65,32 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 1500);
+
     if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
+      clearTimeout(timer);
+      SplashScreen.hideAsync().catch(() => {});
     }
+
+    return () => clearTimeout(timer);
   }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
-
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <Stack
-          screenOptions={{
-            contentStyle: {backgroundColor: "transparent"},
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="heart/index" options={{ headerShown: false }} />
-          <Stack.Screen name="git/index" options={{ headerShown: false }} />
-          <Stack.Screen name="fever/index" options={{ headerShown: false }} />
-          <Stack.Screen name="neuro/index" options={{ headerShown: false }} />
-          <Stack.Screen name="skin/index" options={{ headerShown: false }} />
-          <Stack.Screen name="gynacology/index" options={{ headerShown: false }} />
-          <Stack.Screen name="lungs/index" options={{ headerShown: false }} />
-        </Stack>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#010101" }}>
+        <SafeAreaProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: "#010101" },
+              animation: "fade",
+            }}
+          />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
+
