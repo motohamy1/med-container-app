@@ -17,7 +17,7 @@ import { Colors } from '../../constants/Colors';
 import { TopicSearchResult } from '../../constants/SpecialtyData';
 import { dbService } from '../../services/dbService';
 import { SurgicalOrbitSection } from '../../components/SurgicalOrbitSection';
-import { ExpandedSpecialtiesGrid } from '../../components/ExpandedSpecialtiesGrid';
+import { ExpandedMedicalOrbitSection } from '../../components/ExpandedMedicalOrbitSection';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ORBIT_SIZE = Math.min(SCREEN_WIDTH * 0.78, 300);
@@ -239,7 +239,7 @@ const OrbitNavigation = ({ onPressMore }: { onPressMore?: () => void }) => {
     { id: '5', name: 'Dermatology', icon: 'body', color: Colors.specialty.dermatology },
     { id: '6', name: 'OB/GYN', icon: 'woman', color: Colors.specialty.obgyn },
     { id: '7', name: 'Pulmonology', icon: 'fitness', color: Colors.specialty.pulmonology },
-    { id: '8', name: 'More', icon: 'grid', color: Colors.specialty.more },
+    { id: '8', name: 'More Medicine', icon: 'grid', color: Colors.specialty.more },
   ];
 
   return (
@@ -592,7 +592,7 @@ export default function Index() {
   }, [runSearch, search.query]);
 
   const handlePressMore = useCallback(() => {
-    // Scrolls down smoothly to the rounded cards section for expanded specialties
+    // Scrolls down smoothly to the second medical specialties orbit wheel
     scrollViewRef.current?.scrollTo({ y: gridYRef.current || 850, animated: true });
   }, []);
 
@@ -631,12 +631,12 @@ export default function Index() {
         ) : (
           <>
             <OrbitNavigation onPressMore={handlePressMore} />
-            <SurgicalOrbitSection />
-            <ExpandedSpecialtiesGrid
+            <ExpandedMedicalOrbitSection
               onLayout={(e) => {
                 gridYRef.current = e.nativeEvent.layout.y;
               }}
             />
+            <SurgicalOrbitSection />
           </>
         )}
       </ScrollView>

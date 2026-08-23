@@ -213,8 +213,7 @@ ${medicalKnowledgeContext}
    - Each suggestion must start with '•'.
    - Suggestions should be realistic next clinical questions a doctor or student would ask (e.g. next-line therapy, emergency signs, complication management, dosing).
 
-5. **LANGUAGE**:
-   - Match the user's language (English or Arabic). Keep international drug names, scores, and medical acronyms in standard English.
+6. **NO INTERNAL THINKING**: Do NOT output your internal reasoning process, thoughts, or planning steps. Start immediately with the themed sections. Output ONLY the clinical content.
 
 ${topicId && topicId !== 'general' ? `
 CRITICAL TOPIC SCOPE: You are operating within topic ID: "${topicId}".

@@ -14,6 +14,16 @@ const aiModel = genAI ? genAI.getGenerativeModel({
     }
 }) : null;
 
+function cleanText(text) {
+    if (!text) return "";
+    return text
+        .replace(/<think>[\s\S]*?<\/think>/gi, '')
+        .replace(/<thought>[\s\S]*?<\/thought>/gi, '')
+        .replace(/^Thinking Process:[\s\S]*?\n\n/i, '')
+        .replace(/^Here's a thinking process:[\s\S]*?\n\n/i, '')
+        .trim();
+}
+
 async function executeAI(systemPrompt, userPrompt) {
     let lastError = null;
 
@@ -41,9 +51,7 @@ async function executeAI(systemPrompt, userPrompt) {
                 if (response.ok) {
                     const data = await response.json();
                     if (data.choices && data.choices[0] && data.choices[0].message) {
-                        let text = data.choices[0].message.content.trim();
-                        text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
-                        return text;
+                        return cleanText(data.choices[0].message.content);
                     }
                 }
             } catch (groqErr) {
@@ -57,8 +65,8 @@ async function executeAI(systemPrompt, userPrompt) {
         try {
             const fullPrompt = `${systemPrompt}\n\nUSER QUERY:\n${userPrompt}`;
             const result = await aiModel.generateContent(fullPrompt);
-            const text = result.response.text().trim();
-            if (text) return text;
+            const text = result.response.text();
+            if (text) return cleanText(text);
         } catch (err) {
             lastError = err;
             console.warn(`[AI Router] Gemini failed: ${err.message.substring(0, 100)}...`);
@@ -87,7 +95,7 @@ async function executeAI(systemPrompt, userPrompt) {
             if (response.ok) {
                 const data = await response.json();
                 if (data.choices && data.choices[0] && data.choices[0].message) {
-                    return data.choices[0].message.content.trim();
+                    return cleanText(data.choices[0].message.content);
                 }
             }
         } catch (fetchErr) {
@@ -116,7 +124,7 @@ async function executeAI(systemPrompt, userPrompt) {
             if (response.ok) {
                 const data = await response.json();
                 if (data.choices && data.choices[0] && data.choices[0].message) {
-                    return data.choices[0].message.content.trim();
+                    return cleanText(data.choices[0].message.content);
                 }
             }
         } catch (fetchErr) {

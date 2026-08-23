@@ -10,10 +10,10 @@ type Props = {
 };
 
 // Regex to detect RTL characters (Arabic, Hebrew, etc.)
-const rtlRegex = /[\u0591-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+const rtlRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
 
 /**
- * Parses inline markdown: **bold text**, [1] or 【1】 citations, and regular text
+ * Parses inline markdown: **bold text**, [1] or citation, and regular text
  */
 function renderInlineContent(
   line: string,
@@ -22,9 +22,16 @@ function renderInlineContent(
   baseColor: string,
   fontSize: number
 ) {
+  // First, strip accidentally generated table syntax (pipes and dashes used for tables)
+  const sanitized = line
+    .replace(/\|\s*[-:]+\s*\|/g, "") // remove |---| rows
+    .replace(/\|\s*$/g, "")          // remove trailing |
+    .replace(/^\s*\|/g, "")          // remove leading |
+    .trim();
+
   // Regex to match **bold** or citations like [1], [2], 【1】, etc.
   const regex = /(\*\*.*?\*\*|\[\d+\]|【\d+】)/g;
-  const parts = line.split(regex);
+  const parts = sanitized.split(regex);
 
   return parts.map((part, index) => {
     if (!part) return null;
@@ -81,8 +88,15 @@ export default function FormattedClinicalText({
 
   // Clean raw artifacts
   const cleaned = text
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<thought>[\s\S]*?<\/thought>/gi, '')
+    .replace(/^Thinking Process:[\s\S]*?\n\n/i, '')
+    .replace(/^Here's a thinking process:[\s\S]*?\n\n/i, '')
     .replace(/##END##/gi, '')
     .replace(/【(\d+)】/g, '[$1]')
+    .replace(/^\s*\|/gm, "") // Strip leading pipes from table leftovers
+    .replace(/\|\s*$/gm, "") // Strip trailing pipes
+    .replace(/^#+\s*/gm, "") // Strip leading # markers (e.g. ### from headers)
     .trim();
 
   const lines = cleaned.split('\n');
@@ -91,7 +105,8 @@ export default function FormattedClinicalText({
     <View style={styles.container}>
       {lines.map((rawLine, lineIndex) => {
         const line = rawLine.trim();
-        if (!line) {
+        if (!line || line.match(/^[-:| ]+$/)) {
+          // Skip empty lines or pure table separators
           return <View key={`empty-${lineIndex}`} style={styles.paragraphSpacer} />;
         }
 
@@ -99,7 +114,7 @@ export default function FormattedClinicalText({
         const textAlign = isRTL ? 'right' : 'left';
         const writingDirection = isRTL ? 'rtl' : 'ltr';
 
-        // Bullet point: • or - or *
+        // Bullet point: • or - or * or digit.
         const bulletMatch = line.match(/^([•\-\*]|\d+\.)\s+(.*)$/);
         if (bulletMatch) {
           const bulletSymbol = bulletMatch[1].includes('.') ? bulletMatch[1] : '•';
@@ -114,7 +129,7 @@ export default function FormattedClinicalText({
                     color: themeColor, 
                     fontSize: bulletSymbol === '•' ? fontSize + 4 : fontSize - 1,
                     textAlign: isRTL ? 'right' : 'left',
-                    marginLeft: isRTL ? 8 : 0,
+                    marginLeft: isRTL ? 12 : 0,
                     marginRight: isRTL ? 0 : 8,
                     width: 'auto',
                   }

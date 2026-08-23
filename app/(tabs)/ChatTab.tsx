@@ -153,16 +153,41 @@ function parseMedicalSections(text: string): {
   sections: MedicalSection[];
   plainText: string;
 } {
-  const parts = text.split(/##(.*?)##/);
+  // Enhanced split that catches ##SECTION: HEADING##, ##HEADING##, or ### HEADING
+  // and allows for missing trailing markers
+  const parts = text.split(/(?:##(?:SECTION:\s*)?(.*?)##|###\s*(SECTION:\s*)?(.*?)\n)/gi);
   const sections: MedicalSection[] = [];
+
+  // Initial plain text before any section markers
   let plainText = parts[0]?.trim() || "";
 
-  for (let i = 1; i < parts.length; i += 2) {
-    const heading = parts[i]?.trim();
-    let content = parts[i + 1] || "";
+  // The regex above creates multiple capture groups, so we need a more flexible loop
+  // Or we can use a simpler approach: finding all occurrences of markers
+  const markers = Array.from(text.matchAll(/(?:##(?:SECTION:\s*)?(.*?)##|###\s*(SECTION:\s*)?(.*?)(?:\n|$))/gi));
+
+  if (markers.length === 0) {
+    return { hasSections: false, sections: [], plainText: text };
+  }
+
+  plainText = text.substring(0, markers[0].index).trim();
+
+  for (let i = 0; i < markers.length; i++) {
+    const currentMarker = markers[i];
+    // heading is either in group 1 (for ## format) or group 3 (for ### format)
+    let heading = (currentMarker[1] || currentMarker[3] || "").trim();
+
+    const start = currentMarker.index! + currentMarker[0].length;
+    const end = markers[i + 1] ? markers[i + 1].index : text.length;
+    let content = text.substring(start, end).trim();
+
+    // Clean up heading
+    heading = heading.replace(/[:#]/g, "").trim();
+
+    // Clean up content
     content = content.replace(/##END##/gi, "").trim();
 
-    if (heading && heading !== "END" && heading !== "SUGGESTIONS") {
+    const skipKeywords = ["END", "SUGGESTIONS", "GREETING"];
+    if (heading && !skipKeywords.includes(heading.toUpperCase())) {
       sections.push({ heading, content });
     }
   }
@@ -484,7 +509,7 @@ const ChatBubble: React.FC<{
             <Text className="text-gray-400 text-[11px] font-sans-bold uppercase tracking-widest mb-2.5 ml-1">
               <Ionicons name="sparkles" size={12} color={TURQUOISE} /> Suggested Follow-Up Inquiries
             </Text>
-            <View className="flex-row flex-wrap gap-2">
+            <View className="flex-col gap-2">
               {message.suggestions.map((sug, sIdx) => (
                 <TouchableOpacity
                   key={`tab-sug-${sIdx}`}
@@ -493,7 +518,7 @@ const ChatBubble: React.FC<{
                   className="flex-row items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-[#0c1214] border border-turquoise/30 active:opacity-60"
                 >
                   <Ionicons name="arrow-forward-circle" size={14} color={TURQUOISE} />
-                  <Text className="text-gray-200 text-xs font-sans-medium leading-4 flex-shrink">
+                  <Text className="text-gray-200 text-xs font-sans-medium leading-4 flex-1">
                     {sug}
                   </Text>
                 </TouchableOpacity>
@@ -552,22 +577,32 @@ const ChatTab = () => {
   const params = useLocalSearchParams<{ query?: string; autoSend?: string }>();
   const insets = useSafeAreaInsets();
   const floatingBottom = insets.bottom > 0 ? insets.bottom : 10;
-  const DOCK_BAR_HEIGHT = 64;
-  const ACTIVE_BUBBLE_OVERFLOW = 16;
+  const DOCK_BAR_HEIGHT = 68;
+  const ACTIVE_BUBBLE_OVERFLOW = 0; // Removed overflow to eliminate gap with glassy tab bar
   const COMPOSER_CLEARANCE = 14;
   
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
-    const showSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => setKeyboardVisible(true));
-    const hideSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardVisible(false));
+    const showSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => {
+      setKeyboardVisible(true);
+      // Small delay to allow layout to settle before scrolling
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
+    });
+    const hideSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => {
+      setKeyboardVisible(false);
+      // Ensure we scroll to the very end when the viewport expands back
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
+    });
     return () => {
       showSub.remove();
       hideSub.remove();
     };
   }, []);
 
-  const composerBottom = isKeyboardVisible ? 10 : floatingBottom + DOCK_BAR_HEIGHT + ACTIVE_BUBBLE_OVERFLOW + COMPOSER_CLEARANCE;
+  const composerBottom = isKeyboardVisible
+    ? 12
+    : floatingBottom + DOCK_BAR_HEIGHT + ACTIVE_BUBBLE_OVERFLOW + COMPOSER_CLEARANCE;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
@@ -672,6 +707,11 @@ const ChatTab = () => {
     setIsTyping(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
+    // Scroll to end immediately when user sends a message
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: query,
@@ -684,7 +724,14 @@ const ChatTab = () => {
     setMessages((prev) => [...prev, userMessage]);
 
     try {
-      const { reply, citations, suggestions } = await aiService.sendMessageByText(query, "general", "physicians");
+      const { reply, citations, suggestions } = await aiService.sendMessageByText(
+        query,
+        "general",
+        "physicians",
+        undefined,
+        undefined,
+        messages.map(m => ({ text: m.text, isUser: m.isUser }))
+      );
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: reply,
@@ -820,7 +867,8 @@ const ChatTab = () => {
 
       {/* Main Chat Body & Empty State */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         className="flex-1 bg-[#010101]"
         style={{ backgroundColor: "#010101" }}
       >
@@ -951,7 +999,7 @@ const ChatTab = () => {
             ListFooterComponent={isTyping ? <ThinkingIndicator /> : null}
             contentContainerStyle={{
               paddingTop: 24,
-              paddingBottom: composerBottom + 110,
+              paddingBottom: composerBottom + 150, // Further increased clearance
               flexGrow: 1,
               backgroundColor: "#010101",
             }}
