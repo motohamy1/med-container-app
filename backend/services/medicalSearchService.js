@@ -34,20 +34,53 @@ async function fetchMedicalKnowledge(query) {
     }
 }
 
+function isRelevantLiterature(ref, queryKeywords) {
+    if (!ref || !ref.title) return false;
+    const combinedText = `${ref.title} ${ref.abstract || ''}`.toLowerCase();
+    
+    // Break query keywords into meaningful tokens (exclude common stop words)
+    const stopWords = new Set(['and', 'the', 'for', 'with', 'under', 'over', 'from', 'what', 'how', 'when', 'which', 'latest', 'recent', 'only', 'guideline', 'guidelines']);
+    const tokens = queryKeywords
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, ' ')
+        .split(/\s+/)
+        .filter(t => t.length > 2 && !stopWords.has(t));
+    
+    if (tokens.length === 0) return true;
+    
+    // Check if at least one key disease/concept token matches the title or abstract
+    const matches = tokens.filter(tok => {
+        // Handle variations like pylori -> pylori/pyloridis, child -> child/children/pediatric
+        if (tok === 'pylori' || tok === 'helicobacter') return combinedText.includes('pylori') || combinedText.includes('helicobacter');
+        if (tok.startsWith('child') || tok.startsWith('pediatr')) return combinedText.includes('child') || combinedText.includes('pediatr') || combinedText.includes('adolesc');
+        return combinedText.includes(tok);
+    });
+
+    return matches.length >= Math.min(2, tokens.length);
+}
+
 async function fetchClinicalLiterature(query, specialtyId) {
     try {
-        let categoryFilter = specialtyId ? ` AND (${specialtyId})` : '';
-        let evidenceFilter = '(PUB_TYPE:"Systematic Review" OR PUB_TYPE:"Meta-Analysis" OR PUB_TYPE:"Practice Guideline")';
+        // Sanitize specialtyId: Ignore generic user roles like 'physicians', 'dentists', 'nurses', 'general'
+        const validSpecialties = ['cardiology', 'pulmonology', 'gastroenterology', 'neurology', 'pediatrics', 'dermatology', 'infectious', 'endocrinology', 'nephrology', 'oncology', 'rheumatology'];
+        const isSpecificSpecialty = specialtyId && validSpecialties.includes(specialtyId.toLowerCase());
+        let categoryFilter = isSpecificSpecialty ? ` AND (${specialtyId})` : '';
+        let evidenceFilter = '(PUB_TYPE:"Systematic Review" OR PUB_TYPE:"Meta-Analysis" OR PUB_TYPE:"Practice Guideline" OR PUB_TYPE:"Review" OR PUB_TYPE:"Clinical Trial")';
 
-        // 1. Europe PMC (Aggregates PubMed, PMC, Guidelines)
-        const fetchPMC = async (sortMode) => {
+        // 1. Europe PMC (Aggregates PubMed, PMC, Guidelines, Systematic Reviews)
+        const fetchPMC = async (sortParam, isRecentOnly = false) => {
             try {
-                const enhancedQuery = `(${query})${categoryFilter} AND ${evidenceFilter} ${sortMode}`;
+                const currentYear = new Date().getFullYear();
+                const yearFilter = isRecentOnly ? ` AND (PUB_YEAR:[${currentYear - 2} TO ${currentYear}])` : '';
+                // Ensure query terms are clean and not enclosed in broken syntax
+                const cleanQuery = query.replace(/[()]/g, ' ').trim();
+                const enhancedQuery = `(${cleanQuery})${categoryFilter} AND ${evidenceFilter}${yearFilter}`;
                 const url = new URL('https://www.ebi.ac.uk/europepmc/webservices/rest/search');
                 url.searchParams.append('query', enhancedQuery);
                 url.searchParams.append('format', 'json');
                 url.searchParams.append('resultType', 'core');
-                url.searchParams.append('pageSize', '2'); 
+                url.searchParams.append('pageSize', '4');
+                url.searchParams.append('sort', sortParam);
                 
                 const response = await fetch(url.toString());
                 if (!response.ok) return [];
@@ -57,19 +90,22 @@ async function fetchClinicalLiterature(query, specialtyId) {
                 return results.map(r => ({
                     source: 'Europe PMC / PubMed',
                     title: r.title,
+                    author: r.authorString || 'Medical Consensus Group',
                     journal: r.journalTitle || r.pubType || 'Medical Journal',
-                    year: r.pubYear,
+                    year: r.pubYear ? r.pubYear.toString() : 'Recent',
+                    url: r.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${r.pmid}/` : (r.doi ? `https://doi.org/${r.doi}` : `https://europepmc.org/article/MED/${r.id}`),
                     abstract: r.abstractText ? r.abstractText.replace(/<\/?(?:b|i|p|sup|sub)>/g, '') : '',
-                    type: sortMode.includes('sort_date') ? 'Latest Research' : 'Highly Cited Foundation'
-                })).filter(r => r.abstract);
+                    type: isRecentOnly ? 'Latest Evidence / Update (2024+)' : 'Landmark Guideline / Consensus'
+                })).filter(r => r.abstract && isRelevantLiterature(r, cleanQuery));
             } catch { return []; }
         };
 
         // 2. ClinicalTrials.gov (Latest ongoing/completed trials)
         const fetchTrials = async () => {
             try {
+                const cleanQuery = query.replace(/[()]/g, ' ').trim();
                 const url = new URL('https://clinicaltrials.gov/api/v2/studies');
-                url.searchParams.append('query.cond', query);
+                url.searchParams.append('query.cond', cleanQuery);
                 url.searchParams.append('pageSize', '2');
                 url.searchParams.append('sort', 'LastUpdatePostDate:desc'); // Get latest
                 
@@ -80,24 +116,27 @@ async function fetchClinicalLiterature(query, specialtyId) {
                 
                 return studies.map(s => {
                     const protocol = s.protocolSection || {};
+                    const nctId = protocol.identificationModule?.nctId || '';
                     return {
                         source: 'ClinicalTrials.gov',
                         title: protocol.identificationModule?.briefTitle || 'Clinical Trial',
-                        journal: 'ClinicalTrials Registry',
+                        author: protocol.sponsorCollaboratorsModule?.leadSponsor?.name || 'Clinical Research Sponsor',
+                        journal: 'ClinicalTrials.gov Registry',
                         year: protocol.statusModule?.lastUpdateSubmitDate?.split('-')[0] || 'Recent',
+                        url: nctId ? `https://clinicaltrials.gov/study/${nctId}` : 'https://clinicaltrials.gov',
                         abstract: protocol.descriptionModule?.briefSummary || 'Clinical trial investigating the condition or intervention.',
                         type: 'Clinical Trial / Experimental'
                     };
-                });
+                }).filter(r => isRelevantLiterature(r, cleanQuery));
             } catch { return []; }
         };
 
         // 3. OpenFDA (Drug labels, warnings)
         const fetchFDA = async () => {
             try {
-                // We use generic search across indications and generic names
+                const cleanQuery = query.replace(/[()]/g, ' ').trim();
                 const url = new URL('https://api.fda.gov/drug/label.json');
-                url.searchParams.append('search', `indications_and_usage:"${query}" OR generic_name:"${query}"`);
+                url.searchParams.append('search', `indications_and_usage:"${cleanQuery}" OR generic_name:"${cleanQuery}"`);
                 url.searchParams.append('limit', '1');
                 
                 const response = await fetch(url.toString());
@@ -108,23 +147,26 @@ async function fetchClinicalLiterature(query, specialtyId) {
                 return results.map(r => ({
                     source: 'OpenFDA (FDA.gov)',
                     title: `FDA Label: ${r.openfda?.brand_name?.[0] || r.openfda?.generic_name?.[0] || 'Drug'}`,
+                    author: 'U.S. FDA Center for Drug Evaluation',
                     journal: 'FDA Official Labeling',
                     year: r.effective_time?.substring(0,4) || 'Current',
+                    url: 'https://www.accessdata.fda.gov/scripts/cder/daf/',
                     abstract: `INDICATIONS: ${r.indications_and_usage?.[0] || 'N/A'}\nWARNINGS: ${r.boxed_warning?.[0] || r.warnings?.[0] || 'No boxed warnings.'}`,
                     type: 'Official FDA Data'
-                }));
+                })).filter(r => isRelevantLiterature(r, cleanQuery));
             } catch { return []; }
         };
 
-        const [pmcLatest, pmcCited, trials, fda] = await Promise.all([
-            fetchPMC('sort_date:y'),
-            fetchPMC('sort_cited:y'),
+        const [pmcLatest, pmcFoundational, trials, fda] = await Promise.all([
+            fetchPMC('P_PD_D desc', true), // Explicit recent 2024+ sort
+            fetchPMC('CITED desc', false),  // Foundational consensus
             fetchTrials(),
             fetchFDA()
         ]);
 
-        const allRefs = [...pmcCited, ...pmcLatest, ...trials, ...fda];
-        return allRefs.slice(0, 5); // Limit total context size to prevent overloading LLM
+        // Prioritize newest 2024+ evidence first, followed by foundational consensus
+        const allRefs = [...pmcLatest, ...pmcFoundational, ...trials, ...fda];
+        return allRefs.slice(0, 6); // Limit total context size
     } catch {
         return [];
     }

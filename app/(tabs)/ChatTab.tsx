@@ -65,6 +65,24 @@ const SECTION_CONFIG: Record<
   string,
   { color: string; border: string; icon: keyof typeof Ionicons.glyphMap; label: string }
 > = {
+  "EMERGENCY PROTOCOL & IMMEDIATE ACTION": {
+    color: Colors.pink,
+    border: "rgba(255, 195, 221, 0.45)",
+    icon: "alert-circle-outline",
+    label: "Emergency Protocol & Action",
+  },
+  "DIAGNOSTIC CRITERIA & SCORING": {
+    color: Colors.teal,
+    border: "rgba(109, 194, 189, 0.45)",
+    icon: "checkbox-outline",
+    label: "Diagnostic Criteria & Scoring",
+  },
+  "DIAGNOSTIC CRITERIA": {
+    color: Colors.teal,
+    border: "rgba(109, 194, 189, 0.45)",
+    icon: "checkbox-outline",
+    label: "Diagnostic Criteria",
+  },
   "CLINICAL ASSESSMENT": {
     color: Colors.main,
     border: "rgba(222, 255, 249, 0.45)",
@@ -130,6 +148,24 @@ const SECTION_CONFIG: Record<
     border: "rgba(255, 195, 221, 0.45)",
     icon: "alert-circle-outline",
     label: "Red Flags / Emergency",
+  },
+  "LATEST EVIDENCE & CLINICAL UPDATES": {
+    color: Colors.lavender,
+    border: "rgba(219, 212, 253, 0.45)",
+    icon: "newspaper-outline",
+    label: "Latest Evidence & Clinical Updates",
+  },
+  "LATEST EVIDENCE & UPDATES": {
+    color: Colors.lavender,
+    border: "rgba(219, 212, 253, 0.45)",
+    icon: "newspaper-outline",
+    label: "Latest Evidence & Updates",
+  },
+  "LATEST EVIDENCE": {
+    color: Colors.lavender,
+    border: "rgba(219, 212, 253, 0.45)",
+    icon: "newspaper-outline",
+    label: "Latest Evidence & Updates",
   },
   "EVIDENCE & CITATIONS": {
     color: Colors.lavender,

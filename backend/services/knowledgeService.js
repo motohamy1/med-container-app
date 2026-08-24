@@ -24,8 +24,9 @@ async function generateEmbedding(text) {
 
 /**
  * Perform a similarity search in the Custom Knowledge base.
+ * Prioritizes active guidelines and returns rich metadata for attribution.
  */
-async function searchCustomKnowledge(queryText, match_count = 3, match_threshold = 0.5) {
+async function searchCustomKnowledge(queryText, match_count = 5, match_threshold = 0.45) {
     // 1. Convert user's question to a vector
     const query_embedding = await generateEmbedding(queryText);
     if (!query_embedding) return [];
@@ -73,11 +74,18 @@ function chunkText(text, maxChunkSize = 1000) {
 }
 
 /**
- * Admin utility: Ingest a large text (e.g. textbook chapter) into the database
- * with batching and progress reporting.
+ * Admin utility: Ingest a large guideline/resource with metadata, batching,
+ * progress reporting, and version control.
  */
-async function ingestKnowledge(title, text, sourceUrl = '', onProgress = null) {
-    console.log(`[Ingest] Starting ingestion for: "${title}"`);
+async function ingestKnowledge(title, text, sourceUrl = '', onProgress = null, metadata = {}) {
+    const {
+        guidelineSociety = 'OTHER',
+        publicationYear = new Date().getFullYear(),
+        versionTag = '',
+        pmid = ''
+    } = metadata;
+
+    console.log(`[Ingest] Starting ingestion for: "${title}" (${guidelineSociety} ${publicationYear})`);
     const chunks = chunkText(text);
     console.log(`[Ingest] Sliced into ${chunks.length} chunks.`);
 
@@ -96,6 +104,11 @@ async function ingestKnowledge(title, text, sourceUrl = '', onProgress = null) {
                     .insert({
                         title,
                         source_url: sourceUrl,
+                        guideline_society: guidelineSociety,
+                        publication_year: publicationYear,
+                        version_tag: versionTag || `${guidelineSociety} ${publicationYear}`,
+                        pmid: pmid || null,
+                        is_active: true,
                         content: chunk,
                         embedding
                     });
@@ -120,7 +133,7 @@ async function ingestKnowledge(title, text, sourceUrl = '', onProgress = null) {
         await new Promise(res => setTimeout(res, 300));
     }
     
-    console.log(`[Ingest] Successfully ingested ${successCount}/${chunks.length} chunks.`);
+    console.log(`[Ingest] Successfully ingested ${successCount}/${chunks.length} chunks for ${title}.`);
     return successCount;
 }
 

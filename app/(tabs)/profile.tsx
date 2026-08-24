@@ -173,14 +173,17 @@ const StatsSection = () => {
 // Menu Item Component
 const MenuItem = ({
   item,
-  onToggle,
+  onPress,
 }: {
   item: MenuItem;
-  onToggle?: () => void;
+  onPress?: () => void;
 }) => (
   <TouchableOpacity
     className="flex-row items-center gap-4 p-4 active:bg-white/5"
-    onPress={() => !item.hasToggle && Haptics.selectionAsync()}
+    onPress={() => {
+      if (onPress) onPress();
+      else if (!item.hasToggle) Haptics.selectionAsync();
+    }}
   >
     <View className={`w-10 h-10 rounded-xl items-center justify-center ${item.bgColor}`}>
       <Ionicons name={item.icon} size={20} color={item.iconColor} />
@@ -194,7 +197,7 @@ const MenuItem = ({
     {item.hasToggle ? (
       <Switch
         value={item.toggleValue}
-        onValueChange={onToggle}
+        onValueChange={onPress}
         trackColor={{ false: Colors.tealMedium, true: Colors.accent }}
         thumbColor={item.toggleValue ? Colors.ink : Colors.grayMuted}
       />
@@ -209,12 +212,12 @@ const MenuSection = ({
   title,
   icon,
   items,
-  onToggle,
+  onItemPress,
 }: {
   title: string;
   icon?: keyof typeof Ionicons.glyphMap;
   items: MenuItem[];
-  onToggle?: (itemId: string) => void;
+  onItemPress?: (itemId: string) => void;
 }) => (
   <View className="flex-col gap-2 px-4 py-2">
     {icon ? (
@@ -230,7 +233,7 @@ const MenuSection = ({
         <View key={item.id}>
           <MenuItem
             item={item}
-            onToggle={() => onToggle && onToggle(item.id)}
+            onPress={() => onItemPress && onItemPress(item.id)}
           />
           {index < items.length - 1 && (
             <View className="h-px bg-charcoal/30 mx-4" />
@@ -343,10 +346,26 @@ const Profile = () => {
     },
   ];
 
-  const handleToggle = (itemId: string) => {
+  // Admin menu items
+  const adminItems: MenuItem[] = [
+    {
+      id: 'review-queue',
+      title: 'Scientific Review',
+      subtitle: 'Approve AI distilled knowledge',
+      icon: 'flask-outline',
+      iconColor: Colors.accent,
+      bgColor: 'bg-turquoise/10',
+    },
+  ];
+
+  const handleItemPress = (itemId: string) => {
     if (itemId === 'voice-output') {
       setVoiceOutput(!voiceOutput);
       Haptics.selectionAsync();
+    }
+    if (itemId === 'review-queue') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      router.push('/admin/ReviewQueue');
     }
     if (itemId === 'notifications') {
       // Future: present the notification preferences / notification center screen.
@@ -371,9 +390,10 @@ const Profile = () => {
         <ProfileHeader profile={profile} loading={loading} />
         <StatsSection />
         <PushTokenIndicator token={pushToken} error={pushError} />
-        <MenuSection title="My Health" items={healthItems} />
-        <MenuSection title="AI Settings" icon="sparkles" items={aiItems} onToggle={handleToggle} />
-        <MenuSection title="General" items={generalItems} onToggle={handleToggle} />
+        <MenuSection title="My Health" items={healthItems} onItemPress={handleItemPress} />
+        <MenuSection title="AI Settings" icon="sparkles" items={aiItems} onItemPress={handleItemPress} />
+        <MenuSection title="General" items={generalItems} onItemPress={handleItemPress} />
+        <MenuSection title="Admin Console" icon="construct-outline" items={adminItems} onItemPress={handleItemPress} />
 
         {/* Danger Zone */}
         <View className="p-6 flex-col items-center gap-4 mt-4">

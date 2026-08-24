@@ -5,10 +5,16 @@ const cors = require('cors');
 const { hasApiKey } = require('./services/aiService');
 const chatRoutes = require('./routes/chatRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const AutonomousScientist = require('./services/autonomousScientistService');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Inject progress hook
+const { broadcastScientistProgress } = require('./routes/adminRoutes');
+// adminRoutes module.exports is the router, so we need to grab the helper differently
+// or just re-export it. Let's fix adminRoutes to export the helper.
 
 const PORT = process.env.PORT || 3001;
 
@@ -19,8 +25,11 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 // Chat endpoint
 app.use('/api/chat', chatRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/admin', adminRoutes.router);
 app.use('/api/topics', require('./routes/topicRoutes'));
+
+// Connect Scientist Agent to SSE Broadcaster
+AutonomousScientist.progressCallback = adminRoutes.broadcastScientistProgress;
 
 // ─── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {

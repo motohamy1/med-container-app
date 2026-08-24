@@ -107,6 +107,56 @@ async function autoReviewAndUpdateTopics(newTextContent, resourceTitle) {
     }
 }
 
+/**
+ * Logs a knowledge update candidate from a chat session.
+ * These are potential new guidelines found by the AI in external search results (PMC).
+ */
+async function logKnowledgeUpdateFromChat(topic, content, reference, query) {
+    try {
+        console.log(`[Knowledge Mining] Found potential update for topic: ${topic}`);
+        const { error } = await supabase
+            .from('knowledge_review_queue')
+            .insert({
+                topic_name: topic,
+                content: content,
+                reference: reference,
+                trigger_query: query,
+                source: 'CHAT_MINING',
+                status: 'PENDING'
+            });
+
+        if (error) {
+            // If table doesn't exist, just log to console for now
+            if (error.code === '42P01') {
+                console.log(`[Knowledge Mining] Queue table not found. Proposal: ${topic} - ${content.substring(0, 100)}...`);
+            } else {
+                console.error(`[Knowledge Mining] Error saving update:`, error.message);
+            }
+        }
+    } catch (err) {
+        console.error(`[Knowledge Mining] Fatal error:`, err);
+    }
+}
+
+/**
+ * Logs a query that yielded no direct evidence-based references.
+ * Used to build a "Gap Map" for future ingestion.
+ */
+async function logKnowledgeGap(query, category) {
+    try {
+        console.log(`[Knowledge Gap] No reference found for: "${query}" (${category})`);
+        await supabase
+            .from('knowledge_gaps')
+            .insert({
+                query: query,
+                category: category,
+                occurred_at: new Date().toISOString()
+            });
+    } catch { /* Silent fail */ }
+}
+
 module.exports = {
-    autoReviewAndUpdateTopics
+    autoReviewAndUpdateTopics,
+    logKnowledgeUpdateFromChat,
+    logKnowledgeGap
 };

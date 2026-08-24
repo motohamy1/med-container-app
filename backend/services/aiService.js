@@ -136,9 +136,13 @@ async function executeAI(systemPrompt, userPrompt) {
 }
 
 async function extractEnglishKeywords(query) {
-    if (!/[\u0600-\u06FF]/.test(query)) return query;
-    
-    const systemPrompt = `You are a medical keyword extractor. Extract 1-4 core English medical search keywords from the query for a scientific database search. Translate concepts to English. Output a pure JSON array of strings ONLY. No markdown, no conversational text. Example: ["typhoid fever", "treatment"]`;
+    const systemPrompt = `You are a medical search query specialist. Extract 1-4 canonical medical MeSH keywords and correct any typos from the clinical query for searching PubMed / Europe PMC.
+Examples:
+- "latest treatment of h.pylori in childern uder 17" -> ["Helicobacter pylori", "treatment", "pediatric", "adolescent"]
+- "علاج التيفود المقاوم للمضادات الحيوية" -> ["typhoid fever", "antimicrobial resistance", "treatment"]
+- "criteria of septic shock only" -> ["septic shock", "diagnostic criteria", "consensus"]
+
+Output a pure JSON array of strings ONLY. No markdown, no conversational text.`;
     try {
         const result = await executeAI(systemPrompt, query);
         const cleaned = result.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
@@ -147,9 +151,14 @@ async function extractEnglishKeywords(query) {
             return keywords.join(' ');
         }
     } catch (e) {
-        console.warn('[Keyword Extractor] Failed to parse JSON keywords, falling back to query');
+        console.warn('[Keyword Extractor] Failed to parse JSON keywords, falling back to basic cleanup');
     }
-    return query;
+    // Basic fallback: remove common conversational filler
+    return query
+        .replace(/\b(latest|recent|treatment|manage|management|what is|how to|criteria of|guideline|guidelines|for|in|under|the|of|a|an)\b/gi, ' ')
+        .replace(/[^\w\s.-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 async function analyzeIntent(message) {

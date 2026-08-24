@@ -21,7 +21,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Colors } from '../../constants/Colors';
 
-export const DOCK_HEIGHT = 68;
+export const DOCK_HEIGHT = 72;
 const HORIZONTAL_MARGIN = 16;
 
 const SPRING_CONFIG = {

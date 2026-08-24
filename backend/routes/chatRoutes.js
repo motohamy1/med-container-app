@@ -5,6 +5,7 @@ const { getSpecialtyScope, getTopicAiScope } = require('../services/supabaseServ
 const { callAI, extractEnglishKeywords, analyzeIntent } = require('../services/aiService');
 const { fetchMedicalKnowledge, fetchClinicalLiterature } = require('../services/medicalSearchService');
 const { searchCustomKnowledge } = require('../services/knowledgeService');
+const { logKnowledgeUpdateFromChat, logKnowledgeGap } = require('../services/knowledgeUpdateService');
 
 router.post('/', async (req, res) => {
     const { message, mode = 'general', category = 'physicians', topicId, categoryContext } = req.body;
@@ -59,19 +60,17 @@ Hello Doctor! How can I assist you with clinical guidelines, treatment protocols
     }
 
     try {
-        let searchKeywords = message;
-        if (/[\u0600-\u06FF]/.test(message)) {
-            searchKeywords = await extractEnglishKeywords(message);
-            console.log(`[PMC Search] Translated Arabic query to keywords: "${searchKeywords}"`);
-        }
+        // Always extract focused medical search keywords from user query
+        let searchKeywords = await extractEnglishKeywords(message);
+        console.log(`[Literature Search] Extracted keywords: "${searchKeywords}" from message: "${message}"`);
 
         // Parallelize knowledge base retrieval with a 2.5s maximum timeout
         const withTimeout = (promise, ms = 2500, fallback = null) =>
             Promise.race([promise, new Promise(resolve => setTimeout(() => resolve(fallback), ms))]);
 
         const [rawKnowledgeRes, literatureRefsRes, customDocsRes] = await Promise.allSettled([
-            withTimeout(fetchMedicalKnowledge(message), 2500, ''),
-            withTimeout(fetchClinicalLiterature(searchKeywords, category), 2500, []),
+            withTimeout(fetchMedicalKnowledge(searchKeywords || message), 2500, ''),
+            withTimeout(fetchClinicalLiterature(searchKeywords || message, category), 2500, []),
             withTimeout(searchCustomKnowledge(message), 2500, [])
         ]);
 
@@ -81,41 +80,59 @@ Hello Doctor! How can I assist you with clinical guidelines, treatment protocols
         
         let citations = [];
         let literatureContext = '';
+        let customContext = '';
+        let refIndex = 1;
         
-        if (literatureRefs.length > 0) {
-            literatureContext += `\n### PEER-REVIEWED MEDICAL LITERATURE (EUROPE PMC):\n`;
-            literatureRefs.forEach((ref, index) => {
-                const refNum = index + 1;
+        // 1. Authoritative Guidelines & Textbooks from Ingested Database
+        if (customKnowledgeDocs.length > 0) {
+            customContext += `\n### 📚 VERIFIED MEDICAL GUIDELINES & CLINICAL TEXTBOOKS (DATABASE):\n`;
+            customKnowledgeDocs.forEach((doc) => {
+                const currentRefId = refIndex++;
+                const societyTag = doc.guideline_society ? ` [${doc.guideline_society}]` : '';
+                const yearTag = doc.publication_year ? ` (${doc.publication_year})` : '';
+                
                 citations.push({
-                    id: refNum.toString(),
+                    id: currentRefId.toString(),
+                    title: `${doc.title}${societyTag}`,
+                    author: doc.guideline_society || 'Clinical Practice Guidelines',
+                    journal: doc.version_tag || 'Authoritative Clinical Consensus',
+                    year: doc.publication_year ? doc.publication_year.toString() : '2024',
+                    url: doc.source_url || (doc.pmid ? `https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(doc.pmid)}` : 'https://goldcopd.org')
+                });
+
+                customContext += `--- GUIDELINE REFERENCE [${currentRefId}] ("${doc.title}"${societyTag}${yearTag}) ---\n`;
+                if (doc.pmid) customContext += `PMID/DOI: ${doc.pmid}\n`;
+                if (doc.source_url) customContext += `Official Portal: ${doc.source_url}\n`;
+                customContext += `Clinical Excerpt:\n${doc.content}\n`;
+                customContext += `---------------------------------------------------------\n\n`;
+            });
+        }
+
+        // 2. Peer-Reviewed Medical Literature from Europe PMC
+        if (literatureRefs.length > 0) {
+            literatureContext += `\n### 🔬 PEER-REVIEWED MEDICAL LITERATURE (EUROPE PMC):\n`;
+            literatureRefs.forEach((ref) => {
+                const currentRefId = refIndex++;
+                citations.push({
+                    id: currentRefId.toString(),
                     title: ref.title,
                     author: ref.author,
                     journal: ref.journal,
                     year: ref.year,
                     url: ref.url
                 });
-                literatureContext += `--- REFERENCE [${refNum}] (${ref.type}) ---\n`;
+                literatureContext += `--- LITERATURE REFERENCE [${currentRefId}] (${ref.type || 'Study'}) ---\n`;
                 literatureContext += `Title: ${ref.title}\n`;
                 literatureContext += `Journal: ${ref.journal} (${ref.year})\n`;
-                literatureContext += `Abstract: ${ref.abstract.substring(0, 1000)}...\n`;
-                literatureContext += `------------------\n\n`;
-            });
-        }
-
-        let customContext = '';
-        if (customKnowledgeDocs.length > 0) {
-            customContext += `\n### 📚 PRIVATE TEXTBOOKS & LOCAL GUIDELINES:\n`;
-            customKnowledgeDocs.forEach((doc, index) => {
-                customContext += `--- EXCERPT ${index + 1} from "${doc.title}" ---\n`;
-                customContext += `${doc.content}\n`;
-                customContext += `------------------\n\n`;
+                literatureContext += `Abstract: ${ref.abstract ? ref.abstract.substring(0, 1000) : ''}...\n`;
+                literatureContext += `---------------------------------------------------------\n\n`;
             });
         }
 
         // Combine all knowledge sources
         const medicalKnowledgeContext = (rawKnowledge || literatureContext || customContext)
-            ? `\n### SPECIALIZED CLINICAL KNOWLEDGE BASE:\n` +
-            `The following is expert medical reasoning retrieved directly from curated clinical literature, textbooks, and datasets:\n\n` +
+            ? `\n### SPECIALIZED CLINICAL KNOWLEDGE BASE (EVIDENCE-BASED GROUNDING):\n` +
+            `The following are verified excerpts retrieved directly from curated international guidelines, textbooks, and peer-reviewed literature:\n\n` +
             customContext + rawKnowledge + `\n\n` + literatureContext
             : '';
 
@@ -139,106 +156,76 @@ Hello Doctor! How can I assist you with clinical guidelines, treatment protocols
             personaInstruction += `\nSPECIFIC CONTEXT: You are advising within ${categoryContext}.`;
         }
 
-        let systemPrompt = '';
-
-        if (mode === 'fast_recap') {
-            systemPrompt = `
+        let systemPrompt = `
 ${personaInstruction}
 
-YOUR TASK: Provide a FAST, CONCISE, HIGH-YIELD CLINICAL RECAP.
+YOUR MISSION: Synthesize provided clinical evidence into actionable, high-yield guidance.
 
 KNOWLEDGE RESOURCES:
-${medicalKnowledgeContext}
+${medicalKnowledgeContext || 'NONE AVAILABLE (AI: SYNTHESIZE FROM AUTHORITATIVE INTERNATIONAL CLINICAL GUIDELINES & CONSENSUS)'}
 
-### FORMATTING RULES:
-- Use structured section delimiters:
-##DEFINITION & OVERVIEW##
-• Concise definition and diagnostic thresholds.
-##END##
+### 1. CLINICAL EVIDENCE GROUNDING & SYNTHESIS:
+- Base all recommendations, drug regimens, weight/age-adjusted dosages, and diagnostic criteria on established international clinical guidelines and provided resources.
+- Deliver direct, high-confidence clinical answers without generic boilerplate or robotic meta-disclaimers (never output phrases like "No direct evidence-based reference found" or "GENERAL CLINICAL THEORY").
+- If a patient population requires special consideration (e.g., pediatric age brackets 10–18y, renal impairment, pregnancy, or antimicrobial resistance), directly integrate the specific guideline recommendations (e.g., ESPGHAN/NASPGHAN high-dose amoxicillin + clarithromycin/metronidazole or bismuth quadruple regimens).
+- Use bracketed citations [1], [2] referencing the source in the provided context.
 
-##CLINICAL PICTURE##
-• Key signs, symptoms, and presentation.
-##END##
+### 2. INTELLIGENT INTENT-FIRST ARCHITECTURE (ZERO GENERIC FLUFF):
+- Deeply analyze what the user is asking. Deliver the EXACT clinical answer first with zero introductory filler.
+- **Dynamic Hero Card Selection**:
+  * **Treatment / Management query**: -> Card 1: ##SECTION: MANAGEMENT PROTOCOL## -> Card 2: ##SECTION: FIRST-LINE PHARMACOTHERAPY##
+  * **Criteria / Definition query**: -> Card 1: ##SECTION: DIAGNOSTIC CRITERIA & SCORING##
+  * **Acute Emergency / Field Scenario**: -> Card 1: ##SECTION: EMERGENCY PROTOCOL & IMMEDIATE ACTION##
+  * **Diagnostic Workup / Lab / Imaging query**: -> Card 1: ##SECTION: INVESTIGATIONS / WORKUP##
+- Always include ##SECTION: LATEST EVIDENCE & CLINICAL UPDATES## before citations when summarizing recent 2024–2026 antimicrobial resistance trends or landmark updates.
 
-##INVESTIGATIONS / WORKUP##
-• Essential diagnostic tests and scoring.
-##END##
+### 3. KNOWLEDGE DISTILLATION (ACTIVE LEARNING):
+- If the "KNOWLEDGE RESOURCES" (e.g., Europe PMC) provide a new standard of care, specific dosage, or landmark trial results NOT present in the primary "DATABASE CONTEXT", you MUST include a hidden block at the very end:
+  ##KNOWLEDGE_UPDATE##
+  [Topic Name]: [Summary of the new information to be added to the permanent database]
+  [Reference]: [Full citation string]
+  ##END_UPDATE##
 
-##MANAGEMENT PROTOCOL##
-• First-line pharmacotherapy and key clinical steps.
-##END##
-
-##SUGGESTIONS##
-• Follow-up clinical question 1?
-• Follow-up clinical question 2?
-• Follow-up clinical question 3?
-##END##
-
-- Highlight key medications, dosages, and guidelines using **bold**.
+### 4. FORMATTING & THEMED SECTION HEADERS:
+- You MUST wrap every distinct card in a themed section header: ##SECTION: HEADING_NAME##
+- **No Markdown Tables**: Never use markdown tables (| or ---). Use structured bullet points:
+  - **Drug Name**: Dosage | Route | Frequency | Duration/Notes
+- **Language**: Respond in the language of the query (e.g., Arabic), but keep drug names, scores, and medical terms in English.
 - Cite references inline using [1], [2] where applicable.
-- Match user's language (English or Arabic). Keep drug names/scores in English.
+
+### 5. SUGGESTIONS:
+At the very end, provide ##SUGGESTIONS## with 2-3 focused clinical follow-up prompts.
 `;
-        } else {
-            systemPrompt = `
-${personaInstruction}
-
-KNOWLEDGE RESOURCES:
-${medicalKnowledgeContext}
-
-### CRITICAL CLINICAL INSTRUCTIONS:
-1. **QUESTION-FOCUSED SPECIFICITY (DO NOT OVER-DUMP)**:
-   - Answer PRECISELY what the user asks. Do NOT output a comprehensive textbook overview if only a specific aspect was asked.
-   - Specific Examples:
-     * If asked about "treatment / management of COPD": Provide ONLY the management protocol (first-line inhalers, step-up/step-down, acute vs stable). Do NOT include definitions, etiology, or complete diagnostic workup.
-     * If asked about "definition of COPD": Provide ONLY the clinical definition and spirometric diagnostic threshold (FEV1/FVC < 0.70). Do NOT dump treatment regimens.
-     * If asked about "investigations / diagnostic criteria": Provide ONLY the diagnostic algorithm, scoring criteria, and lab/imaging workup.
-     * If asked about "dosing / pharmacology of X": Provide ONLY the dosage, mechanism, contraindications, and monitoring.
-
-2. **CLEAN SECTION STRUCTURE**:
-   - Organize your response using 1 to 3 targeted, highly relevant section titles in ALL CAPS enclosed in '##SECTION TITLE##'.
-   - Examples of matching titles:
-     * Treatment: ##MANAGEMENT PROTOCOL##, ##PHARMACOTHERAPY & DOSING##, ##CLINICAL PEARLS##
-     * Diagnosis: ##DIAGNOSTIC CRITERIA##, ##LABS & IMAGING WORKUP##
-     * Definition: ##DEFINITION & CLASSIFICATION##
-     * Emergency: ##EMERGENCY PROTOCOL & RED FLAGS##
-   - Use clear bullet points ('•') for lists.
-   - Use **bold text** to highlight key drug names, doses, thresholds, and clinical criteria.
-   - Do NOT use markdown '#' inside sections (only '##HEADING##').
-
-3. **EVIDENCE & CITATIONS**:
-   - Cite provided peer-reviewed literature using bracketed numbers [1], [2] inline.
-
-4. **FOLLOW-UP QUESTIONS (SUGGESTIONS)**:
-   - At the end of your response, ALWAYS provide a ##SUGGESTIONS## section containing 2 to 4 concise, high-yield follow-up questions directly related to what the user asked.
-   - Each suggestion must start with '•'.
-   - Suggestions should be realistic next clinical questions a doctor or student would ask (e.g. next-line therapy, emergency signs, complication management, dosing).
-
-6. **NO INTERNAL THINKING**: Do NOT output your internal reasoning process, thoughts, or planning steps. Start immediately with the themed sections. Output ONLY the clinical content.
-
-${topicId && topicId !== 'general' ? `
-CRITICAL TOPIC SCOPE: You are operating within topic ID: "${topicId}".
-If the query is completely OUT OF SCOPE for this medical topic, output EXACTLY:
-##OUT_OF_SCOPE##
-This question is not related to the ${topicId} topic.
-` : ''}
-
-REQUIRED OUTPUT TEMPLATE:
-##[RELEVANT SECTION TITLE]##
-• Direct, high-yield clinical answer with **bold highlights** for drugs, criteria, and numbers.
-##END##
-
-##SUGGESTIONS##
-• First relevant follow-up question?
-• Second relevant follow-up question?
-• Third relevant follow-up question?
-##END##
-`;
-        }
 
         const rawReply = await callAI(systemPrompt, message);
 
         let normalized = rawReply;
         
+        // 1. EXTRACT KNOWLEDGE UPDATE (ACTIVE LEARNING)
+        const updateMatch = normalized.match(/##KNOWLEDGE_UPDATE##([\s\S]*?)##END_UPDATE##/i);
+        if (updateMatch && updateMatch[1]) {
+            const updateBody = updateMatch[1].trim();
+            const lines = updateBody.split('\n');
+            const topicLine = lines.find(l => l.toLowerCase().includes('[topic name]')) || 'Unknown Topic';
+            const refLine = lines.find(l => l.toLowerCase().includes('[reference]')) || 'No Ref';
+
+            // Log it for review (Asynchronous)
+            logKnowledgeUpdateFromChat(
+                topicLine.split(':')[1]?.trim() || 'Generic',
+                updateBody,
+                refLine.split(':')[1]?.trim() || 'PMC Search',
+                message
+            );
+
+            // Strip from user-facing reply
+            normalized = normalized.replace(/##KNOWLEDGE_UPDATE##[\s\S]*?##END_UPDATE##/gi, '').trim();
+        }
+
+        // 2. DETECT KNOWLEDGE GAP (If custom knowledge database was empty for this query)
+        if (customKnowledgeDocs.length === 0) {
+            logKnowledgeGap(message, category);
+        }
+
         normalized = normalized.replace(/^(#{1,4})\s*([^#\n]+?)\s*#*$/gm, (match, hashes, headingText) => {
             return `##${headingText.trim().toUpperCase()}##`;
         });
