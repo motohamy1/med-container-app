@@ -113,7 +113,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
               <Ionicons name={item.specialtyIcon as any} size={12} color={theme.color} />
               <Text
                 className="text-[10px] font-sans-bold uppercase tracking-wider"
-                style={{ color: theme.color }}
+                style={{ color: theme.color, includeFontPadding: false }}
               >
                 {item.specialtyName}
               </Text>
@@ -121,7 +121,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
 
             <View className="px-2 py-0.5 rounded-full bg-white/10 border border-white/10 flex-row items-center gap-1">
               <Ionicons name="calendar-outline" size={10} color="#cbd5e1" />
-              <Text className="text-[10px] font-sans-medium text-gray-300">
+              <Text className="text-[10px] font-sans-medium text-gray-300" style={{ includeFontPadding: false }}>
                 {item.date}
               </Text>
             </View>
@@ -135,7 +135,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
             />
             <Text
               className="text-[10.5px] font-mono font-bold uppercase tracking-wider"
-              style={{ color: theme.color }}
+              style={{ color: theme.color, includeFontPadding: false }}
             >
               {item.badge}
             </Text>
@@ -143,8 +143,9 @@ export const MedicalUpdatesCarousel: React.FC = () => {
 
           {/* Title */}
           <Text
-            className="text-[15px] font-sans-bold text-white tracking-tight leading-5 mb-2"
+            className="text-[15px] font-sans-bold text-white leading-5 mb-2"
             numberOfLines={2}
+            style={{ includeFontPadding: false }}
           >
             {item.title}
           </Text>
@@ -159,6 +160,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
             <Text
               className="text-[11.5px] font-sans text-gray-200 leading-4"
               numberOfLines={3}
+              style={{ includeFontPadding: false }}
             >
               {item.headline}
             </Text>
@@ -169,6 +171,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
             <Text
               className="text-[10px] font-mono text-gray-400 flex-1 mr-2"
               numberOfLines={1}
+              style={{ includeFontPadding: false }}
             >
               📄 {item.journalOrSource}
             </Text>
@@ -181,7 +184,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
             >
               <Text
                 className="text-[10.5px] font-sans-bold"
-                style={{ color: theme.color }}
+                style={{ color: theme.color, includeFontPadding: false }}
               >
                 Read Brief
               </Text>
@@ -204,7 +207,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
             <Ionicons name="newspaper-outline" size={16} color={Colors.teal} />
           </View>
           <View>
-            <Text className="text-[17px] font-sans-bold text-white tracking-tight">
+            <Text className="text-[17px] font-sans-bold text-white">
               Latest Medical Updates
             </Text>
             <Text className="text-[11px] font-sans-medium text-gray-muted">
@@ -276,7 +279,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
                       />
                       <Text
                         className="text-[10.5px] font-sans-bold uppercase tracking-wider"
-                        style={{ color: selectedTheme.color }}
+                        style={{ color: selectedTheme.color, includeFontPadding: false }}
                       >
                         {selectedUpdate.specialtyName}
                       </Text>
@@ -295,14 +298,14 @@ export const MedicalUpdatesCarousel: React.FC = () => {
                   <View className="mb-2">
                     <Text
                       className="text-[11.5px] font-mono font-bold"
-                      style={{ color: selectedTheme.color }}
+                      style={{ color: selectedTheme.color, includeFontPadding: false }}
                     >
                       ⚡ {selectedUpdate.badge} • {selectedUpdate.date}
                     </Text>
                   </View>
 
                   {/* Title */}
-                  <Text className="text-[18px] font-sans-bold text-white leading-6 mb-3">
+                  <Text className="text-[18px] font-sans-bold text-white leading-6 mb-3" style={{ includeFontPadding: false }}>
                     {selectedUpdate.title}
                   </Text>
 
@@ -316,7 +319,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
                       borderLeftWidth: 3.5,
                     }}
                   >
-                    <Text className="text-[13px] font-sans text-gray-200 leading-5">
+                    <Text className="text-[13px] font-sans text-gray-200 leading-5" style={{ includeFontPadding: false }}>
                       {selectedUpdate.headline}
                     </Text>
                   </View>
@@ -324,7 +327,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
                   {/* Key Takeaways */}
                   <Text
                     className="text-[12.5px] font-sans-bold uppercase tracking-wider mb-2"
-                    style={{ color: selectedTheme.color }}
+                    style={{ color: selectedTheme.color, includeFontPadding: false }}
                   >
                     Key Takeaways
                   </Text>
@@ -335,7 +338,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
                           className="w-1.5 h-1.5 rounded-full mt-1.5"
                           style={{ backgroundColor: selectedTheme.color }}
                         />
-                        <Text className="text-[12.5px] font-sans text-gray-300 flex-1 leading-4.5">
+                        <Text className="text-[12.5px] font-sans text-gray-300 flex-1 leading-4.5" style={{ includeFontPadding: false }}>
                           {point}
                         </Text>
                       </View>
@@ -352,17 +355,17 @@ export const MedicalUpdatesCarousel: React.FC = () => {
                   >
                     <Text
                       className="text-[11px] font-sans-bold uppercase mb-1"
-                      style={{ color: selectedTheme.color }}
+                      style={{ color: selectedTheme.color, includeFontPadding: false }}
                     >
                       Clinical Practice Impact
                     </Text>
-                    <Text className="text-[12px] font-sans text-gray-200 leading-4.5">
+                    <Text className="text-[12px] font-sans text-gray-200 leading-4.5" style={{ includeFontPadding: false }}>
                       {selectedUpdate.clinicalImpact}
                     </Text>
                   </View>
 
                   {/* Citation */}
-                  <Text className="text-[11px] font-mono text-gray-400 mb-5">
+                  <Text className="text-[11px] font-mono text-gray-400 mb-5" style={{ includeFontPadding: false }}>
                     📚 Source: {selectedUpdate.journalOrSource}
                   </Text>
 
@@ -380,7 +383,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
                     }}
                   >
                     <Ionicons name="sparkles" size={16} color="#010101" />
-                    <Text className="text-[#010101] font-sans-bold text-[14px]">
+                    <Text className="text-[#010101] font-sans-bold text-[14px]" style={{ includeFontPadding: false }}>
                       Consult AI for Deep Analysis
                     </Text>
                   </TouchableOpacity>
@@ -389,7 +392,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
                     onPress={() => setSelectedUpdate(null)}
                     className="w-full py-2 items-center justify-center"
                   >
-                    <Text className="text-gray-400 font-sans-medium text-[13px]">
+                    <Text className="text-gray-400 font-sans-medium text-[13px]" style={{ includeFontPadding: false }}>
                       Dismiss
                     </Text>
                   </TouchableOpacity>

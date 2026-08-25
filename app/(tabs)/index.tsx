@@ -17,6 +17,7 @@ import { Colors } from '../../constants/Colors';
 import { TopicSearchResult } from '../../constants/SpecialtyData';
 import { dbService } from '../../services/dbService';
 import { SurgicalOrbitSection } from '../../components/SurgicalOrbitSection';
+import { ExpandedSurgicalOrbitSection } from '../../components/ExpandedSurgicalOrbitSection';
 import { ExpandedMedicalOrbitSection } from '../../components/ExpandedMedicalOrbitSection';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -33,6 +34,7 @@ const categoryRoutes: Record<string, string> = {
   'Dermatology': '/specialty/skin',
   'OB/GYN': '/specialty/gynacology',
   'Pulmonology': '/specialty/lungs',
+  'Nephrology': '/specialty/nephrology',
 };
 
 // Types
@@ -85,9 +87,9 @@ const Header = () => {
       <View>
         <View className="flex-row items-center gap-1.5 mb-0.5">
           <Ionicons name="medical" size={14} color={Colors.lime} />
-          <Text className="text-[12.5px] text-lime font-sans-bold tracking-wide">{getGreeting()}</Text>
+          <Text className="text-[12.5px] text-lime font-sans-bold">{getGreeting()}</Text>
         </View>
-        <Text className="text-[22px] font-sans-bold leading-tight text-white tracking-tight">Dr. Alex Doe</Text>
+        <Text className="text-[22px] font-sans-bold leading-tight text-white">Dr. Alex Doe</Text>
       </View>
 
       {/* Profile Avatar / Quick Access with Depth */}
@@ -177,20 +179,14 @@ const OrbitButton = ({
   size,
   top,
   left,
-  onPressMore,
 }: {
   category: SpecialtyCategory;
   size: number;
   top: DimensionValue;
   left: DimensionValue;
-  onPressMore?: () => void;
 }) => {
   const route = categoryRoutes[category.name];
   const handlePress = () => {
-    if (category.name === 'More' && onPressMore) {
-      onPressMore();
-      return;
-    }
     if (route) {
       router.push(route as any);
     }
@@ -208,20 +204,27 @@ const OrbitButton = ({
         hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
       >
         <View
-          className="bg-[#080808] border border-white/10 items-center justify-center rounded-full"
+          className="border items-center justify-center rounded-full"
           style={{
             width: size,
             height: size,
-            shadowColor: '#000',
+            backgroundColor: '#080c0e',
+            borderColor: `${category.color}45`,
+            shadowColor: category.color,
             shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.4,
+            shadowOpacity: 0.35,
             shadowRadius: 8,
             elevation: 7,
           }}
         >
           <Ionicons name={category.icon} size={20} color={category.color} />
         </View>
-        <Text className="text-[11px] font-sans-medium text-gray-200 mt-1.5 text-center leading-tight tracking-tight" numberOfLines={2}>
+        <Text
+          className="text-[11px] font-sans-medium text-gray-200 mt-1.5 text-center leading-tight max-w-[100px]"
+          numberOfLines={2}
+          allowFontScaling={false}
+          style={{ includeFontPadding: false }}
+        >
           {category.name}
         </Text>
       </TouchableOpacity>
@@ -230,7 +233,7 @@ const OrbitButton = ({
 };
 
 // Orbit Navigation Component
-const OrbitNavigation = ({ onPressMore }: { onPressMore?: () => void }) => {
+const OrbitNavigation = () => {
   const categories: SpecialtyCategory[] = [
     { id: '1', name: 'Cardiology', icon: 'heart', color: Colors.specialty.cardiology },
     { id: '2', name: 'GIT', icon: 'restaurant', color: Colors.specialty.git },
@@ -239,7 +242,7 @@ const OrbitNavigation = ({ onPressMore }: { onPressMore?: () => void }) => {
     { id: '5', name: 'Dermatology', icon: 'body', color: Colors.specialty.dermatology },
     { id: '6', name: 'OB/GYN', icon: 'woman', color: Colors.specialty.obgyn },
     { id: '7', name: 'Pulmonology', icon: 'fitness', color: Colors.specialty.pulmonology },
-    { id: '8', name: 'More Medicine', icon: 'grid', color: Colors.specialty.more },
+    { id: '8', name: 'Nephrology', icon: 'water', color: Colors.specialty.more },
   ];
 
   return (
@@ -273,8 +276,12 @@ const OrbitNavigation = ({ onPressMore }: { onPressMore?: () => void }) => {
           }}
         >
           <Ionicons name="medical" size={26} color="#010101" />
-          <Text className="text-[11px] font-sans-bold text-[#010101] text-center mt-1">Medical Arena AI</Text>
-          <Text className="text-[10px] text-[#010101]/80 font-sans-bold">Clinical Advisor</Text>
+          <Text className="text-[11px] font-sans-bold text-[#010101] text-center mt-1" allowFontScaling={false} style={{ includeFontPadding: false }}>
+            Medical Arena AI
+          </Text>
+          <Text className="text-[10px] text-[#010101]/80 font-sans-bold" allowFontScaling={false} style={{ includeFontPadding: false }}>
+            Clinical Advisor
+          </Text>
         </TouchableOpacity>
         <OrbitButton category={categories[0]} size={BUTTON_SIZE} top="0%" left="50%" />
         <OrbitButton category={categories[1]} size={BUTTON_SIZE} top="14.6%" left="82%" />
@@ -283,7 +290,7 @@ const OrbitNavigation = ({ onPressMore }: { onPressMore?: () => void }) => {
         <OrbitButton category={categories[4]} size={BUTTON_SIZE} top="100%" left="50%" />
         <OrbitButton category={categories[5]} size={BUTTON_SIZE} top="85.4%" left="18%" />
         <OrbitButton category={categories[6]} size={BUTTON_SIZE} top="50%" left="5%" />
-        <OrbitButton category={categories[7]} size={BUTTON_SIZE} top="14.6%" left="18%" onPressMore={onPressMore} />
+        <OrbitButton category={categories[7]} size={BUTTON_SIZE} top="14.6%" left="18%" />
       </View>
     </View>
   );
@@ -366,7 +373,7 @@ const ResultRow = ({ item, onOpen }: { item: TopicSearchResult; onOpen: (r: Topi
             <Text className="text-gray-400 text-[10px] font-sans-medium">{item.categoryTitle}</Text>
           ) : null}
         </View>
-        <Text className="text-[15px] font-sans-semibold text-white leading-tight tracking-tight" numberOfLines={1}>
+        <Text className="text-[15px] font-sans-semibold text-white leading-tight" numberOfLines={1}>
           {item.title}
         </Text>
         <Text className="text-[12px] font-sans text-gray-muted mt-0.5" numberOfLines={1}>{item.subtitle}</Text>
@@ -431,7 +438,7 @@ const SearchResults = ({
           >
             <Ionicons name="sparkles" size={26} color={Colors.accent} />
           </View>
-          <Text className="text-white font-sans-bold text-[17px] text-center tracking-tight">
+          <Text className="text-white font-sans-bold text-[17px] text-center">
             Consult Medical Arena AI
           </Text>
           <Text className="text-gray-muted text-[13px] font-sans text-center mt-1.5 mb-5 leading-5 max-w-[280px]">
@@ -630,13 +637,14 @@ export default function Index() {
           />
         ) : (
           <>
-            <OrbitNavigation onPressMore={handlePressMore} />
+            <OrbitNavigation />
             <ExpandedMedicalOrbitSection
               onLayout={(e) => {
                 gridYRef.current = e.nativeEvent.layout.y;
               }}
             />
             <SurgicalOrbitSection />
+            <ExpandedSurgicalOrbitSection />
           </>
         )}
       </ScrollView>

@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { cleanAIResponse, safeParseJSON, parseTopicSynthesis } = require('./jsonUtils');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -9,27 +10,64 @@ const genAI = GEMINI_API_KEY ? new GoogleGenerativeAI(GEMINI_API_KEY) : null;
 const aiModel = genAI ? genAI.getGenerativeModel({ 
     model: 'gemini-1.5-flash',
     generationConfig: {
-        temperature: 0.3,
+        temperature: 0.2,
         maxOutputTokens: 4096,
     }
 }) : null;
 
 function cleanText(text) {
-    if (!text) return "";
-    return text
-        .replace(/<think>[\s\S]*?<\/think>/gi, '')
-        .replace(/<thought>[\s\S]*?<\/thought>/gi, '')
-        .replace(/^Thinking Process:[\s\S]*?\n\n/i, '')
-        .replace(/^Here's a thinking process:[\s\S]*?\n\n/i, '')
-        .trim();
+    return cleanAIResponse(text);
 }
 
-async function executeAI(systemPrompt, userPrompt) {
-    let lastError = null;
+/**
+ * Standardize incoming conversation history into [{ role: 'user'|'assistant', content: string }]
+ */
+function normalizeHistory(history = []) {
+    if (!Array.isArray(history)) return [];
+    return history.map(item => {
+        if (!item) return null;
+        if (item.role && item.content) {
+            return {
+                role: item.role === 'model' || item.role === 'assistant' ? 'assistant' : 'user',
+                content: String(item.content).trim()
+            };
+        }
+        if (typeof item.text === 'string') {
+            return {
+                role: item.isUser ? 'user' : 'assistant',
+                content: item.text.trim()
+            };
+        }
+        return null;
+    }).filter(Boolean);
+}
 
-    // 1. Try Groq (Ultra-fast inference: 300+ tokens/sec)
+async function executeAI(systemPrompt, userPrompt, rawHistory = []) {
+    let lastError = null;
+    const history = normalizeHistory(rawHistory).slice(-8); // Keep last 8 turns for high relevance
+
+    // Build chat history text snippet for models that combine prompts
+    const historyTextSnippet = history.length > 0 
+        ? `\n\n### CONVERSATION HISTORY (PRESERVE PATIENT CONTEXT, AGE, AND CLINICAL DEMOGRAPHICS ACROSS TURNS):\n` +
+          history.map(h => `${h.role === 'user' ? 'Physician' : 'Medical Arena AI'}: ${h.content}`).join('\n\n') +
+          `\n\n### CURRENT CLINICAL QUESTION:\n${userPrompt}`
+        : userPrompt;
+
+    // 1. Try Groq (Ultra-fast inference: 300+ tokens/sec, highly reliable models)
     if (GROQ_API_KEY) {
-        const groqModels = ["openai/gpt-oss-120b", "qwen/qwen3.6-27b", "openai/gpt-oss-20b"];
+        const groqModels = [
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+            "mixtral-8x7b-32768",
+            "gemma2-9b-it",
+            "qwen/qwen3.6-27b"
+        ];
+        const groqMessages = [
+            { role: "system", content: systemPrompt },
+            ...history,
+            { role: "user", content: userPrompt }
+        ];
+
         for (const modelName of groqModels) {
             try {
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -40,18 +78,19 @@ async function executeAI(systemPrompt, userPrompt) {
                     },
                     body: JSON.stringify({
                         model: modelName,
-                        messages: [
-                            { role: "system", content: systemPrompt },
-                            { role: "user", content: userPrompt }
-                        ],
-                        temperature: 0.2
+                        messages: groqMessages,
+                        temperature: 0.1,
+                        max_tokens: 4096
                     })
                 });
 
                 if (response.ok) {
                     const data = await response.json();
                     if (data.choices && data.choices[0] && data.choices[0].message) {
-                        return cleanText(data.choices[0].message.content);
+                        const content = cleanText(data.choices[0].message.content);
+                        if (content && content.length > 0) {
+                            return content;
+                        }
                     }
                 }
             } catch (groqErr) {
@@ -63,7 +102,7 @@ async function executeAI(systemPrompt, userPrompt) {
     // 2. Try Native Gemini Flash API
     if (aiModel) {
         try {
-            const fullPrompt = `${systemPrompt}\n\nUSER QUERY:\n${userPrompt}`;
+            const fullPrompt = `${systemPrompt}\n\n${historyTextSnippet}`;
             const result = await aiModel.generateContent(fullPrompt);
             const text = result.response.text();
             if (text) return cleanText(text);
@@ -76,6 +115,12 @@ async function executeAI(systemPrompt, userPrompt) {
     // 3. Fallback to Nvidia NIM
     if (NVIDIA_API_KEY) {
         try {
+            const nvidiaMessages = [
+                { role: "system", content: systemPrompt },
+                ...history,
+                { role: "user", content: userPrompt }
+            ];
+
             const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
                 method: "POST",
                 headers: { 
@@ -84,11 +129,9 @@ async function executeAI(systemPrompt, userPrompt) {
                 },
                 body: JSON.stringify({ 
                     model: "meta/llama-3.1-70b-instruct", 
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        { role: "user", content: userPrompt }
-                    ],
-                    max_tokens: 4000
+                    messages: nvidiaMessages,
+                    max_tokens: 4096,
+                    temperature: 0.1
                 })
             });
 
@@ -106,6 +149,12 @@ async function executeAI(systemPrompt, userPrompt) {
     // 4. Fallback to OpenRouter
     if (OPENROUTER_API_KEY) {
         try {
+            const openRouterMessages = [
+                { role: "system", content: systemPrompt },
+                ...history,
+                { role: "user", content: userPrompt }
+            ];
+
             const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                 method: "POST",
                 headers: { 
@@ -114,10 +163,8 @@ async function executeAI(systemPrompt, userPrompt) {
                 },
                 body: JSON.stringify({ 
                     model: "openrouter/free", 
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        { role: "user", content: userPrompt }
-                    ] 
+                    messages: openRouterMessages,
+                    max_tokens: 4096
                 })
             });
 
@@ -135,20 +182,32 @@ async function executeAI(systemPrompt, userPrompt) {
     throw lastError || new Error("No AI providers available or all quotas exhausted.");
 }
 
-async function extractEnglishKeywords(query) {
+async function extractEnglishKeywords(query, rawHistory = []) {
+    const history = normalizeHistory(rawHistory).slice(-4);
+    let contextSnippet = '';
+    if (history.length > 0) {
+        contextSnippet = `\nRecent Conversation Context:\n` + 
+            history.map(h => `${h.role === 'user' ? 'User' : 'Assistant'}: ${h.content.substring(0, 150)}`).join('\n') + `\n`;
+    }
+
     const systemPrompt = `You are a medical search query specialist. Extract 1-4 canonical medical MeSH keywords and correct any typos from the clinical query for searching PubMed / Europe PMC.
+If the latest query is a follow-up (e.g., "what about tetracycline?", "what are the dosages?"), resolve coreferences using the recent conversation context so the search keywords accurately reflect the clinical topic (e.g., ["Helicobacter pylori", "tetracycline", "pediatric", "safety"]).
+
 Examples:
 - "latest treatment of h.pylori in childern uder 17" -> ["Helicobacter pylori", "treatment", "pediatric", "adolescent"]
+- Follow up: "what about tetracycline?" (when prior context was pediatric H. pylori) -> ["Helicobacter pylori", "tetracycline", "pediatric", "safety"]
 - "علاج التيفود المقاوم للمضادات الحيوية" -> ["typhoid fever", "antimicrobial resistance", "treatment"]
 - "criteria of septic shock only" -> ["septic shock", "diagnostic criteria", "consensus"]
 
 Output a pure JSON array of strings ONLY. No markdown, no conversational text.`;
+
+    const userPrompt = `${contextSnippet}Latest Query: "${query}"`;
+
     try {
-        const result = await executeAI(systemPrompt, query);
-        const cleaned = result.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-        const keywords = JSON.parse(cleaned);
-        if (Array.isArray(keywords) && keywords.length > 0) {
-            return keywords.join(' ');
+        const result = await executeAI(systemPrompt, userPrompt);
+        const parsed = safeParseJSON(result);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.join(' ');
         }
     } catch (e) {
         console.warn('[Keyword Extractor] Failed to parse JSON keywords, falling back to basic cleanup');
@@ -182,8 +241,8 @@ Output ONLY ONE WORD: either CONVERSATIONAL or CLINICAL.`;
     }
 }
 
-async function callAI(systemPrompt, userPrompt = '') {
-    return executeAI(systemPrompt, userPrompt);
+async function callAI(systemPrompt, userPrompt = '', history = []) {
+    return executeAI(systemPrompt, userPrompt, history);
 }
 
 module.exports = {

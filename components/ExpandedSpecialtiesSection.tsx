@@ -85,7 +85,7 @@ export const ExpandedSpecialtiesSection: React.FC<ExpandedSpecialtiesSectionProp
           </View>
         </View>
 
-        <Text className="text-[19px] font-sans-bold text-white tracking-tight">
+        <Text className="text-[19px] font-sans-bold text-white">
           Surgery Suite & Medical Disciplines
         </Text>
         <Text className="text-[12px] font-sans text-gray-400 mt-0.5">
@@ -173,7 +173,7 @@ export const ExpandedSpecialtiesSection: React.FC<ExpandedSpecialtiesSectionProp
               <View className="w-6 h-6 rounded-lg bg-[#ffc3dd]20 items-center justify-center border border-[#ffc3dd]40">
                 <Ionicons name="cut" size={12} color="#ffc3dd" />
               </View>
-              <Text className="text-[15px] font-sans-bold text-white tracking-tight">
+              <Text className="text-[15px] font-sans-bold text-white">
                 Surgical Suite & Operative Medicine
               </Text>
             </View>
@@ -234,7 +234,7 @@ export const ExpandedSpecialtiesSection: React.FC<ExpandedSpecialtiesSectionProp
                             {item.badge}
                           </Text>
                         </View>
-                        <Text className="text-[15px] font-sans-bold text-white tracking-tight leading-tight">
+                        <Text className="text-[15px] font-sans-bold text-white leading-tight">
                           {item.title}
                         </Text>
                       </View>
@@ -303,7 +303,7 @@ export const ExpandedSpecialtiesSection: React.FC<ExpandedSpecialtiesSectionProp
               <View className="w-6 h-6 rounded-lg bg-[#6dc2bd]20 items-center justify-center border border-[#6dc2bd]40">
                 <Ionicons name="fitness" size={12} color="#6dc2bd" />
               </View>
-              <Text className="text-[15px] font-sans-bold text-white tracking-tight">
+              <Text className="text-[15px] font-sans-bold text-white">
                 More Medical Specialties
               </Text>
             </View>
@@ -364,7 +364,7 @@ export const ExpandedSpecialtiesSection: React.FC<ExpandedSpecialtiesSectionProp
                           </Text>
                         </View>
                         <Text
-                          className="text-[15px] font-sans-bold text-white tracking-tight leading-tight"
+                          className="text-[15px] font-sans-bold text-white leading-tight"
                           numberOfLines={1}
                         >
                           {spec.scientificName}

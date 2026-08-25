@@ -175,6 +175,7 @@ function NotchedTabBar({ state, descriptors, navigation }: any) {
                     { color: isFocused ? Colors.main : Colors.graySubtle }
                   ]}
                   numberOfLines={1}
+                  allowFontScaling={false}
                 >
                   {config.title}
                 </Text>
@@ -226,12 +227,13 @@ const styles = StyleSheet.create({
     position: 'relative',
     justifyContent: 'center',
     overflow: 'hidden',
+    borderRadius: 32,
   },
   glassShell: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   innerBorder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 32,
@@ -261,6 +263,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 6,
+    paddingHorizontal: 2,
   },
   iconContainer: {
     width: 44,
@@ -270,10 +273,13 @@ const styles = StyleSheet.create({
     zIndex: 60,
   },
   tabLabel: {
-    fontSize: 10,
-    fontFamily: 'PlexSans_700Bold',
+    fontSize: 10.5,
+    fontFamily: 'PlexSans_600SemiBold',
     marginTop: 0,
     zIndex: 60,
+    textAlign: 'center',
+    width: '100%',
+    includeFontPadding: false,
     textShadowColor: 'rgba(0, 0, 0, 0.75)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,

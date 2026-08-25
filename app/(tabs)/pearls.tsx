@@ -214,7 +214,7 @@ export default function PearlsTab() {
         {/* Header Row */}
         <View className="px-5 pt-2 pb-5 flex-row items-center justify-between">
           <View>
-            <Text className="text-[23px] font-sans-bold text-white tracking-tight">
+            <Text className="text-[23px] font-sans-bold text-white">
               Pearls & Updates
             </Text>
             <View className="flex-row items-center gap-1.5 mt-1">
@@ -247,7 +247,7 @@ export default function PearlsTab() {
             </Animated.View>
             <Text
               className="text-[11.5px] font-sans-semibold"
-              style={{ color: regensRemaining > 0 ? Colors.main : Colors.gold }}
+              style={{ color: regensRemaining > 0 ? Colors.main : Colors.gold, includeFontPadding: false }}
             >
               {regensRemaining > 0 ? `Shuffle (${regensRemaining})` : 'Upgrade'}
             </Text>
@@ -437,7 +437,7 @@ export default function PearlsTab() {
                 <Ionicons name="bookmark" size={15} color={Colors.lavender} />
               </View>
               <View>
-                <Text className="text-[16.5px] font-sans-bold text-white tracking-tight">
+                <Text className="text-[16.5px] font-sans-bold text-white">
                   Saved Pearls Deck
                 </Text>
                 <Text className="text-[11px] font-sans-medium text-gray-400">
@@ -522,7 +522,7 @@ export default function PearlsTab() {
                     >
                       <Text
                         className="text-[10px] font-sans-bold uppercase"
-                        style={{ color: savedItem.specialtyColor }}
+                        style={{ color: savedItem.specialtyColor, includeFontPadding: false }}
                       >
                         {savedItem.specialtyName}
                       </Text>
@@ -540,24 +540,25 @@ export default function PearlsTab() {
                     </TouchableOpacity>
                   </View>
 
-                  <Text className="text-white font-sans-bold text-[15px] mb-1.5">
+                  <Text className="text-white font-sans-bold text-[15px] mb-1.5" style={{ includeFontPadding: false }}>
                     {savedItem.title}
                   </Text>
 
                   <Text
                     className="text-gray-300 font-sans text-[12px] leading-4.5 mb-3"
                     numberOfLines={2}
+                    style={{ includeFontPadding: false }}
                   >
                     {savedItem.rule}
                   </Text>
 
                   <View className="flex-row items-center justify-between pt-2 border-t border-white/5">
-                    <Text className="text-[10px] font-mono text-gray-400" numberOfLines={1}>
+                    <Text className="text-[10px] font-mono text-gray-400" numberOfLines={1} style={{ includeFontPadding: false }}>
                       {savedItem.citation}
                     </Text>
                     <View className="flex-row items-center gap-1 px-2.5 py-1 rounded-full bg-main/15 border border-main/30">
                       <Ionicons name="sparkles" size={10} color={Colors.main} />
-                      <Text className="text-main text-[10.5px] font-sans-semibold">
+                      <Text className="text-main text-[10.5px] font-sans-semibold" style={{ includeFontPadding: false }}>
                         View Details
                       </Text>
                     </View>
@@ -804,7 +805,7 @@ export default function PearlsTab() {
               <Ionicons name="star" size={28} color={Colors.gold} />
             </View>
 
-            <Text className="text-white font-sans-bold text-[19px] text-center tracking-tight mb-1.5">
+            <Text className="text-white font-sans-bold text-[19px] text-center mb-1.5">
               Daily Shuffle Limit Reached
             </Text>
 
@@ -925,6 +926,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    includeFontPadding: false,
   },
   metricBadge: {
     paddingHorizontal: 8,
@@ -941,6 +943,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlexMono_500Medium',
     color: '#e2e8f0',
     fontWeight: '600',
+    includeFontPadding: false,
   },
   bookmarkButton: {
     width: 30,
@@ -959,6 +962,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: '700',
     marginBottom: 8,
+    includeFontPadding: false,
   },
   ruleSummaryBox: {
     paddingVertical: 7,
@@ -975,10 +979,12 @@ const styles = StyleSheet.create({
     fontFamily: 'PlexSans_400Regular',
     fontSize: 12,
     lineHeight: 16.5,
+    includeFontPadding: false,
   },
   ruleHighlight: {
     fontFamily: 'PlexSans_700Bold',
     fontWeight: '700',
+    includeFontPadding: false,
   },
   cardFooterRow: {
     flexDirection: 'row',
@@ -999,6 +1005,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'PlexMono_500Medium',
     color: '#94a3b8',
+    includeFontPadding: false,
   },
   tapDetailsBadge: {
     flexDirection: 'row',
@@ -1013,6 +1020,7 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     fontFamily: 'PlexSans_700Bold',
     fontWeight: '700',
+    includeFontPadding: false,
   },
   // Modal Styles
   modalOverlay: {
@@ -1066,6 +1074,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlexSans_700Bold',
     fontWeight: '700',
     textTransform: 'uppercase',
+    includeFontPadding: false,
   },
   modalTopActions: {
     flexDirection: 'row',
@@ -1089,6 +1098,7 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     fontWeight: '700',
     marginBottom: 10,
+    includeFontPadding: false,
   },
   modalMetricBadge: {
     flexDirection: 'row',
@@ -1106,6 +1116,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'PlexMono_500Medium',
     fontWeight: '600',
+    includeFontPadding: false,
   },
   modalSectionCard: {
     padding: 14,
@@ -1126,12 +1137,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
+    includeFontPadding: false,
   },
   modalSectionBody: {
     color: '#e2e8f0',
     fontFamily: 'PlexSans_400Regular',
     fontSize: 13.5,
     lineHeight: 20,
+    includeFontPadding: false,
   },
   modalCitationBox: {
     flexDirection: 'row',
@@ -1150,6 +1163,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlexMono_500Medium',
     fontSize: 11,
     flex: 1,
+    includeFontPadding: false,
   },
   modalConsultBtn: {
     flexDirection: 'row',
@@ -1170,5 +1184,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlexSans_700Bold',
     fontSize: 13.5,
     fontWeight: '700',
+    includeFontPadding: false,
   },
 });

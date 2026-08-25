@@ -458,5 +458,34 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
     ],
     clinicalPearls: 'Always administer high-dose intravenous Thiamine BEFORE or concurrent with any glucose/dextrose infusions in patients with alcohol use disorder or malnutrition; infusing glucose alone rapidly exhausts remaining thiamine stores and triggers acute irreversible Wernicke encephalopathy.',
     aiPrompt: 'Provide behavioral health and psychiatric emergency guidance covering acute agitation tranquilization, CIWA alcohol withdrawal protocols, and serotonin syndrome vs NMS differentiation.'
+  },
+  {
+    id: 'ophthalmology',
+    name: 'Ophtho',
+    scientificName: 'Ophthalmology & Visual Sciences',
+    badge: 'OPHTHALMOLOGY',
+    icon: 'eye-outline',
+    color: '#dbd4fd', // Lavender
+    scope: 'Acute vision loss, ocular emergencies, glaucoma crises, retinal detachment, chemical burns, and orbital pathology.',
+    corePillars: ['Acute Angle-Closure Glaucoma', 'Central Retinal Artery Occlusion', 'Chemical Eye Burns (Roper-Hall)', 'Orbital Compartment Syndrome'],
+    highYieldTopics: [
+      {
+        title: 'Acute Angle-Closure Glaucoma',
+        summary: 'Sudden severe eye pain, halos around lights, fixed mid-dilated pupil, IOP >40 mmHg. Emergency treatment: Topical Timolol 0.5% + Pilocarpine 2% + IV Acetazolamide 500 mg + IV Mannitol 1-2 g/kg. Definitive: Laser peripheral iridotomy.',
+        guideline: 'AAO Preferred Practice Pattern — Primary Angle Closure'
+      },
+      {
+        title: 'Central Retinal Artery Occlusion (CRAO)',
+        summary: 'Painless sudden monocular vision loss, cherry-red spot on fundoscopy, afferent pupillary defect. Time-critical (<4-6 hours): Ocular massage, anterior chamber paracentesis, high-flow O2, IV tPA consideration. Rule out Giant Cell Arteritis with ESR/CRP.',
+        guideline: 'AHA/ASA Acute Retinal Ischemia Guidelines'
+      },
+      {
+        title: 'Chemical Eye Burn Emergency',
+        summary: 'Immediate copious irrigation with isotonic saline or Ringer lactate for minimum 30 minutes before any examination. Check pH every 5 minutes until neutral (7.0-7.4). Alkali burns (worse prognosis) penetrate deeper than acid burns. Grade severity with Roper-Hall classification.',
+        guideline: 'AAO Emergency Ophthalmology Guidelines'
+      }
+    ],
+    clinicalPearls: 'In chemical eye burns, never delay irrigation to check visual acuity or perform slit-lamp examination; immediate continuous irrigation for at least 30 minutes is the single most important intervention to prevent permanent corneal damage and blindness.',
+    aiPrompt: 'Provide emergency ophthalmology protocols including acute angle-closure glaucoma, central retinal artery occlusion, chemical burns, and orbital compartment syndrome.'
   }
 ];

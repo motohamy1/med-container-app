@@ -35,17 +35,13 @@ import { useLocalSearchParams } from "expo-router";
 import { aiService, DoctorCategory, Citation } from "../../services/aiService";
 import { Colors } from "../../constants/Colors";
 import FormattedClinicalText from "../../components/FormattedClinicalText";
-
-const FLOATING_TAB_BAR_HEIGHT = 70;
+import { getDailyPromptBatches, QuickPrompt } from "../../constants/ClinicalPresetsData";
 
 // Motion discipline (PRODUCT.md): state-changing feedback only, 150-250ms.
 const EASE_HEAVY = Easing.bezier(0.32, 0.72, 0, 1);
 const MOTION = { enter: 250, stagger: 60 } as const;
 
 const TURQUOISE = Colors.accent;
-const INK = Colors.ink;
-
-import { getDailyPromptBatches, QuickPrompt } from "../../constants/ClinicalPresetsData";
 
 // Types
 type Message = {
@@ -60,7 +56,7 @@ type Message = {
   failedQuery?: string;
 };
 
-// Medical section config for structured AI rendering — harmonized with 4 main colors (#defff9, #6dc2bd, #dbd4fd, #ffc3dd)
+// Medical section config for structured AI rendering — harmonized with 4 main colors
 const SECTION_CONFIG: Record<
   string,
   { color: string; border: string; icon: keyof typeof Ionicons.glyphMap; label: string }
@@ -124,6 +120,18 @@ const SECTION_CONFIG: Record<
     border: "rgba(222, 255, 249, 0.45)",
     icon: "medical-outline",
     label: "First-Line Pharmacotherapy",
+  },
+  "PEDIATRIC SAFETY & CONTRAINDICATIONS": {
+    color: Colors.pink,
+    border: "rgba(255, 195, 221, 0.45)",
+    icon: "warning-outline",
+    label: "Pediatric Safety & Contraindications",
+  },
+  "RECOMMENDED REGIMEN & DOSING": {
+    color: Colors.teal,
+    border: "rgba(109, 194, 189, 0.45)",
+    icon: "flask-outline",
+    label: "Recommended Regimen & Dosing",
   },
   "SURGICAL / PROCEDURAL CONSIDERATIONS": {
     color: Colors.lavender,
@@ -189,16 +197,11 @@ function parseMedicalSections(text: string): {
   sections: MedicalSection[];
   plainText: string;
 } {
-  // Enhanced split that catches ##SECTION: HEADING##, ##HEADING##, or ### HEADING
-  // and allows for missing trailing markers
   const parts = text.split(/(?:##(?:SECTION:\s*)?(.*?)##|###\s*(SECTION:\s*)?(.*?)\n)/gi);
   const sections: MedicalSection[] = [];
 
-  // Initial plain text before any section markers
   let plainText = parts[0]?.trim() || "";
 
-  // The regex above creates multiple capture groups, so we need a more flexible loop
-  // Or we can use a simpler approach: finding all occurrences of markers
   const markers = Array.from(text.matchAll(/(?:##(?:SECTION:\s*)?(.*?)##|###\s*(SECTION:\s*)?(.*?)(?:\n|$))/gi));
 
   if (markers.length === 0) {
@@ -209,17 +212,13 @@ function parseMedicalSections(text: string): {
 
   for (let i = 0; i < markers.length; i++) {
     const currentMarker = markers[i];
-    // heading is either in group 1 (for ## format) or group 3 (for ### format)
     let heading = (currentMarker[1] || currentMarker[3] || "").trim();
 
     const start = currentMarker.index! + currentMarker[0].length;
     const end = markers[i + 1] ? markers[i + 1].index : text.length;
     let content = text.substring(start, end).trim();
 
-    // Clean up heading
     heading = heading.replace(/[:#]/g, "").trim();
-
-    // Clean up content
     content = content.replace(/##END##/gi, "").trim();
 
     const skipKeywords = ["END", "SUGGESTIONS", "GREETING"];
@@ -266,119 +265,18 @@ const BezelShell: React.FC<{
   </View>
 );
 
-// Reduced-motion preference (PRODUCT.md: respect system reduced-motion)
-function useReducedMotion(): boolean {
+const useReducedMotion = () => {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
-    let mounted = true;
-    AccessibilityInfo.isReduceMotionEnabled().then((v) => {
-      if (mounted) setReduced(v);
-    });
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduced);
     const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced);
-    return () => {
-      mounted = false;
-      sub.remove();
-    };
+    return () => sub.remove();
   }, []);
   return reduced;
-}
-
-const MedicalSectionBox: React.FC<{
-  section: MedicalSection;
-  index: number;
-}> = ({ section, index }) => {
-  const reducedMotion = useReducedMotion();
-  const upHeading = section.heading.toUpperCase();
-  const matchedKey = Object.keys(SECTION_CONFIG).find(
-    (key) =>
-      upHeading === key || upHeading.includes(key) || key.includes(upHeading),
-  );
-
-  const known = matchedKey ? SECTION_CONFIG[matchedKey] : null;
-  const fallback = FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
-  const cfg = known
-    ? known
-    : {
-        ...fallback,
-        label:
-          section.heading.charAt(0).toUpperCase() +
-          section.heading.slice(1).toLowerCase(),
-      };
-
-  return (
-    <Animated.View
-      entering={
-        reducedMotion
-          ? undefined
-          : FadeInUp.duration(MOTION.enter).delay(index * MOTION.stagger).easing(EASE_HEAVY)
-      }
-      style={{ width: "100%", marginBottom: 14 }}
-    >
-      <View
-        style={{
-          borderRadius: 24,
-          borderWidth: 1,
-          borderColor: cfg.border + "50",
-          backgroundColor: "rgba(255,255,255,0.03)",
-          padding: 5,
-        }}
-      >
-        <View
-          style={{
-            borderRadius: 19,
-            backgroundColor: "#191c20",
-            overflow: "hidden",
-            borderWidth: 1,
-            borderColor: cfg.border + "28",
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: cfg.border + "18",
-              paddingHorizontal: 16,
-              paddingVertical: 12,
-              borderBottomWidth: StyleSheet.hairlineWidth,
-              borderBottomColor: cfg.border + "45",
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: cfg.border + "2e",
-                width: 30,
-                height: 30,
-                borderRadius: 15,
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 11,
-              }}
-            >
-              <Ionicons name={cfg.icon} size={15} color={cfg.color} />
-            </View>
-            <Text
-              style={{
-                color: cfg.color,
-                fontFamily: "PlexSans_700Bold",
-                fontSize: 12,
-                letterSpacing: 1.4,
-                textTransform: "uppercase",
-              }}
-            >
-              {cfg.label}
-            </Text>
-          </View>
-          <View style={{ paddingHorizontal: 17, paddingVertical: 15 }}>
-            <FormattedClinicalText text={section.content} themeColor={cfg.color} />
-          </View>
-        </View>
-      </View>
-    </Animated.View>
-  );
 };
 
-// Animated Pulse Dots for AI Thinking State
-const ThinkingIndicator: React.FC = () => {
+// Animated Thinking Wave
+const ThinkingIndicator = () => {
   const reducedMotion = useReducedMotion();
   const dot1 = useSharedValue(0.25);
   const dot2 = useSharedValue(0.25);
@@ -421,7 +319,7 @@ const ThinkingIndicator: React.FC = () => {
       <View className="w-8 h-8 rounded-full bg-turquoise/15 items-center justify-center border border-turquoise/30">
         <Ionicons name="sparkles" size={15} color={TURQUOISE} />
       </View>
-      <View className="flex-row items-center gap-1.5 bg-teal-dark border border-white/10 px-4 py-3 rounded-3xl rounded-tl-md">
+      <View className="flex-row items-center gap-1.5 bg-[#0c1017] border border-white/10 px-4 py-3 rounded-3xl rounded-tl-md">
         <Text className="text-gray-400 text-xs font-sans-semibold mr-1">Consulting clinical guidelines</Text>
         <Animated.View style={s1} className="w-1.5 h-1.5 rounded-full bg-turquoise" />
         <Animated.View style={s2} className="w-1.5 h-1.5 rounded-full bg-turquoise" />
@@ -450,7 +348,7 @@ const ChatBubble: React.FC<{
           </View>
           <Text className="text-white text-xs font-sans-bold tracking-wide">Med Arena AI</Text>
         </View>
-        <View className="bg-teal-dark border border-terracotta/30 rounded-3xl rounded-tl-md p-4">
+        <View className="bg-[#0c1017] border border-terracotta/30 rounded-3xl rounded-tl-md p-4">
           <View className="flex-row items-center gap-2 mb-2">
             <Ionicons name="alert-circle-outline" size={16} color={Colors.terracotta} />
             <Text className="text-terracotta text-xs font-sans-bold uppercase tracking-wider">
@@ -492,46 +390,102 @@ const ChatBubble: React.FC<{
               <Ionicons name="sparkles" size={13} color={TURQUOISE} />
             </View>
             <Text className="text-white text-xs font-sans-bold tracking-wide">Med Arena AI</Text>
-            <View className="px-2.5 py-1 rounded-full bg-teal-medium border border-white/10">
-              <Text className="text-[10px] text-turquoise font-sans-semibold tracking-widest uppercase">Clinical RAG</Text>
+            <View className="px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10">
+              <Text className="text-[10px] text-turquoise font-sans-semibold">Evidence-Based</Text>
             </View>
           </View>
-          <Text className="text-gray-500 text-[10px]">{message.timestamp}</Text>
+          <Text className="text-gray-500 text-[10px] font-mono">{message.timestamp}</Text>
         </View>
 
-        {/* AI Message Content */}
+        {/* Structured Medical Cards or Formatted Fallback */}
         {hasSections ? (
-          <View className="pl-1">
+          <View className="gap-3">
             {plainText.length > 0 && (
-              <View className="bg-teal-dark border border-turquoise/20 rounded-3xl p-4 mb-3">
-                <FormattedClinicalText text={plainText} themeColor={TURQUOISE} />
+              <View className="bg-[#0c1017] border border-white/10 rounded-2xl p-4">
+                <FormattedClinicalText text={plainText} />
               </View>
             )}
-            {sections.map((section, i) => (
-              <MedicalSectionBox key={`sec-${i}`} section={section} index={i} />
-            ))}
+            {sections.map((sec, sIdx) => {
+              const upperHeading = sec.heading.toUpperCase().trim();
+              const matchedKey =
+                Object.keys(SECTION_CONFIG).find((key) =>
+                  upperHeading.includes(key),
+                ) || upperHeading;
+              const cfg =
+                SECTION_CONFIG[matchedKey] ||
+                FALLBACK_PALETTE[sIdx % FALLBACK_PALETTE.length];
+              const sectionIcon = (cfg as any).icon || "information-circle-outline";
+              const sectionLabel = (cfg as any).label || sec.heading;
+              const sectionColor = cfg.color;
+              const sectionBorder = cfg.border;
+
+              return (
+                <View
+                  key={`sec-${sIdx}`}
+                  className="rounded-2xl overflow-hidden bg-[#0c1017]"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: sectionBorder,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 3 },
+                    shadowOpacity: 0.35,
+                    shadowRadius: 8,
+                    elevation: 3,
+                  }}
+                >
+                  <View
+                    className="flex-row items-center gap-2 px-4 py-2.5 border-b"
+                    style={{
+                      backgroundColor: `${sectionColor}12`,
+                      borderBottomColor: `${sectionColor}25`,
+                    }}
+                  >
+                    <Ionicons name={sectionIcon} size={15} color={sectionColor} />
+                    <Text
+                      className="text-xs font-sans-bold uppercase tracking-wider flex-1"
+                      style={{ color: sectionColor }}
+                    >
+                      {sectionLabel}
+                    </Text>
+                  </View>
+                  <View className="p-4">
+                    <FormattedClinicalText text={sec.content} />
+                  </View>
+                </View>
+              );
+            })}
           </View>
         ) : (
-          <View className="bg-teal-dark border border-white/10 rounded-3xl rounded-tl-md p-4 shadow-card">
-            <FormattedClinicalText text={message.text} themeColor={TURQUOISE} />
+          <View className="bg-[#0c1017] border border-white/10 rounded-3xl rounded-tl-md p-4">
+            <FormattedClinicalText text={message.text} />
           </View>
         )}
 
-        {/* Citations Block */}
+        {/* Citations section */}
         {message.citations && message.citations.length > 0 && (
-          <View className="mt-4 mb-2">
-            <Text className="text-gray-400 text-[11px] font-sans-bold uppercase tracking-widest mb-2.5 ml-1">
-              <Ionicons name="library-outline" size={12} /> Medical References
-            </Text>
+          <View className="mt-3.5 pt-3 border-t border-white/5">
+            <View className="flex-row items-center gap-1.5 mb-2 ml-1">
+              <Ionicons name="book-outline" size={13} color={Colors.lavender} />
+              <Text className="text-gray-400 text-[10.5px] font-sans-bold uppercase tracking-wider">
+                Guidelines & Evidence Grounding
+              </Text>
+            </View>
             {message.citations.map((cit) => (
-              <View key={cit.id} className="bg-white/[0.04] border border-white/[0.07] rounded-2xl p-3.5 mb-2">
-                <View className="flex-row items-start gap-2.5">
-                  <View className="bg-turquoise/15 border border-turquoise/25 px-2 py-0.5 rounded-full mt-0.5">
-                    <Text className="text-turquoise text-[10px] font-sans-bold">[{cit.id}]</Text>
+              <View
+                key={cit.id}
+                className="bg-[#0c1017] border border-white/10 rounded-xl p-3 mb-2"
+              >
+                <View className="flex-row items-start gap-2">
+                  <View className="px-2 py-0.5 rounded-full bg-lavender/20 mt-0.5">
+                    <Text className="text-[10px] text-lavender font-sans-bold">[{cit.id}]</Text>
                   </View>
                   <View className="flex-1">
-                    <Text className="text-gray-200 text-xs font-sans-semibold leading-4 mb-1">{cit.title}</Text>
-                    <Text className="text-gray-400 text-[10px] font-sans-medium">{cit.journal} ({cit.year})</Text>
+                    <Text className="text-gray-200 text-xs font-sans-semibold leading-4 mb-0.5">
+                      {cit.title}
+                    </Text>
+                    <Text className="text-gray-400 text-[10px] font-sans-medium">
+                      {cit.journal} ({cit.year}) · {cit.author}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -539,13 +493,16 @@ const ChatBubble: React.FC<{
           </View>
         )}
 
-        {/* Interactive Follow-Up Questions (Suggestions) */}
+        {/* Interactive Follow-Up Suggestions */}
         {message.suggestions && message.suggestions.length > 0 && (
-          <View className="mt-4 mb-2">
-            <Text className="text-gray-400 text-[11px] font-sans-bold uppercase tracking-widest mb-2.5 ml-1">
-              <Ionicons name="sparkles" size={12} color={TURQUOISE} /> Suggested Follow-Up Inquiries
-            </Text>
-            <View className="flex-col gap-2">
+          <View className="mt-3.5 mb-1">
+            <View className="flex-row items-center gap-1.5 mb-2 ml-1">
+              <Ionicons name="sparkles" size={12} color={TURQUOISE} />
+              <Text className="text-gray-400 text-[10.5px] font-sans-bold uppercase tracking-wider">
+                Related Clinical Inquiries
+              </Text>
+            </View>
+            <View className="gap-2">
               {message.suggestions.map((sug, sIdx) => (
                 <TouchableOpacity
                   key={`tab-sug-${sIdx}`}
@@ -613,32 +570,22 @@ const ChatTab = () => {
   const params = useLocalSearchParams<{ query?: string; autoSend?: string }>();
   const insets = useSafeAreaInsets();
   const floatingBottom = insets.bottom > 0 ? insets.bottom : 10;
-  const DOCK_BAR_HEIGHT = 68;
-  const ACTIVE_BUBBLE_OVERFLOW = 0; // Removed overflow to eliminate gap with glassy tab bar
-  const COMPOSER_CLEARANCE = 14;
+  const DOCK_BAR_HEIGHT = 72;
   
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
     const showSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', () => {
       setKeyboardVisible(true);
-      // Small delay to allow layout to settle before scrolling
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
     });
     const hideSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => {
       setKeyboardVisible(false);
-      // Ensure we scroll to the very end when the viewport expands back
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 150);
     });
     return () => {
       showSub.remove();
       hideSub.remove();
     };
   }, []);
-
-  const composerBottom = isKeyboardVisible
-    ? 12
-    : floatingBottom + DOCK_BAR_HEIGHT + ACTIVE_BUBBLE_OVERFLOW + COMPOSER_CLEARANCE;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
@@ -651,7 +598,8 @@ const ChatTab = () => {
 
   // Refresh daily batches on mount if calendar day changed
   useEffect(() => {
-    setDailyBatches(getDailyPromptBatches());
+    const batches = getDailyPromptBatches();
+    setDailyBatches(batches);
   }, []);
 
   const handleManualShuffle = () => {
@@ -669,13 +617,15 @@ const ChatTab = () => {
   const chatActive = messages.length > 0 || isTyping;
   const headerCollapse = useSharedValue(0);
 
+  const handleTextSendRef = useRef<((queryOverride?: string) => Promise<void>) | null>(null);
+
   useEffect(() => {
     if (params.query && params.query.trim()) {
       const q = params.query.trim();
       if (lastAutoQueryRef.current !== q) {
         lastAutoQueryRef.current = q;
         setInputText("");
-        handleTextSend(q);
+        handleTextSendRef.current?.(q);
       }
     }
   }, [params.query, params.autoSend]);
@@ -712,20 +662,6 @@ const ChatTab = () => {
     opacity: interpolate(headerCollapse.value, [0, 0.6, 1], [1, 0.4, 0]),
   }));
 
-  useEffect(() => {
-    const keyboardShowListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      () => {
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 200);
-      },
-    );
-    return () => {
-      keyboardShowListener.remove();
-    };
-  }, []);
-
   const handleCopyText = async (text: string) => {
     try {
       const Clipboard = await import('expo-clipboard');
@@ -743,11 +679,6 @@ const ChatTab = () => {
     setIsTyping(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // Scroll to end immediately when user sends a message
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-
     const userMessage: Message = {
       id: Date.now().toString(),
       text: query,
@@ -757,7 +688,14 @@ const ChatTab = () => {
         minute: "2-digit",
       }),
     };
-    setMessages((prev) => [...prev, userMessage]);
+
+    const currentHistory = [...messages, userMessage];
+    setMessages(currentHistory);
+
+    // Smoothly scroll to bring the user's question into prominent view
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 120);
 
     try {
       const { reply, citations, suggestions } = await aiService.sendMessageByText(
@@ -766,7 +704,7 @@ const ChatTab = () => {
         "physicians",
         undefined,
         undefined,
-        messages.map(m => ({ text: m.text, isUser: m.isUser }))
+        currentHistory.map(m => ({ text: m.text, isUser: m.isUser }))
       );
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -802,8 +740,9 @@ const ChatTab = () => {
     }
   };
 
+  handleTextSendRef.current = handleTextSend;
+
   const handleRetry = (failedQuery: string) => {
-    // Remove the failed error bubble, then resend
     setMessages((prev) => prev.filter((m) => !(m.isError && m.failedQuery === failedQuery)));
     handleTextSend(failedQuery);
   };
@@ -811,6 +750,11 @@ const ChatTab = () => {
   const handleNewChat = () => {
     setMessages([]);
   };
+
+  // Dynamic bottom composer padding according to dock bar / keyboard
+  const composerPaddingBottom = isKeyboardVisible
+    ? (Platform.OS === 'ios' ? 8 : 10)
+    : floatingBottom + DOCK_BAR_HEIGHT + 8;
 
   return (
     <View className="flex-1 bg-[#010101]" style={{ backgroundColor: "#010101" }}>
@@ -868,7 +812,7 @@ const ChatTab = () => {
                         {
                           color: "#ffffff",
                           fontFamily: "PlexSans_700Bold",
-                          letterSpacing: -0.4,
+                          includeFontPadding: false,
                         },
                         titleStyle,
                       ]}
@@ -901,158 +845,161 @@ const ChatTab = () => {
         </Animated.View>
       </SafeAreaView>
 
-      {/* Main Chat Body & Empty State */}
+      {/* Main Chat Layout with Natural Flex Flow */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         className="flex-1 bg-[#010101]"
         style={{ backgroundColor: "#010101" }}
       >
-        {messages.length === 0 ? (
-          <ScrollView
-            contentContainerStyle={{
-              paddingHorizontal: 20,
-              paddingTop: 36,
-              paddingBottom: composerBottom + 110,
-            }}
-            showsVerticalScrollIndicator={false}
-            className="flex-1 bg-[#010101]"
-            style={{ backgroundColor: "#010101" }}
-          >
-            {/* Empty State Hero */}
-            <Animated.View
-              entering={reducedMotion ? undefined : FadeIn.duration(MOTION.enter).easing(EASE_HEAVY)}
-              className="items-center mb-8"
+        <View className="flex-1">
+          {messages.length === 0 ? (
+            <ScrollView
+              contentContainerStyle={{
+                paddingHorizontal: 20,
+                paddingTop: 28,
+                paddingBottom: 20,
+              }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              className="flex-1 bg-[#010101]"
+              style={{ backgroundColor: "#010101" }}
             >
-              {/* Double-ring hero emblem */}
-              <View className="w-20 h-20 rounded-full border border-lime/30 items-center justify-center bg-lime/[0.06] mb-4">
-                <View className="w-[60px] h-[60px] rounded-full items-center justify-center border border-lime/45 bg-lime/15">
-                  <Ionicons name="sparkles" size={26} color={Colors.lime} />
-                </View>
-              </View>
-
-              {/* Eyebrow tag */}
-              <View className="px-3.5 py-1 rounded-full bg-lavender/15 border border-lavender/40 mb-3">
-                <Text className="text-[10px] uppercase tracking-[0.25em] font-sans-bold text-lavender">
-                  Evidence-Based Clinical AI
-                </Text>
-              </View>
-
-              <Text className="text-white text-[25px] font-sans-bold text-center tracking-tight leading-8 mb-2">
-                Clinical Consultant AI
-              </Text>
-              <Text className="text-gray-400 text-[13px] text-center max-w-[280px] leading-5 font-sans">
-                Ask about clinical management, diagnostic workups, dosing, or choose a prompt below.
-              </Text>
-            </Animated.View>
-
-            {/* Section Header with Cycle Badge & Manual Shuffle */}
-            <View className="flex-row items-center justify-between w-full mb-3 px-1">
-              <View className="flex-row items-center gap-1.5">
-                <Ionicons name="sparkles" size={13} color={Colors.lime} />
-                <Text className="text-gray-300 font-sans-bold text-[11.5px] uppercase tracking-wider">
-                  Clinical Presets
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                onPress={handleManualShuffle}
-                activeOpacity={0.7}
-                className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.06] border border-white/10"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              {/* Empty State Hero */}
+              <Animated.View
+                entering={reducedMotion ? undefined : FadeIn.duration(MOTION.enter).easing(EASE_HEAVY)}
+                className="items-center mb-8"
               >
-                <Ionicons name="shuffle" size={12} color={Colors.lime} />
-                <Text className="text-lime text-[10.5px] font-sans-bold">
-                  Cycle {batchIndex + 1}/{dailyBatches.length}
+                {/* Double-ring hero emblem */}
+                <View className="w-20 h-20 rounded-full border border-lime/30 items-center justify-center bg-lime/[0.06] mb-4">
+                  <View className="w-[60px] h-[60px] rounded-full items-center justify-center border border-lime/45 bg-lime/15">
+                    <Ionicons name="sparkles" size={26} color={Colors.lime} />
+                  </View>
+                </View>
+
+                {/* Eyebrow tag */}
+                <View className="px-3.5 py-1 rounded-full bg-lavender/15 border border-lavender/40 mb-3">
+                  <Text className="text-[10px] uppercase tracking-[0.25em] font-sans-bold text-lavender">
+                    Evidence-Based Clinical AI
+                  </Text>
+                </View>
+
+                <Text className="text-white text-[25px] font-sans-bold text-center leading-8 mb-2">
+                  Clinical Consultant AI
                 </Text>
-              </TouchableOpacity>
-            </View>
+                <Text className="text-gray-400 text-[13px] text-center max-w-[280px] leading-5 font-sans">
+                  Ask about clinical management, diagnostic workups, dosing, or choose a prompt below.
+                </Text>
+              </Animated.View>
 
-            {/* Dynamic Symmetrical 2-Column Grid (Manually shuffled by user) */}
-            <Animated.View
-              key={batchIndex}
-              entering={reducedMotion ? undefined : FadeInUp.duration(350).easing(EASE_HEAVY)}
-              className="w-full flex-row flex-wrap justify-between gap-y-2.5 mb-8"
-            >
-              {activeBatch.map((item, idx) => (
+              {/* Section Header with Cycle Badge & Manual Shuffle */}
+              <View className="flex-row items-center justify-between w-full mb-3 px-1">
+                <View className="flex-row items-center gap-1.5">
+                  <Ionicons name="sparkles" size={13} color={Colors.lime} />
+                  <Text className="text-gray-300 font-sans-bold text-[11.5px] uppercase tracking-wider">
+                    Clinical Presets
+                  </Text>
+                </View>
+
                 <TouchableOpacity
-                  key={idx}
-                  onPress={() => handleTextSend(item.prompt)}
-                  activeOpacity={0.75}
-                  style={{
-                    width: "48.5%",
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 3 },
-                    shadowOpacity: 0.35,
-                    shadowRadius: 8,
-                    elevation: 4,
-                  }}
-                  className="p-3.5 rounded-2xl bg-[#0c1017] border border-white/[0.12] justify-between h-[96px]"
+                  onPress={handleManualShuffle}
+                  activeOpacity={0.7}
+                  className="flex-row items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.06] border border-white/10"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <View className="flex-row items-center justify-between">
-                    <View
-                      className="w-7 h-7 rounded-xl items-center justify-center border"
-                      style={{
-                        backgroundColor: item.color + "18",
-                        borderColor: item.color + "45",
-                      }}
-                    >
-                      <Ionicons name={item.icon} size={14} color={item.color} />
-                    </View>
-                    <Ionicons name="arrow-up" size={13} color="#6b7280" />
-                  </View>
-                  <View>
-                    <Text
-                      className="text-gray-100 font-sans-bold text-[13px] leading-4"
-                      numberOfLines={1}
-                    >
-                      {item.title}
-                    </Text>
-                    <Text
-                      className="text-gray-400 font-sans text-[11px] leading-3.5 mt-0.5"
-                      numberOfLines={1}
-                    >
-                      {item.subtitle}
-                    </Text>
-                  </View>
+                  <Ionicons name="shuffle" size={12} color={Colors.lime} />
+                  <Text className="text-lime text-[10.5px] font-sans-bold">
+                    Cycle {batchIndex + 1}/{dailyBatches.length}
+                  </Text>
                 </TouchableOpacity>
-              ))}
-            </Animated.View>
-          </ScrollView>
-        ) : (
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <ChatBubble
-                message={item}
-                onCopy={handleCopyText}
-                onRetry={handleRetry}
-                onSelectSuggestion={(q) => handleTextSend(q)}
-              />
-            )}
-            ListFooterComponent={isTyping ? <ThinkingIndicator /> : null}
-            contentContainerStyle={{
-              paddingTop: 24,
-              paddingBottom: composerBottom + 150, // Further increased clearance
-              flexGrow: 1,
-              backgroundColor: "#010101",
-            }}
-            onContentSizeChange={() =>
-              flatListRef.current?.scrollToEnd({ animated: true })
-            }
-            onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            style={{ flex: 1, backgroundColor: "#010101" }}
-          />
-        )}
+              </View>
 
-        {/* Floating Composer Island */}
+              {/* Dynamic Symmetrical 2-Column Grid */}
+              <Animated.View
+                key={batchIndex}
+                entering={reducedMotion ? undefined : FadeInUp.duration(350).easing(EASE_HEAVY)}
+                className="w-full flex-row flex-wrap justify-between gap-y-2.5 mb-8"
+              >
+                {activeBatch.map((item, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    onPress={() => handleTextSend(item.prompt)}
+                    activeOpacity={0.75}
+                    style={{
+                      width: "48.5%",
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 3 },
+                      shadowOpacity: 0.35,
+                      shadowRadius: 8,
+                      elevation: 4,
+                    }}
+                    className="p-3.5 rounded-2xl bg-[#0c1017] border border-white/[0.12] justify-between h-[96px]"
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <View
+                        className="w-7 h-7 rounded-xl items-center justify-center border"
+                        style={{
+                          backgroundColor: item.color + "18",
+                          borderColor: item.color + "45",
+                        }}
+                      >
+                        <Ionicons name={item.icon} size={14} color={item.color} />
+                      </View>
+                      <Ionicons name="arrow-up" size={13} color="#6b7280" />
+                    </View>
+                    <View>
+                      <Text
+                        className="text-gray-100 font-sans-bold text-[13px] leading-4"
+                        numberOfLines={1}
+                      >
+                        {item.title}
+                      </Text>
+                      <Text
+                        className="text-gray-400 font-sans text-[11px] leading-3.5 mt-0.5"
+                        numberOfLines={1}
+                      >
+                        {item.subtitle}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </Animated.View>
+            </ScrollView>
+          ) : (
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <ChatBubble
+                  message={item}
+                  onCopy={handleCopyText}
+                  onRetry={handleRetry}
+                  onSelectSuggestion={(q) => handleTextSend(q)}
+                />
+              )}
+              ListFooterComponent={isTyping ? <ThinkingIndicator /> : null}
+              contentContainerStyle={{
+                paddingTop: 16,
+                paddingBottom: 20,
+                flexGrow: 1,
+                backgroundColor: "#010101",
+              }}
+              keyboardDismissMode="on-drag"
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              style={{ flex: 1, backgroundColor: "#010101" }}
+            />
+          )}
+        </View>
+
+        {/* Natural Flow Composer Dock (No overlapping behind messages) */}
         <View
-          className="absolute left-4 right-4"
-          style={{ bottom: composerBottom }}
+          style={{
+            paddingHorizontal: 16,
+            paddingTop: 8,
+            paddingBottom: composerPaddingBottom,
+            backgroundColor: "#010101",
+          }}
         >
           <View
             className="flex-row items-center rounded-[28px] px-4 py-2 border border-white/[0.12]"

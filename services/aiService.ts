@@ -19,39 +19,47 @@ export type Citation = {
 };
 
 const CLINICAL_SYSTEM_PROMPT = `You are Medical Arena AI, a board-certified clinical decision support assistant designed exclusively for physicians, surgeons, and medical practitioners.
-Your core mission is to synthesize provided clinical evidence into actionable, high-yield guidance.
+Your core mission is to synthesize clinical evidence into actionable, high-yield guidance while strictly maintaining cross-turn patient context and pharmacovigilance.
 
-### 1. CLINICAL EVIDENCE GROUNDING & SYNTHESIS:
-- Base all recommendations, drug regimens, weight/age-adjusted dosages, and diagnostic criteria on established international clinical guidelines and provided resources.
-- Deliver direct, high-confidence clinical answers without generic boilerplate or robotic meta-disclaimers (never output phrases like "No direct evidence-based reference found" or "GENERAL CLINICAL THEORY").
-- If a patient population requires special consideration (e.g., pediatric age brackets 10–18y, renal impairment, pregnancy, or antimicrobial resistance), directly integrate the specific guideline recommendations (e.g., ESPGHAN/NASPGHAN high-dose amoxicillin + clarithromycin/metronidazole or bismuth quadruple regimens).
-- Use bracketed citations [1], [2] referencing the source in the provided context.
+### 1. SESSION CONTINUITY & DEMOGRAPHIC PRESERVATION:
+- **Preserve Established Context**: When the user asks a follow-up question (e.g. asking about a drug, dosage, or test like "what about tetracycline?"), you MUST interpret it strictly within the active clinical topic and patient demographic established in previous messages (e.g. pediatric age 10-18y H. pylori eradication).
+- Never reset to generic adult or disconnected definitions unless the user explicitly introduces a completely new case or patient.
 
-### 2. INTELLIGENT INTENT-FIRST ARCHITECTURE (ZERO GENERIC FLUFF):
+### 2. CLINICAL EVIDENCE GROUNDING & PEDIATRIC PHARMACOVIGILANCE:
+- Base all recommendations, drug regimens, weight/age-adjusted dosages, and diagnostic criteria on established international clinical guidelines (e.g., ESPGHAN/NASPGHAN, AAP, IDSA, Maastricht VI).
+- **Pediatric Age Restrictions & Contraindications**: Whenever discussing drugs with pediatric age cutoffs (e.g., Tetracyclines contraindicated in children <8 years due to tooth discoloration and enamel hypoplasia; Fluoroquinolones limitations; Aspirin Reye's syndrome risk), explicitly state the age constraints, weight thresholds, and safe alternative protocols.
+- **Pediatric H. pylori Protocols**:
+  * First-line (ESPGHAN/NASPGHAN): 14-day high-dose Amoxicillin + Clarithromycin (if clarithromycin resistance <15%) OR Amoxicillin + Metronidazole.
+  * Rescue / Bismuth Quadruple: In children ≥8 years or adolescents (depending on regional guidelines / weight >40kg), Tetracycline/Metronidazole/Bismuth/PPI may be considered; in children <8 years, Tetracycline is strictly avoided.
+- Deliver direct, high-confidence clinical answers without generic boilerplate or robotic meta-disclaimers.
+- Use bracketed citations [1], [2] referencing the source in the provided context where applicable.
+
+### 3. INTELLIGENT INTENT-FIRST ARCHITECTURE (ZERO GENERIC FLUFF):
 - Deeply analyze what the user is asking. Deliver the EXACT clinical answer first with zero introductory filler.
 - **Dynamic Hero Card Selection**:
   * **Treatment / Management query**: -> Card 1: ##SECTION: MANAGEMENT PROTOCOL## -> Card 2: ##SECTION: FIRST-LINE PHARMACOTHERAPY##
+  * **Pediatric / Drug safety query**: -> Card 1: ##SECTION: PEDIATRIC SAFETY & CONTRAINDICATIONS## -> Card 2: ##SECTION: RECOMMENDED REGIMEN & DOSING##
   * **Criteria / Definition query**: -> Card 1: ##SECTION: DIAGNOSTIC CRITERIA & SCORING##
   * **Acute Emergency / Field Scenario**: -> Card 1: ##SECTION: EMERGENCY PROTOCOL & IMMEDIATE ACTION##
   * **Diagnostic Workup / Lab / Imaging query**: -> Card 1: ##SECTION: INVESTIGATIONS / WORKUP##
-- Always include ##SECTION: LATEST EVIDENCE & CLINICAL UPDATES## before citations when summarizing recent 2024–2026 antimicrobial resistance trends or landmark updates.
+- Always include ##SECTION: CLINICAL PEARLS & PITFALLS## highlighting common pitfalls or resistance patterns.
 
-### 3. KNOWLEDGE DISTILLATION (ACTIVE LEARNING):
+### 4. KNOWLEDGE DISTILLATION (ACTIVE LEARNING):
 - If the "KNOWLEDGE RESOURCES" (e.g., Europe PMC) provide a new standard of care, specific dosage, or landmark trial results NOT present in the primary "DATABASE CONTEXT", you MUST include a hidden block at the very end:
   ##KNOWLEDGE_UPDATE##
   [Topic Name]: [Summary of the new information to be added to the permanent database]
   [Reference]: [Full citation string]
   ##END_UPDATE##
 
-### 4. FORMATTING & THEMED SECTION HEADERS:
+### 5. FORMATTING & THEMED SECTION HEADERS:
 - You MUST wrap every distinct card in a themed section header: ##SECTION: HEADING_NAME##
 - **No Markdown Tables**: Never use markdown tables (| or ---). Use bullet points:
   - **Drug Name**: Dosage | Route | Frequency | Duration/Notes
 - **Language**: Match user query language, but keep drug names, scores, and medical terms in English.
 - **No Internal Thinking**: DO NOT include thinking tags or reasoning chains. Output only the structured sections.
 
-### 5. SUGGESTIONS:
-At the very end, provide ##SUGGESTIONS## with 2-3 focused clinical follow-up prompts.`;
+### 6. SUGGESTIONS:
+At the very end, provide ##SUGGESTIONS## with 2-3 focused clinical follow-up prompts tailored to the ongoing case.`;
 
 /**
  * Robust extraction for Suggestions and thinking/reasoning removal
@@ -97,11 +105,11 @@ function cleanAIResponse(text: string): { reply: string; suggestions: string[]; 
  */
 async function callGroqDirect(prompt: string, context?: string, history: { role: 'user' | 'assistant'; content: string }[] = []): Promise<string | null> {
   if (!GROQ_KEY) return null;
-  const models = ['groq/compound', 'qwen/qwen3.6-27b'];
+  const models = ['openai/gpt-oss-120b', 'qwen/qwen3.6-27b', 'llama-3.3-70b-versatile'];
 
   const messages = [
     { role: 'system', content: CLINICAL_SYSTEM_PROMPT + (context ? `\n\nDATABASE CONTEXT TO USE:\n${context}` : '') },
-    ...history,
+    ...history.slice(-8),
     { role: 'user', content: prompt },
   ];
 
@@ -142,7 +150,7 @@ async function callGeminiDirect(prompt: string, context?: string, historyText?: 
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(GEMINI_KEY);
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3.1-pro-preview',
+      model: 'gemini-1.5-flash',
       generationConfig: { temperature: 0.2, maxOutputTokens: 3500 },
     });
     const fullPrompt = `${CLINICAL_SYSTEM_PROMPT}${context ? `\n\nDATABASE CONTEXT TO USE:\n${context}` : ''}${historyText ? `\n\nCONVERSATION HISTORY:\n${historyText}` : ''}\n\nCLINICAL QUESTION:\n${prompt}`;
@@ -299,28 +307,34 @@ export const aiService = {
     // 2. Try Direct Groq API
     const groqReply = await callGroqDirect(message, resolvedContext, groqHistory);
     if (groqReply) {
-      const { reply, suggestions } = cleanAIResponse(groqReply);
-      return { reply, citations: [], suggestions };
+      const cleaned = cleanAIResponse(groqReply);
+      return {
+        reply: cleaned.reply,
+        citations: [],
+        suggestions: cleaned.suggestions.length > 0 ? cleaned.suggestions : [
+          'Stepwise dose adjustments',
+          'Pediatric safety considerations',
+          'Refractory case algorithm'
+        ],
+      };
     }
 
     // 3. Try Direct Gemini API
     const geminiReply = await callGeminiDirect(message, resolvedContext, geminiHistoryText);
     if (geminiReply) {
-      const { reply, suggestions } = cleanAIResponse(geminiReply);
-      return { reply, citations: [], suggestions };
+      const cleaned = cleanAIResponse(geminiReply);
+      return {
+        reply: cleaned.reply,
+        citations: [],
+        suggestions: cleaned.suggestions.length > 0 ? cleaned.suggestions : [
+          'Stepwise dose adjustments',
+          'Pediatric safety considerations',
+          'Refractory case algorithm'
+        ],
+      };
     }
 
-    // 4. Offline Fallback from Bundled Medical Database
+    // 4. Fallback to Offline Local Knowledge Base
     return getOfflineFallbackReply(message);
-  },
-
-  async processAudio(
-    base64Audio: string,
-    mimeType: string = 'audio/m4a'
-  ): Promise<{ text: string; reply: string }> {
-    return {
-      text: '(Audio processing unavailable)',
-      reply: 'Voice input is not supported in this version. Please type your clinical query.',
-    };
   },
 };

@@ -7,6 +7,7 @@ const { ingestKnowledge } = require('../services/knowledgeService');
 const { autoReviewAndUpdateTopics } = require('../services/knowledgeUpdateService');
 const { extractAndCompileTopicsFromResource } = require('../services/referenceTopicMiner');
 const AutonomousScientist = require('../services/autonomousScientistService');
+const { expansionManager, SPECIALTY_META } = require('../services/expansionManager');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
@@ -14,13 +15,13 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 // Configure multer for PDF uploads (store in memory for immediate processing)
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Global map to hold active SSE connections for progress tracking
+// Global maps to hold active SSE connections
 const clients = new Map();
-// Scientist SSE connections
 const scientistClients = new Map();
+const expansionClients = new Map();
 
 /**
- * SSE Endpoint for Scientist Mission Progress
+ * SSE Endpoint for Scientist Mission Progress (Legacy & Generic)
  */
 router.get('/scientist/mission-progress', (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
@@ -37,16 +38,55 @@ router.get('/scientist/mission-progress', (req, res) => {
 });
 
 /**
+ * SSE Endpoint for Real-time Expansion Mission Control Stream
+ */
+router.get('/scientist/expansion/stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    // Send initial current state immediately
+    const initialState = expansionManager.getStatus();
+    res.write(`data: ${JSON.stringify(initialState)}\n\n`);
+
+    const clientId = Date.now() + Math.random();
+    expansionClients.set(clientId, res);
+
+    req.on('close', () => {
+        expansionClients.delete(clientId);
+    });
+});
+
+// Broadcast listener from expansionManager
+expansionManager.on('update', (state) => {
+    // Send to expansionClients
+    expansionClients.forEach(client => {
+        try {
+            client.write(`data: ${JSON.stringify(state)}\n\n`);
+        } catch (_) {}
+    });
+
+    // Also forward to scientistClients
+    scientistClients.forEach(client => {
+        try {
+            client.write(`data: ${JSON.stringify(state)}\n\n`);
+        } catch (_) {}
+    });
+});
+
+/**
  * Helper to broadcast scientist progress
  */
 function broadcastScientistProgress(update) {
     scientistClients.forEach(client => {
-        client.write(`data: ${JSON.stringify(update)}\n\n`);
+        try {
+            client.write(`data: ${JSON.stringify(update)}\n\n`);
+        } catch (_) {}
     });
 }
 
 /**
- * SSE Endpoint to stream real-time progress to the Admin Dashboard
+ * SSE Endpoint to stream real-time progress to the Admin Dashboard (File / URL Ingestion)
  */
 router.get('/progress/:jobId', (req, res) => {
     const { jobId } = req.params;
@@ -106,11 +146,9 @@ router.post('/ingest', upload.single('file'), async (req, res) => {
         } 
         // 2. Handle URL Scraping
         else if (url && !rawText) {
-            // Using dynamic import for node-fetch or native fetch in Node 18+
             const response = await fetch(url);
             const html = await response.text();
             const $ = cheerio.load(html);
-            // Advanced scraping: strip out nav, footer, scripts, styles
             $('script, style, nav, footer, header, noscript, iframe').remove();
             textToIngest = $('body').text().replace(/\s+/g, ' ').trim();
         } 
@@ -132,7 +170,6 @@ router.post('/ingest', upload.single('file'), async (req, res) => {
             title || "Untitled Guideline", 
             textToIngest, 
             sourceUrl,
-            // Progress Callback
             (processed, total) => sendProgress(jobId, processed, total),
             {
                 guidelineSociety,
@@ -145,13 +182,13 @@ router.post('/ingest', upload.single('file'), async (req, res) => {
         // Notify client that job is complete
         sendProgress(jobId, 1, 1, 'complete');
 
-        // 4. Trigger Auto-Update Pipeline (Background task to review and critique existing specialty topics)
+        // Trigger Auto-Update Pipeline
         console.log(`[Admin] Kicking off Auto-Update Pipeline for resource: ${title || sourceUrl}`);
         autoReviewAndUpdateTopics(textToIngest, title || sourceUrl).catch(err => {
             console.error("[Admin] Auto-Update Pipeline failed:", err);
         });
 
-        // 5. Trigger Reference Topic Extraction & Compilation Pipeline (Discovers new conditions from this resource)
+        // Trigger Reference Topic Extraction Pipeline
         console.log(`[Admin] Kicking off Reference Topic Extraction for resource: ${title || sourceUrl}`);
         extractAndCompileTopicsFromResource(title || sourceUrl, textToIngest).catch(err => {
             console.error("[Admin] Topic Extraction Pipeline failed:", err);
@@ -163,13 +200,124 @@ router.post('/ingest', upload.single('file'), async (req, res) => {
     }
 });
 
+// =========================================================================
+// INTERACTIVE SPECIALTY EXPANSION MISSION CONTROL ENDPOINTS
+// =========================================================================
+
+/**
+ * Get the current expansion mission state
+ */
+router.get('/scientist/expansion/status', (req, res) => {
+    res.json(expansionManager.getStatus());
+});
+
+/**
+ * Start an expansion mission
+ */
+router.post('/scientist/expansion/start', async (req, res) => {
+    const { specialtyId, customTopics } = req.body;
+    if (!specialtyId) {
+        return res.status(400).json({ error: "Missing specialtyId." });
+    }
+
+    try {
+        const state = await expansionManager.start({ specialtyId, customTopics });
+        res.json({ success: true, state });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+/**
+ * Pause the active expansion
+ */
+router.post('/scientist/expansion/pause', (req, res) => {
+    const state = expansionManager.pause();
+    res.json({ success: true, state });
+});
+
+/**
+ * Resume the paused expansion
+ */
+router.post('/scientist/expansion/resume', (req, res) => {
+    const state = expansionManager.resume();
+    res.json({ success: true, state });
+});
+
+/**
+ * Stop the expansion mission
+ */
+router.post('/scientist/expansion/stop', (req, res) => {
+    const state = expansionManager.stop();
+    res.json({ success: true, state });
+});
+
+/**
+ * Skip the active topic or a specific pending topic
+ */
+router.post('/scientist/expansion/skip', (req, res) => {
+    const { topicId } = req.body;
+    const state = expansionManager.skipTopic(topicId);
+    res.json({ success: true, state });
+});
+
+/**
+ * Retry a failed or skipped topic
+ */
+router.post('/scientist/expansion/retry', (req, res) => {
+    const { topicId } = req.body;
+    if (!topicId) {
+        return res.status(400).json({ error: "Missing topicId." });
+    }
+    const state = expansionManager.retryTopic(topicId);
+    res.json({ success: true, state });
+});
+
+/**
+ * Add a custom topic into the active queue
+ */
+router.post('/scientist/expansion/add-topic', (req, res) => {
+    const { title, categoryId, categoryTitle } = req.body;
+    if (!title) {
+        return res.status(400).json({ error: "Missing topic title." });
+    }
+    const state = expansionManager.addTopic({ title, categoryId, categoryTitle });
+    res.json({ success: true, state });
+});
+
+/**
+ * Remove a topic from the queue
+ */
+router.post('/scientist/expansion/remove', (req, res) => {
+    const { topicId } = req.body;
+    if (!topicId) {
+        return res.status(400).json({ error: "Missing topicId." });
+    }
+    const state = expansionManager.removeTopic(topicId);
+    res.json({ success: true, state });
+});
+
+// Legacy trigger
+router.post('/scientist/expand/:specialtyId', async (req, res) => {
+    const { specialtyId } = req.params;
+    try {
+        const state = await expansionManager.start({ specialtyId });
+        res.json({ message: `Expansion mission started for ${specialtyId}.`, state });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// =========================================================================
+// SCIENTIST QUEUE & LEDGER ENDPOINTS
+// =========================================================================
+
 /**
  * Trigger Autonomous Scientist Research Cycle
  */
 router.post('/scientist/trigger', async (req, res) => {
     try {
         console.log('[Admin] Manually triggering Autonomous Scientist cycle...');
-        // Run in background
         AutonomousScientist.runResearchCycle().catch(err => {
             console.error('[Admin Scientist] Background cycle failed:', err);
         });
@@ -243,24 +391,6 @@ router.post('/scientist/reject/:id', async (req, res) => {
             .eq('id', id);
 
         res.json({ success: true, message: "Proposal rejected." });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-/**
- * Manually trigger knowledge expansion for a specific specialty
- */
-router.post('/scientist/expand/:specialtyId', async (req, res) => {
-    const { specialtyId } = req.params;
-    try {
-        console.log(`[Admin] Triggering expansion for: ${specialtyId}`);
-        // Run in background
-        AutonomousScientist.expandSpecialty(specialtyId).catch(err => {
-            console.error('[Admin Scientist] Expansion failed:', err);
-        });
-
-        res.json({ message: `Expansion mission started for ${specialtyId}. Check ledger for progress.` });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

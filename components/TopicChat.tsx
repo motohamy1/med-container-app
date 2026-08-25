@@ -86,6 +86,8 @@ const SECTION_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   "MANAGEMENT PROTOCOL": "medical-outline",
   "MANAGEMENT & PHARMACOTHERAPY": "medical-outline",
   "FIRST-LINE PHARMACOTHERAPY": "medical-outline",
+  "PEDIATRIC SAFETY & CONTRAINDICATIONS": "warning-outline",
+  "RECOMMENDED REGIMEN & DOSING": "flask-outline",
   "PHARMACOTHERAPY & DOSING": "flask-outline",
   "STEP-UP PROTOCOL": "trending-up-outline",
   "CLINICAL PEARLS": "sparkles-outline",
@@ -99,23 +101,25 @@ const SECTION_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 
 // Animated Thinking Wave
 const ThinkingIndicator: React.FC<{ themeColor: string }> = ({ themeColor }) => {
-  const dot1 = useSharedValue(0.25);
-  const dot2 = useSharedValue(0.25);
-  const dot3 = useSharedValue(0.25);
+  const dot1 = useSharedValue(0.3);
+  const dot2 = useSharedValue(0.3);
+  const dot3 = useSharedValue(0.3);
 
   useEffect(() => {
     const wave = () =>
       withRepeat(
         withSequence(
-          withTiming(1, { duration: 420, easing: EASE_HEAVY }),
-          withTiming(0.25, { duration: 420, easing: EASE_HEAVY })
+          withTiming(1, { duration: 400, easing: EASE_HEAVY }),
+          withTiming(0.3, { duration: 400, easing: EASE_HEAVY }),
         ),
         -1,
-        true
+        true,
       );
+
     dot1.value = wave();
-    const t2 = setTimeout(() => (dot2.value = wave()), 160);
-    const t3 = setTimeout(() => (dot3.value = wave()), 320);
+    const t2 = setTimeout(() => (dot2.value = wave()), 150);
+    const t3 = setTimeout(() => (dot3.value = wave()), 300);
+
     return () => {
       clearTimeout(t2);
       clearTimeout(t3);
@@ -129,72 +133,80 @@ const ThinkingIndicator: React.FC<{ themeColor: string }> = ({ themeColor }) => 
   return (
     <Animated.View
       entering={FadeInDown.duration(200).easing(EASE_HEAVY)}
-      className="flex-row items-center gap-3 px-4 py-2 mb-4"
+      className="flex-row items-center gap-3 px-4 py-3 mb-4"
     >
       <View
-        className="w-8 h-8 rounded-full items-center justify-center border"
+        className="w-7 h-7 rounded-full items-center justify-center border"
         style={{
-          backgroundColor: `${themeColor}20`,
-          borderColor: `${themeColor}40`,
+          backgroundColor: `${themeColor}15`,
+          borderColor: `${themeColor}35`,
         }}
       >
-        <Ionicons name="sparkles" size={14} color={themeColor} />
+        <Ionicons name="sparkles" size={13} color={themeColor} />
       </View>
-      <View className="flex-row items-center gap-1.5 bg-[#141b1d] border border-white/10 px-4 py-2.5 rounded-2xl rounded-tl-md">
-        <Text className="text-gray-400 text-xs font-sans-medium mr-1">
-          Synthesizing clinical guidelines
-        </Text>
-        <Animated.View style={[s1, { backgroundColor: themeColor }]} className="w-1.5 h-1.5 rounded-full" />
-        <Animated.View style={[s2, { backgroundColor: themeColor }]} className="w-1.5 h-1.5 rounded-full" />
-        <Animated.View style={[s3, { backgroundColor: themeColor }]} className="w-1.5 h-1.5 rounded-full" />
+      <View className="flex-row items-center gap-1.5 bg-[#0e1416] border border-white/10 px-4 py-2.5 rounded-3xl rounded-tl-md">
+        <Text className="text-gray-400 text-xs font-sans-medium mr-1">Consulting knowledge base</Text>
+        <Animated.View className="w-1.5 h-1.5 rounded-full" style={[{ backgroundColor: themeColor }, s1]} />
+        <Animated.View className="w-1.5 h-1.5 rounded-full" style={[{ backgroundColor: themeColor }, s2]} />
+        <Animated.View className="w-1.5 h-1.5 rounded-full" style={[{ backgroundColor: themeColor }, s3]} />
       </View>
     </Animated.View>
   );
 };
 
+interface TopicChatProps {
+  specialtyId: string;
+  topicId: string;
+  topicName: string;
+  themeColor?: string;
+  initialQuery?: string;
+  categoryContext?: string;
+  onClose?: () => void;
+}
+
 export default function TopicChat({
   specialtyId,
   topicId,
   topicName,
-  themeColor,
+  themeColor: propThemeColor,
   initialQuery,
   categoryContext,
-}: {
-  specialtyId: string;
-  topicId: string;
-  topicName: string;
-  themeColor: string;
-  initialQuery?: string;
-  categoryContext?: string;
-}) {
+  onClose,
+}: TopicChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState(initialQuery || "");
+  const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const initialQuerySentRef = useRef(false);
 
-  const specialty = SPECIALTY_KNOWLEDGE[specialtyId || "heart"] || SPECIALTY_KNOWLEDGE["heart"];
-  const topicData = specialty.categories.flatMap((c) => c.topics).find((t) => t.id === topicId);
+  const specialty = SPECIALTY_KNOWLEDGE[specialtyId] || {
+    title: "Specialty",
+    color: "#6dc2bd",
+    categories: [],
+  };
 
-  // Suggested Starter Prompts tailored to this topic
+  const themeColor = propThemeColor || specialty.color || "#6dc2bd";
+
+  // Find topic subtitle & starter prompts
+  let topicData: any = null;
+  for (const cat of specialty.categories || []) {
+    const found = (cat.topics || []).find((t: any) => t.id === topicId);
+    if (found) {
+      topicData = found;
+      break;
+    }
+  }
+
   const starterPrompts = [
-    `Treatment protocol for ${topicName}`,
-    `Diagnostic criteria & workup for ${topicName}`,
-    `First-line medications and dosing for ${topicName}`,
-    `Emergency red flags & complications in ${topicName}`,
+    `What are the first-line treatment guidelines for ${topicName}?`,
+    `Diagnostic criteria and required workup for ${topicName}`,
+    `Dosages and contraindications in ${topicName}`,
   ];
-
-  useEffect(() => {
-    const keyboardShowListener = Keyboard.addListener("keyboardDidShow", () => {
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 200);
-    });
-    return () => keyboardShowListener.remove();
-  }, []);
 
   const handleCopyText = async (text: string) => {
     try {
       const Clipboard = await import('expo-clipboard');
       await Clipboard.setStringAsync(text);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Copied", "Clinical response copied to clipboard.");
     } catch {
       Alert.alert("Copy", "Unable to copy text.");
@@ -214,7 +226,9 @@ export default function TopicChat({
       isUser: true,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
-    setMessages((prev) => [...prev, userMessage]);
+    
+    const currentHistory = [...messages, userMessage];
+    setMessages(currentHistory);
 
     try {
       const { reply, citations, suggestions } = await aiService.sendMessageByText(
@@ -222,7 +236,8 @@ export default function TopicChat({
         "general",
         specialtyId as any,
         topicId,
-        categoryContext
+        categoryContext,
+        currentHistory.map(m => ({ text: m.text, isUser: m.isUser }))
       );
 
       // Check for Out-of-Scope flag from the AI
@@ -273,6 +288,13 @@ export default function TopicChat({
     }
   };
 
+  useEffect(() => {
+    if (initialQuery && !initialQuerySentRef.current) {
+      initialQuerySentRef.current = true;
+      handleTextSend(initialQuery);
+    }
+  }, [initialQuery]);
+
   const renderAiMessage = (item: Message) => {
     const { hasSections, sections, plainText } = parseMedicalSections(item.text);
 
@@ -303,41 +325,39 @@ export default function TopicChat({
           <Text className="text-gray-500 text-[10px] font-mono">{item.timestamp}</Text>
         </View>
 
-        {/* Sections or Plain Text */}
+        {/* Structured Medical Cards or Plain Text */}
         {hasSections ? (
-          <View className="space-y-3">
+          <View className="gap-2.5">
             {plainText.length > 0 && (
-              <View className="bg-[#141b1d] border border-white/10 rounded-2xl p-4 mb-3">
-                <FormattedClinicalText text={plainText} themeColor={themeColor} />
+              <View className="bg-[#0e1416] border border-white/10 rounded-2xl p-4">
+                <FormattedClinicalText text={plainText} />
               </View>
             )}
             {sections.map((sec, sIdx) => {
-              const upHeading = sec.heading.toUpperCase();
-              const matchedIconKey = Object.keys(SECTION_ICONS).find(
-                (k) => upHeading === k || upHeading.includes(k) || k.includes(upHeading)
-              );
-              const iconName = matchedIconKey ? SECTION_ICONS[matchedIconKey] : "document-text-outline";
+              const upperHeading = sec.heading.toUpperCase().trim();
+              const iconName = SECTION_ICONS[upperHeading] || "document-text-outline";
 
               return (
                 <View
-                  key={`sec-${sIdx}`}
-                  className="rounded-2xl border bg-[#0d1214] mb-3 overflow-hidden shadow-md"
-                  style={{ borderColor: `${themeColor}35` }}
+                  key={`topic-sec-${sIdx}`}
+                  className="rounded-2xl overflow-hidden bg-[#0e1416] border"
+                  style={{
+                    borderColor: `${themeColor}35`,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.2,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }}
                 >
-                  {/* Section Title Bar */}
                   <View
-                    className="flex-row items-center px-4 py-2.5 border-b"
+                    className="flex-row items-center gap-2 px-4 py-2.5 border-b"
                     style={{
                       backgroundColor: `${themeColor}12`,
                       borderBottomColor: `${themeColor}25`,
                     }}
                   >
-                    <View
-                      className="w-6 h-6 rounded-full items-center justify-center mr-2"
-                      style={{ backgroundColor: `${themeColor}25` }}
-                    >
-                      <Ionicons name={iconName} size={13} color={themeColor} />
-                    </View>
+                    <Ionicons name={iconName} size={15} color={themeColor} />
                     <Text
                       className="text-xs font-sans-bold uppercase tracking-wider flex-1"
                       style={{ color: themeColor }}
@@ -345,27 +365,22 @@ export default function TopicChat({
                       {sec.heading}
                     </Text>
                   </View>
-
-                  {/* Section Content */}
                   <View className="p-4">
-                    <FormattedClinicalText text={sec.content} themeColor={themeColor} />
+                    <FormattedClinicalText text={sec.content} />
                   </View>
                 </View>
               );
             })}
           </View>
         ) : (
-          <View
-            className="bg-[#141b1d] border border-white/10 rounded-2xl p-4"
-            style={{ borderColor: `${themeColor}35` }}
-          >
-            <FormattedClinicalText text={item.text} themeColor={themeColor} />
+          <View className="bg-[#0e1416] border border-white/10 rounded-3xl rounded-tl-md p-4">
+            <FormattedClinicalText text={item.text} />
           </View>
         )}
 
-        {/* Peer-Reviewed Literature References */}
+        {/* Citations Card */}
         {item.citations && item.citations.length > 0 && (
-          <View className="mt-3.5 mb-1">
+          <View className="mt-3 pt-3 border-t border-white/5">
             <View className="flex-row items-center gap-1.5 mb-2 ml-1">
               <Ionicons name="library-outline" size={12} color={themeColor} />
               <Text className="text-gray-400 text-[10.5px] font-sans-bold uppercase tracking-wider">
@@ -474,7 +489,8 @@ export default function TopicChat({
         data={messages}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingVertical: 16, paddingBottom: 110, flexGrow: 1 }}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         renderItem={({ item }) => (item.isUser ? renderUserMessage(item) : renderAiMessage(item))}
         ListEmptyComponent={
           <View className="flex-1 justify-center items-center mt-6 mb-8 px-4">

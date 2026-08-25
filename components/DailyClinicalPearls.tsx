@@ -148,7 +148,7 @@ export const DailyClinicalPearls = () => {
             <Ionicons name="sparkles" size={16} color={Colors.gold} />
           </View>
           <View>
-            <Text className="text-[17px] font-sans-bold text-white tracking-tight">
+            <Text className="text-[17px] font-sans-bold text-white">
               Daily High-Yield Pearls
             </Text>
             <Text className="text-[11px] font-sans-medium text-gray-muted tracking-wide">
@@ -541,7 +541,7 @@ export const DailyClinicalPearls = () => {
               <Ionicons name="star" size={28} color={Colors.gold} />
             </View>
 
-            <Text className="text-white font-sans-bold text-[19px] text-center tracking-tight mb-1.5">
+            <Text className="text-white font-sans-bold text-[19px] text-center mb-1.5">
               Daily Shuffle Limit Reached
             </Text>
 
@@ -645,6 +645,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    includeFontPadding: false,
   },
   metricBadge: {
     paddingHorizontal: 8,
@@ -660,6 +661,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlexMono_500Medium',
     color: '#e2e8f0',
     fontWeight: '600',
+    includeFontPadding: false,
   },
   pearlIconBox: {
     width: 28,
@@ -676,6 +678,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: '700',
     marginBottom: 8,
+    includeFontPadding: false,
   },
   ruleSummaryBox: {
     paddingVertical: 7,
@@ -692,10 +695,12 @@ const styles = StyleSheet.create({
     fontFamily: 'PlexSans_400Regular',
     fontSize: 12,
     lineHeight: 16.5,
+    includeFontPadding: false,
   },
   ruleHighlight: {
     fontFamily: 'PlexSans_700Bold',
     fontWeight: '700',
+    includeFontPadding: false,
   },
   cardFooterRow: {
     flexDirection: 'row',
@@ -716,6 +721,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'PlexMono_500Medium',
     color: '#94a3b8',
+    includeFontPadding: false,
   },
   tapDetailsBadge: {
     flexDirection: 'row',
@@ -730,6 +736,7 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
     fontFamily: 'PlexSans_700Bold',
     fontWeight: '700',
+    includeFontPadding: false,
   },
   modalOverlay: {
     flex: 1,
@@ -782,6 +789,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlexSans_700Bold',
     fontWeight: '700',
     textTransform: 'uppercase',
+    includeFontPadding: false,
   },
   modalCloseButton: {
     width: 34,
@@ -800,6 +808,7 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     fontWeight: '700',
     marginBottom: 10,
+    includeFontPadding: false,
   },
   modalMetricBadge: {
     flexDirection: 'row',
@@ -817,6 +826,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'PlexMono_500Medium',
     fontWeight: '600',
+    includeFontPadding: false,
   },
   modalSectionCard: {
     padding: 14,
@@ -837,12 +847,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
+    includeFontPadding: false,
   },
   modalSectionBody: {
     color: '#e2e8f0',
     fontFamily: 'PlexSans_400Regular',
     fontSize: 13.5,
     lineHeight: 20,
+    includeFontPadding: false,
   },
   modalCitationBox: {
     flexDirection: 'row',
@@ -861,6 +873,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlexMono_500Medium',
     fontSize: 11,
     flex: 1,
+    includeFontPadding: false,
   },
   modalConsultBtn: {
     flexDirection: 'row',
@@ -881,5 +894,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlexSans_700Bold',
     fontSize: 13.5,
     fontWeight: '700',
+    includeFontPadding: false,
   },
 });

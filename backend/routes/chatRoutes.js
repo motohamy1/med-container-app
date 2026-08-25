@@ -8,15 +8,17 @@ const { searchCustomKnowledge } = require('../services/knowledgeService');
 const { logKnowledgeUpdateFromChat, logKnowledgeGap } = require('../services/knowledgeUpdateService');
 
 router.post('/', async (req, res) => {
-    const { message, mode = 'general', category = 'physicians', topicId, categoryContext } = req.body;
+    const { message, mode = 'general', category = 'physicians', topicId, categoryContext, history = [] } = req.body;
     if (!message) return res.status(400).json({ error: 'message is required' });
 
-    // FAST-PATH INTENT CLASSIFICATION: Use AI to detect if it's just small talk
-    const intent = await analyzeIntent(message);
-    
-    if (intent === 'CONVERSATIONAL') {
-        console.log(`[Chat] Intercepted conversational intent: "${message}"`);
-        const conversationalPrompt = `You are the Med Arena Clinical Consultant, a professional medical AI assistant for physicians and medical students.
+    // FAST-PATH INTENT CLASSIFICATION: Use AI to detect if it's just small talk (only if no conversation history)
+    const isFirstTurn = !Array.isArray(history) || history.length === 0;
+    if (isFirstTurn) {
+        const intent = await analyzeIntent(message);
+        
+        if (intent === 'CONVERSATIONAL') {
+            console.log(`[Chat] Intercepted conversational intent: "${message}"`);
+            const conversationalPrompt = `You are the Med Arena Clinical Consultant, a professional medical AI assistant for physicians and medical students.
 The user just said: "${message}".
 Reply warmly, professionally, and concisely in 1-2 short sentences.
 Also suggest 3 high-yield clinical sample questions they might explore next.
@@ -27,41 +29,42 @@ Hello Doctor! How can I assist you with clinical guidelines, treatment protocols
 ##END##
 
 ##SUGGESTIONS##
-• COPD GOLD 2024 management protocol
+• Pediatric H. pylori ESPGHAN/NASPGHAN protocol
 • Acute Coronary Syndrome initial workup
 • Sepsis 1-hour resuscitation bundle
 ##END##`;
-        
-        try {
-            const rawReply = await callAI(conversationalPrompt);
-            let replyText = rawReply;
-            let suggestions = [];
-            const sugMatch = rawReply.match(/##SUGGESTIONS##([\s\S]*?)(?:##END##|$)/i);
-            if (sugMatch && sugMatch[1]) {
-                suggestions = sugMatch[1]
-                    .split('\n')
-                    .map(line => line.replace(/^[\s•\-*0-9.)]+/, '').replace(/##/g, '').trim())
-                    .filter(line => line.length > 4 && !line.toUpperCase().includes('END'));
-                replyText = rawReply.replace(/##SUGGESTIONS##[\s\S]*?(?:##END##|$)/gi, '').trim();
-            }
+            
+            try {
+                const rawReply = await callAI(conversationalPrompt);
+                let replyText = rawReply;
+                let suggestions = [];
+                const sugMatch = rawReply.match(/##SUGGESTIONS##([\s\S]*?)(?:##END##|$)/i);
+                if (sugMatch && sugMatch[1]) {
+                    suggestions = sugMatch[1]
+                        .split('\n')
+                        .map(line => line.replace(/^[\s•\-*0-9.)]+/, '').replace(/##/g, '').trim())
+                        .filter(line => line.length > 4 && !line.toUpperCase().includes('END'));
+                    replyText = rawReply.replace(/##SUGGESTIONS##[\s\S]*?(?:##END##|$)/gi, '').trim();
+                }
 
-            return res.json({ 
-                reply: replyText.includes('##GREETING##') ? replyText : `##GREETING##\n${replyText}\n##END##`, 
-                citations: [],
-                suggestions: suggestions.length > 0 ? suggestions : [
-                    "COPD GOLD 2024 management protocol",
-                    "Acute Coronary Syndrome initial workup",
-                    "Sepsis 1-hour resuscitation bundle"
-                ]
-            });
-        } catch (err) {
-            console.error('[Chat Intent]', err);
+                return res.json({ 
+                    reply: replyText.includes('##GREETING##') ? replyText : `##GREETING##\n${replyText}\n##END##`, 
+                    citations: [],
+                    suggestions: suggestions.length > 0 ? suggestions : [
+                        "Pediatric H. pylori ESPGHAN/NASPGHAN protocol",
+                        "Acute Coronary Syndrome initial workup",
+                        "Sepsis 1-hour resuscitation bundle"
+                    ]
+                });
+            } catch (err) {
+                console.error('[Chat Intent]', err);
+            }
         }
     }
 
     try {
-        // Always extract focused medical search keywords from user query
-        let searchKeywords = await extractEnglishKeywords(message);
+        // Extract context-aware medical search keywords from user query + recent history
+        let searchKeywords = await extractEnglishKeywords(message, history);
         console.log(`[Literature Search] Extracted keywords: "${searchKeywords}" from message: "${message}"`);
 
         // Parallelize knowledge base retrieval with a 2.5s maximum timeout
@@ -71,7 +74,7 @@ Hello Doctor! How can I assist you with clinical guidelines, treatment protocols
         const [rawKnowledgeRes, literatureRefsRes, customDocsRes] = await Promise.allSettled([
             withTimeout(fetchMedicalKnowledge(searchKeywords || message), 2500, ''),
             withTimeout(fetchClinicalLiterature(searchKeywords || message, category), 2500, []),
-            withTimeout(searchCustomKnowledge(message), 2500, [])
+            withTimeout(searchCustomKnowledge(searchKeywords || message), 2500, [])
         ]);
 
         const rawKnowledge = (rawKnowledgeRes.status === 'fulfilled' && rawKnowledgeRes.value) ? rawKnowledgeRes.value : '';
@@ -159,45 +162,52 @@ Hello Doctor! How can I assist you with clinical guidelines, treatment protocols
         let systemPrompt = `
 ${personaInstruction}
 
-YOUR MISSION: Synthesize provided clinical evidence into actionable, high-yield guidance.
+YOUR MISSION: Synthesize clinical evidence into actionable, high-yield guidance while maintaining unbroken session context and clinical safety.
 
 KNOWLEDGE RESOURCES:
 ${medicalKnowledgeContext || 'NONE AVAILABLE (AI: SYNTHESIZE FROM AUTHORITATIVE INTERNATIONAL CLINICAL GUIDELINES & CONSENSUS)'}
 
-### 1. CLINICAL EVIDENCE GROUNDING & SYNTHESIS:
-- Base all recommendations, drug regimens, weight/age-adjusted dosages, and diagnostic criteria on established international clinical guidelines and provided resources.
-- Deliver direct, high-confidence clinical answers without generic boilerplate or robotic meta-disclaimers (never output phrases like "No direct evidence-based reference found" or "GENERAL CLINICAL THEORY").
-- If a patient population requires special consideration (e.g., pediatric age brackets 10–18y, renal impairment, pregnancy, or antimicrobial resistance), directly integrate the specific guideline recommendations (e.g., ESPGHAN/NASPGHAN high-dose amoxicillin + clarithromycin/metronidazole or bismuth quadruple regimens).
-- Use bracketed citations [1], [2] referencing the source in the provided context.
+### 1. SESSION CONTINUITY & DEMOGRAPHIC PRESERVATION:
+- **Preserve Established Context**: When the user asks a follow-up question (e.g. asking about a drug, dosage, or test like "what about tetracycline?"), you MUST interpret it strictly within the active clinical topic and patient demographic established in previous messages (e.g. pediatric age 10-18y H. pylori eradication).
+- Never reset to generic adult or disconnected definitions unless the user explicitly introduces a completely new case or patient.
 
-### 2. INTELLIGENT INTENT-FIRST ARCHITECTURE (ZERO GENERIC FLUFF):
-- Deeply analyze what the user is asking. Deliver the EXACT clinical answer first with zero introductory filler.
-- **Dynamic Hero Card Selection**:
-  * **Treatment / Management query**: -> Card 1: ##SECTION: MANAGEMENT PROTOCOL## -> Card 2: ##SECTION: FIRST-LINE PHARMACOTHERAPY##
-  * **Criteria / Definition query**: -> Card 1: ##SECTION: DIAGNOSTIC CRITERIA & SCORING##
-  * **Acute Emergency / Field Scenario**: -> Card 1: ##SECTION: EMERGENCY PROTOCOL & IMMEDIATE ACTION##
-  * **Diagnostic Workup / Lab / Imaging query**: -> Card 1: ##SECTION: INVESTIGATIONS / WORKUP##
-- Always include ##SECTION: LATEST EVIDENCE & CLINICAL UPDATES## before citations when summarizing recent 2024–2026 antimicrobial resistance trends or landmark updates.
+### 2. CLINICAL EVIDENCE GROUNDING & PEDIATRIC PHARMACOVIGILANCE:
+- Base all recommendations, drug regimens, weight/age-adjusted dosages, and diagnostic criteria on established international clinical guidelines (e.g., ESPGHAN/NASPGHAN, AAP, IDSA, Maastricht VI).
+- **Pediatric Age Restrictions & Contraindications**: Whenever discussing drugs with pediatric age cutoffs (e.g., Tetracyclines contraindicated in children <8 years due to tooth discoloration and enamel hypoplasia; Fluoroquinolones limitations; Aspirin Reye's syndrome risk), explicitly state the age constraints, weight thresholds, and safe alternative protocols.
+- **Pediatric H. pylori Protocols**:
+  * First-line (ESPGHAN/NASPGHAN): 14-day high-dose Amoxicillin + Clarithromycin (if clarithromycin resistance <15%) OR Amoxicillin + Metronidazole.
+  * Rescue / Bismuth Quadruple: In children ≥8 years or adolescents (depending on regional guidelines / weight >40kg), Tetracycline/Metronidazole/Bismuth/PPI may be considered; in children <8 years, Tetracycline is strictly avoided.
+- Deliver direct, high-confidence clinical answers without generic boilerplate or robotic meta-disclaimers.
+- Use bracketed citations [1], [2] referencing the source in the provided context where applicable.
 
-### 3. KNOWLEDGE DISTILLATION (ACTIVE LEARNING):
+### 3. INTELLIGENT INTENT-FIRST ARCHITECTURE:
+- Deliver the EXACT clinical answer first with zero introductory filler.
+- **Dynamic Section Header Selection**:
+  * **Treatment / Management query**: -> ##SECTION: MANAGEMENT PROTOCOL## and ##SECTION: FIRST-LINE PHARMACOTHERAPY##
+  * **Pediatric / Drug safety query**: -> ##SECTION: PEDIATRIC SAFETY & CONTRAINDICATIONS## and ##SECTION: RECOMMENDED REGIMEN & DOSING##
+  * **Diagnostic Criteria query**: -> ##SECTION: DIAGNOSTIC CRITERIA & SCORING##
+  * **Acute Emergency / Field Scenario**: -> ##SECTION: EMERGENCY PROTOCOL & IMMEDIATE ACTION##
+- Always include ##SECTION: CLINICAL PEARLS & PITFALLS## highlighting common pitfalls or resistance patterns.
+
+### 4. KNOWLEDGE DISTILLATION (ACTIVE LEARNING):
 - If the "KNOWLEDGE RESOURCES" (e.g., Europe PMC) provide a new standard of care, specific dosage, or landmark trial results NOT present in the primary "DATABASE CONTEXT", you MUST include a hidden block at the very end:
   ##KNOWLEDGE_UPDATE##
   [Topic Name]: [Summary of the new information to be added to the permanent database]
   [Reference]: [Full citation string]
   ##END_UPDATE##
 
-### 4. FORMATTING & THEMED SECTION HEADERS:
+### 5. FORMATTING & THEMED SECTION HEADERS:
 - You MUST wrap every distinct card in a themed section header: ##SECTION: HEADING_NAME##
 - **No Markdown Tables**: Never use markdown tables (| or ---). Use structured bullet points:
   - **Drug Name**: Dosage | Route | Frequency | Duration/Notes
 - **Language**: Respond in the language of the query (e.g., Arabic), but keep drug names, scores, and medical terms in English.
 - Cite references inline using [1], [2] where applicable.
 
-### 5. SUGGESTIONS:
-At the very end, provide ##SUGGESTIONS## with 2-3 focused clinical follow-up prompts.
+### 6. SUGGESTIONS:
+At the very end, provide ##SUGGESTIONS## with 2-3 focused clinical follow-up prompts tailored to the ongoing case.
 `;
 
-        const rawReply = await callAI(systemPrompt, message);
+        const rawReply = await callAI(systemPrompt, message, history);
 
         let normalized = rawReply;
         
@@ -211,7 +221,7 @@ At the very end, provide ##SUGGESTIONS## with 2-3 focused clinical follow-up pro
 
             // Log it for review (Asynchronous)
             logKnowledgeUpdateFromChat(
-                topicLine.split(':')[1]?.trim() || 'Generic',
+                topicLine.split(':')[1]?.trim() || (searchKeywords || 'Generic'),
                 updateBody,
                 refLine.split(':')[1]?.trim() || 'PMC Search',
                 message
@@ -223,7 +233,7 @@ At the very end, provide ##SUGGESTIONS## with 2-3 focused clinical follow-up pro
 
         // 2. DETECT KNOWLEDGE GAP (If custom knowledge database was empty for this query)
         if (customKnowledgeDocs.length === 0) {
-            logKnowledgeGap(message, category);
+            logKnowledgeGap(searchKeywords || message, category);
         }
 
         normalized = normalized.replace(/^(#{1,4})\s*([^#\n]+?)\s*#*$/gm, (match, hashes, headingText) => {
@@ -268,9 +278,8 @@ At the very end, provide ##SUGGESTIONS## with 2-3 focused clinical follow-up pro
     } catch (err) {
         console.error('[/api/chat]', err.message);
         res.status(500).json({
-            error: 'AI service error',
-            reply: "I'm sorry, I'm having trouble with the clinical AI model right now. Please try again.",
-            suggestions: []
+            error: 'Failed to process clinical inquiry',
+            details: err.message
         });
     }
 });

@@ -1,10 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Dimensions,
-  Modal,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -84,25 +82,17 @@ export const SURGICAL_ORBIT_SPECIALTIES: SurgicalSpecialtyItem[] = [
     description: 'Endourology, laser lithotripsy, robotic prostatectomy, and torsion',
   },
   {
-    id: 'more_surgery',
-    name: 'More Surgery',
-    scientificName: 'Expanded Surgical Subspecialties',
-    icon: 'grid',
-    color: '#dbd4fd', // Lavender
-    description: 'Pediatric, Plastic, ENT, Surgical Oncology, and Transplant',
-  },
-];
-
-// Additional Surgical Specialties in the Expanded Modal
-export const EXPANDED_SURGICAL_SPECIALTIES: SurgicalSpecialtyItem[] = [
-  {
     id: 'surgery_plastics',
     name: 'Plastic Surgery',
     scientificName: 'Plastic, Reconstructive & Burn Surgery',
     icon: 'body-outline',
-    color: '#ffc3dd',
+    color: '#ffc3dd', // Rose
     description: 'Microsurgical free flap transfer, skin grafting, burn excision, and wound coverage',
   },
+];
+
+// Surgical specialties for the second wheel
+export const EXPANDED_SURGICAL_SPECIALTIES: SurgicalSpecialtyItem[] = [
   {
     id: 'surgery_pediatric',
     name: 'Pediatric Surgery',
@@ -134,6 +124,38 @@ export const EXPANDED_SURGICAL_SPECIALTIES: SurgicalSpecialtyItem[] = [
     icon: 'repeat-outline',
     color: '#defff9',
     description: 'Deceased & living donor renal transplant, orthotopic liver transplant, and immunosuppression',
+  },
+  {
+    id: 'surgery_bariatric',
+    name: 'Bariatric',
+    scientificName: 'Bariatric & Metabolic Surgery',
+    icon: 'resize-outline',
+    color: '#ffc3dd',
+    description: 'Sleeve gastrectomy, Roux-en-Y gastric bypass, and metabolic syndrome resolution',
+  },
+  {
+    id: 'surgery_hepatobiliary',
+    name: 'Hepatobiliary',
+    scientificName: 'Hepatobiliary & Pancreatic Surgery',
+    icon: 'flask-outline',
+    color: '#6dc2bd',
+    description: 'Whipple procedure, hepatectomy, bile duct reconstruction, and pancreatic necrosectomy',
+  },
+  {
+    id: 'surgery_maxillofacial',
+    name: 'Maxillofacial',
+    scientificName: 'Oral & Maxillofacial Surgery',
+    icon: 'happy-outline',
+    color: '#dbd4fd',
+    description: 'Orthognathic surgery, TMJ reconstruction, facial fracture fixation, and cleft repair',
+  },
+  {
+    id: 'surgery_endocrine',
+    name: 'Endocrine Surgery',
+    scientificName: 'Endocrine & Thyroid Surgery',
+    icon: 'nuclear-outline',
+    color: '#defff9',
+    description: 'Thyroidectomy, parathyroidectomy, adrenalectomy, and MEN syndrome management',
   },
 ];
 
@@ -180,8 +202,10 @@ const SurgicalOrbitButton = ({
           <Ionicons name={specialty.icon} size={19} color={specialty.color} />
         </View>
         <Text
-          className="text-[11px] font-sans-semibold text-gray-200 mt-1.5 text-center leading-tight tracking-tight max-w-[100px]"
+          className="text-[11px] font-sans-semibold text-gray-200 mt-1.5 text-center leading-tight max-w-[100px]"
           numberOfLines={2}
+          allowFontScaling={false}
+          style={{ includeFontPadding: false }}
         >
           {specialty.name}
         </Text>
@@ -191,14 +215,7 @@ const SurgicalOrbitButton = ({
 };
 
 export const SurgicalOrbitSection: React.FC = () => {
-  const [modalVisible, setModalVisible] = useState(false);
-
   const handleOpenSpecialty = (specialtyId: string) => {
-    if (specialtyId === 'more_surgery') {
-      setModalVisible(true);
-      return;
-    }
-    // Navigate directly to the Surgical Specialty Detail Page
     router.push(`/specialty/${specialtyId}` as any);
   };
 
@@ -220,7 +237,7 @@ export const SurgicalOrbitSection: React.FC = () => {
             Surgical Specialties & Operative Arena
           </Text>
         </View>
-        <Text className="text-[19px] font-sans-bold text-white tracking-tight text-center">
+        <Text className="text-[19px] font-sans-bold text-white text-center">
           Surgical Specialties & Procedures
         </Text>
         <Text className="text-[12px] font-sans text-gray-400 text-center mt-1 max-w-[280px]">
@@ -262,10 +279,10 @@ export const SurgicalOrbitSection: React.FC = () => {
           activeOpacity={0.85}
         >
           <Ionicons name="cut" size={24} color="#010101" />
-          <Text className="text-[11px] font-sans-bold text-[#010101] text-center mt-0.5 leading-tight">
+          <Text className="text-[11px] font-sans-bold text-[#010101] text-center mt-0.5 leading-tight" allowFontScaling={false} style={{ includeFontPadding: false }}>
             Surgical AI
           </Text>
-          <Text className="text-[9.5px] text-[#010101]/80 font-sans-bold">
+          <Text className="text-[9.5px] text-[#010101]/80 font-sans-bold" allowFontScaling={false} style={{ includeFontPadding: false }}>
             OR Advisor
           </Text>
         </TouchableOpacity>
@@ -334,86 +351,16 @@ export const SurgicalOrbitSection: React.FC = () => {
           onPress={() => handleOpenSpecialty('surgery_urology')}
         />
 
-        {/* Node 8: Top Left (315°) -> More Surgical Specialties */}
+        {/* Node 8: Top Left (315°) -> Plastic Surgery */}
         <SurgicalOrbitButton
           specialty={SURGICAL_ORBIT_SPECIALTIES[7]}
           size={BUTTON_SIZE}
           top="14.6%"
           left="18%"
-          onPress={() => handleOpenSpecialty('more_surgery')}
+          onPress={() => handleOpenSpecialty('surgery_plastics')}
         />
       </View>
 
-      {/* Expanded Subspecialties Modal */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View className="flex-1 justify-end bg-black/75">
-          <View className="bg-[#0b0f12] rounded-t-3xl border-t border-white/10 p-6 pb-12 max-h-[80%]">
-            {/* Modal Header */}
-            <View className="flex-row items-center justify-between pb-4 border-b border-white/10">
-              <View>
-                <View className="flex-row items-center gap-1.5 mb-1">
-                  <Ionicons name="cut" size={14} color="#ffc3dd" />
-                  <Text className="text-[11px] font-sans-bold uppercase tracking-wider text-[#ffc3dd]">
-                    Surgical Disciplines
-                  </Text>
-                </View>
-                <Text className="text-xl font-sans-bold text-white">
-                  Expanded Surgical Specialties
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                className="w-8 h-8 rounded-full bg-white/10 items-center justify-center"
-              >
-                <Ionicons name="close" size={18} color="#fff" />
-              </TouchableOpacity>
-            </View>
-
-            {/* List of Expanded Specialties */}
-            <ScrollView className="mt-4" showsVerticalScrollIndicator={false}>
-              <View className="flex flex-col gap-3 pb-6">
-                {[...SURGICAL_ORBIT_SPECIALTIES.slice(0, 7), ...EXPANDED_SURGICAL_SPECIALTIES].map((spec) => (
-                  <TouchableOpacity
-                    key={spec.id}
-                    onPress={() => {
-                      setModalVisible(false);
-                      router.push(`/specialty/${spec.id}` as any);
-                    }}
-                    className="p-4 rounded-2xl bg-[#121719] border border-white/10 flex-row items-center gap-3.5 active:opacity-75"
-                  >
-                    <View
-                      className="w-11 h-11 rounded-xl items-center justify-center border"
-                      style={{
-                        backgroundColor: `${spec.color}15`,
-                        borderColor: `${spec.color}40`,
-                      }}
-                    >
-                      <Ionicons name={spec.icon} size={20} color={spec.color} />
-                    </View>
-                    <View className="flex-1">
-                      <Text className="text-white text-base font-sans-bold">
-                        {spec.name}
-                      </Text>
-                      <Text className="text-[11px] font-sans-medium" style={{ color: spec.color }}>
-                        {spec.scientificName}
-                      </Text>
-                      <Text className="text-gray-400 text-xs mt-0.5" numberOfLines={2}>
-                        {spec.description}
-                      </Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color="#666" />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };

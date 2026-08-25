@@ -39,7 +39,7 @@ type MenuItem = {
 // Top App Bar Component
 const TopAppBar = () => (
   <View className="flex-row items-center justify-between px-4 py-4 pb-2 bg-background/95 backdrop-blur-md border-b border-charcoal/20">
-    <Text className="text-xl font-sans-bold tracking-tight flex-1">Profile</Text>
+    <Text className="text-xl font-sans-bold flex-1 text-white">Profile</Text>
     <View className="flex-row items-center gap-3">
       <TouchableOpacity className="w-10 h-10 rounded-full items-center justify-center">
         <Ionicons name="notifications-outline" size={22} color="#fff" />
@@ -120,7 +120,7 @@ const StatCard = ({ stat }: { stat: StatCard }) => (
       </Text>
     </View>
     <View>
-      <Text className="text-3xl font-sans-bold tracking-tight text-white" style={{ fontVariant: ['tabular-nums'] }}>{stat.value}</Text>
+      <Text className="text-3xl font-sans-bold text-white" style={{ fontVariant: ['tabular-nums'], includeFontPadding: false }}>{stat.value}</Text>
       <Text className="text-[10px] text-gray-muted mt-1">{stat.subtitle}</Text>
     </View>
   </View>
@@ -244,8 +244,6 @@ const MenuSection = ({
   </View>
 );
 
-// (Removed local BottomNavigation — global Tabs from app/(tabs)/_layout.tsx provide the tab bar)
-
 // Push token debug indicator (remove in production)
 const PushTokenIndicator = ({ token, error }: { token: string | null; error: string | null }) => {
   if (!token && !error) return null;
@@ -368,9 +366,6 @@ const Profile = () => {
       router.push('/admin/ReviewQueue');
     }
     if (itemId === 'notifications') {
-      // Future: present the notification preferences / notification center screen.
-      // For now, the Notifications menu item navigates nowhere (reserved for the
-      // notification center that will consume the user_notifications table).
       Haptics.selectionAsync();
     }
   };
@@ -403,8 +398,6 @@ const Profile = () => {
           <Text className="text-[10px] text-gray-muted">Version 2.4.0</Text>
         </View>
       </ScrollView>
-
-      {/* Tab bar is provided by the global tab layout (app/(tabs)/_layout.tsx) */}
     </SafeAreaView>
   );
 };
