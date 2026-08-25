@@ -52,8 +52,6 @@ backend/venv/
 
 /graphify-out
 
-/.planning
-.planning
 /planning
 
 .commandcode
