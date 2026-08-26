@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3001';
@@ -93,7 +93,6 @@ const SPECIALTIES = [
 ];
 
 export default function ReviewQueue() {
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'mission' | 'proposals'>('mission');
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>('pulmonology');
   
@@ -139,7 +138,7 @@ export default function ReviewQueue() {
         router.replace('/(tabs)/profile');
       } catch (__) {}
     }
-  }, [router]);
+  }, []);
 
   // Fetch Mission Status from API
   const fetchMissionStatus = useCallback(async () => {
@@ -149,13 +148,13 @@ export default function ReviewQueue() {
         const data = await res.json();
         if (data && data.stats) {
           setMissionState(data);
-          if (data.specialtyId && !selectedSpecialty) {
-            setSelectedSpecialty(data.specialtyId);
+          if (data.specialtyId) {
+            setSelectedSpecialty(prev => prev || data.specialtyId);
           }
         }
       }
     } catch (_) {}
-  }, [selectedSpecialty]);
+  }, []);
 
   // Fetch Proposals Queue
   const fetchProposals = useCallback(async () => {
@@ -179,12 +178,12 @@ export default function ReviewQueue() {
     fetchMissionStatus();
     fetchProposals();
 
-    // High-frequency polling timer (every 1.5s) for smooth visual updates
+    // Polling timer (every 2s) for live updates
     const timer = setInterval(() => {
       if (isMountedRef.current) {
         fetchMissionStatus();
       }
-    }, 1500);
+    }, 2000);
 
     return () => {
       isMountedRef.current = false;
@@ -376,10 +375,11 @@ export default function ReviewQueue() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+      <Stack.Screen options={{ headerShown: false }} />
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
       {/* Top Header */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-white/10 bg-deepTeal">
+      <View className="flex-row items-center justify-between px-4 py-3 border-b border-white/10 bg-deep-teal">
         <View className="flex-row items-center">
           <TouchableOpacity onPress={handleGoBack} className="mr-3 p-1">
             <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -391,20 +391,20 @@ export default function ReviewQueue() {
         </View>
 
         {/* Tab Switcher */}
-        <View className="flex-row bg-surfaceHover rounded-xl p-1 border border-white/10">
+        <View className="flex-row bg-surface-hover rounded-xl p-1 border border-white/10">
           <TouchableOpacity
             onPress={() => setActiveTab('mission')}
-            className={`px-3 py-1.5 rounded-lg ${activeTab === 'mission' ? 'bg-turquoise/20 border border-turquoise/30' : ''}`}
+            className={`px-3 py-1.5 rounded-lg ${activeTab === 'mission' ? 'bg-teal/20 border border-teal/30' : ''}`}
           >
-            <Text className={`text-xs font-sans-bold ${activeTab === 'mission' ? 'text-turquoise' : 'text-gray-muted'}`}>
+            <Text className={`text-xs font-sans-bold ${activeTab === 'mission' ? 'text-teal' : 'text-gray-muted'}`}>
               Mission Hub
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setActiveTab('proposals')}
-            className={`px-3 py-1.5 rounded-lg ${activeTab === 'proposals' ? 'bg-turquoise/20 border border-turquoise/30' : ''}`}
+            className={`px-3 py-1.5 rounded-lg ${activeTab === 'proposals' ? 'bg-teal/20 border border-teal/30' : ''}`}
           >
-            <Text className={`text-xs font-sans-bold ${activeTab === 'proposals' ? 'text-turquoise' : 'text-gray-muted'}`}>
+            <Text className={`text-xs font-sans-bold ${activeTab === 'proposals' ? 'text-teal' : 'text-gray-muted'}`}>
               Reviews ({proposals.length})
             </Text>
           </TouchableOpacity>
@@ -442,8 +442,8 @@ export default function ReviewQueue() {
                       onPress={() => setSelectedSpecialty(spec.id)}
                       className={`px-3.5 py-2.5 rounded-xl border flex-row items-center gap-2 ${
                         isSelected
-                          ? 'bg-turquoise/20 border-turquoise shadow-md shadow-turquoise/10'
-                          : 'bg-tealMedium/80 border-white/10'
+                          ? 'bg-teal/20 border-teal shadow-md'
+                          : 'bg-teal-medium/80 border-white/10'
                       }`}
                     >
                       <Ionicons
@@ -468,7 +468,7 @@ export default function ReviewQueue() {
             </View>
 
             {/* Mission Control Command Center Card */}
-            <View className="bg-tealMedium rounded-2xl p-4 border border-white/10 shadow-lg">
+            <View className="bg-teal-medium rounded-2xl p-4 border border-white/10 shadow-lg">
               {/* Mission State Header */}
               <View className="flex-row justify-between items-center mb-3">
                 <View className="flex-1 mr-2">
@@ -513,7 +513,7 @@ export default function ReviewQueue() {
                   <TouchableOpacity
                     onPress={() => handleStartExpansion()}
                     disabled={isActionLoading}
-                    className="flex-1 bg-turquoise h-11 rounded-xl flex-row items-center justify-center gap-2 shadow-lg"
+                    className="flex-1 bg-teal h-11 rounded-xl flex-row items-center justify-center gap-2 shadow-lg"
                   >
                     <Ionicons name="play" size={18} color={Colors.ink} />
                     <Text className="text-ink font-sans-bold text-xs">
@@ -566,19 +566,19 @@ export default function ReviewQueue() {
 
                 <TouchableOpacity
                   onPress={() => setShowAddModal(true)}
-                  className="px-3.5 h-11 bg-surfaceHover border border-white/15 rounded-xl flex-row items-center justify-center gap-1.5"
+                  className="px-3.5 h-11 bg-surface-hover border border-white/15 rounded-xl flex-row items-center justify-center gap-1.5"
                 >
                   <Ionicons name="add" size={18} color={Colors.accent} />
-                  <Text className="text-turquoise font-sans-bold text-xs">Add Topic</Text>
+                  <Text className="text-teal font-sans-bold text-xs">Add Topic</Text>
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Progress Bar & KPI Metrics */}
-            <View className="bg-tealMedium/60 rounded-2xl p-4 border border-white/10">
+            <View className="bg-teal-medium/60 rounded-2xl p-4 border border-white/10">
               <View className="flex-row justify-between items-center mb-2">
                 <Text className="text-xs font-sans-bold text-gray-300">Overall Progress</Text>
-                <Text className="text-xs font-sans-bold text-turquoise">
+                <Text className="text-xs font-sans-bold text-teal">
                   {missionState.progressPercent}% ({missionState.stats.completed}/{missionState.stats.total})
                 </Text>
               </View>
@@ -619,11 +619,11 @@ export default function ReviewQueue() {
 
             {/* Active Topic Stage Radar */}
             {missionState.currentTopic && (
-              <View className="bg-turquoise/10 border border-turquoise/30 rounded-2xl p-4 shadow-lg">
+              <View className="bg-teal/10 border border-teal/30 rounded-2xl p-4 shadow-lg">
                 <View className="flex-row items-center justify-between mb-2">
                   <View className="flex-row items-center gap-2">
                     <ActivityIndicator size="small" color={Colors.accent} />
-                    <Text className="text-[10px] text-turquoise uppercase font-sans-bold tracking-wider">
+                    <Text className="text-[10px] text-teal uppercase font-sans-bold tracking-wider">
                       Currently Researching
                     </Text>
                   </View>
@@ -653,7 +653,7 @@ export default function ReviewQueue() {
             )}
 
             {/* Interactive Topic Queue Section */}
-            <View className="bg-tealMedium rounded-2xl p-4 border border-white/10">
+            <View className="bg-teal-medium rounded-2xl p-4 border border-white/10">
               <View className="flex-row justify-between items-center mb-3">
                 <Text className="text-sm font-sans-bold text-white">
                   Topic Ingestion Queue ({filteredQueue.length})
@@ -663,7 +663,7 @@ export default function ReviewQueue() {
                   className="flex-row items-center gap-1"
                 >
                   <Ionicons name="add-circle-outline" size={16} color={Colors.accent} />
-                  <Text className="text-xs text-turquoise font-sans-bold">Add Custom</Text>
+                  <Text className="text-xs text-teal font-sans-bold">Add Custom</Text>
                 </TouchableOpacity>
               </View>
 
@@ -698,13 +698,13 @@ export default function ReviewQueue() {
                     onPress={() => setQueueFilter(tab.id as any)}
                     className={`px-3 py-1.5 rounded-lg border ${
                       queueFilter === tab.id
-                        ? 'bg-turquoise/20 border-turquoise'
+                        ? 'bg-teal/20 border-teal'
                         : 'bg-background/40 border-white/5'
                     }`}
                   >
                     <Text
                       className={`text-[11px] font-sans-bold ${
-                        queueFilter === tab.id ? 'text-turquoise' : 'text-gray-400'
+                        queueFilter === tab.id ? 'text-teal' : 'text-gray-400'
                       }`}
                     >
                       {tab.label}
@@ -733,7 +733,7 @@ export default function ReviewQueue() {
                         key={item.id || index}
                         className={`p-3 rounded-xl border flex-row items-center justify-between ${
                           isItemActive
-                            ? 'bg-turquoise/15 border-turquoise/40'
+                            ? 'bg-teal/15 border-teal/40'
                             : isItemDone
                             ? 'bg-emerald-950/20 border-emerald-500/20'
                             : isItemFailed
@@ -751,7 +751,7 @@ export default function ReviewQueue() {
                                 isItemDone
                                   ? 'text-gray-300'
                                   : isItemActive
-                                  ? 'text-turquoise'
+                                  ? 'text-teal'
                                   : 'text-white'
                               }`}
                               numberOfLines={2}
@@ -808,10 +808,10 @@ export default function ReviewQueue() {
                           {(isItemFailed || isItemSkipped) && (
                             <TouchableOpacity
                               onPress={() => handleRetryTopic(item.id)}
-                              className="bg-turquoise/20 px-2 py-1 rounded-md flex-row items-center gap-1 border border-turquoise/30"
+                              className="bg-teal/20 px-2 py-1 rounded-md flex-row items-center gap-1 border border-teal/30"
                             >
                               <Ionicons name="refresh" size={12} color={Colors.accent} />
-                              <Text className="text-[10px] text-turquoise font-sans-bold">Retry</Text>
+                              <Text className="text-[10px] text-teal font-sans-bold">Retry</Text>
                             </TouchableOpacity>
                           )}
                         </View>
@@ -845,7 +845,7 @@ export default function ReviewQueue() {
               </TouchableOpacity>
 
               {showTerminal && (
-                <View className="mt-3 bg-tealDark p-3 rounded-xl border border-white/5 max-h-48">
+                <View className="mt-3 bg-teal-dark p-3 rounded-xl border border-white/5 max-h-48">
                   <ScrollView nestedScrollEnabled showsVerticalScrollIndicator>
                     {missionState.logs && missionState.logs.length > 0 ? (
                       missionState.logs.map(log => {
@@ -895,16 +895,16 @@ export default function ReviewQueue() {
               </View>
             ) : (
               proposals.map(proposal => (
-                <View key={proposal.id} className="bg-tealMedium rounded-2xl p-4 border border-white/5">
+                <View key={proposal.id} className="bg-teal-medium rounded-2xl p-4 border border-white/5">
                   <View className="flex-row justify-between items-start mb-2">
                     <View className="flex-1 mr-2">
                       <Text className="text-base font-sans-bold text-white">{proposal.topic_name}</Text>
-                      <Text className="text-[11px] text-turquoise uppercase tracking-wider mt-0.5">
+                      <Text className="text-[11px] text-teal uppercase tracking-wider mt-0.5">
                         Source: {proposal.source}
                       </Text>
                     </View>
-                    <View className="bg-turquoise/20 px-2 py-1 rounded-md">
-                      <Text className="text-[10px] text-turquoise font-sans-bold">PENDING</Text>
+                    <View className="bg-teal/20 px-2 py-1 rounded-md">
+                      <Text className="text-[10px] text-teal font-sans-bold">PENDING</Text>
                     </View>
                   </View>
 
@@ -924,7 +924,7 @@ export default function ReviewQueue() {
                     {proposal.content && Array.isArray(proposal.content) ? (
                       proposal.content.slice(0, 2).map((section: any, idx: number) => (
                         <View key={idx} className="mb-2">
-                          <Text className="text-xs font-sans-bold text-turquoise">{section.title}</Text>
+                          <Text className="text-xs font-sans-bold text-teal">{section.title}</Text>
                           <Text className="text-[11px] text-gray-300" numberOfLines={2}>
                             {section.content}
                           </Text>
@@ -944,7 +944,7 @@ export default function ReviewQueue() {
                     <TouchableOpacity
                       onPress={() => handleApproveProposal(proposal.id)}
                       disabled={!!processingId}
-                      className="flex-1 bg-turquoise h-10 rounded-xl items-center justify-center flex-row shadow-lg"
+                      className="flex-1 bg-teal h-10 rounded-xl items-center justify-center flex-row shadow-lg"
                     >
                       {processingId === proposal.id ? (
                         <ActivityIndicator size="small" color={Colors.ink} />
@@ -979,7 +979,7 @@ export default function ReviewQueue() {
         onRequestClose={() => setShowAddModal(false)}
       >
         <View className="flex-1 bg-black/80 justify-center px-4">
-          <View className="bg-tealMedium rounded-2xl p-5 border border-white/20">
+          <View className="bg-teal-medium rounded-2xl p-5 border border-white/20">
             <View className="flex-row justify-between items-center mb-4">
               <Text className="text-base font-sans-bold text-white">Add Custom Topic to Queue</Text>
               <TouchableOpacity onPress={() => setShowAddModal(false)}>
@@ -1009,13 +1009,13 @@ export default function ReviewQueue() {
                   onPress={() => setNewTopicCategory(cat.id)}
                   className={`flex-1 py-2 rounded-lg items-center border ${
                     newTopicCategory === cat.id
-                      ? 'bg-turquoise/20 border-turquoise'
+                      ? 'bg-teal/20 border-teal'
                       : 'bg-background/50 border-white/10'
                   }`}
                 >
                   <Text
                     className={`text-[10px] font-sans-bold ${
-                      newTopicCategory === cat.id ? 'text-turquoise' : 'text-gray-400'
+                      newTopicCategory === cat.id ? 'text-teal' : 'text-gray-400'
                     }`}
                   >
                     {cat.label}
@@ -1027,13 +1027,13 @@ export default function ReviewQueue() {
             <View className="flex-row gap-2">
               <TouchableOpacity
                 onPress={() => setShowAddModal(false)}
-                className="flex-1 bg-surfaceHover h-11 rounded-xl items-center justify-center border border-white/10"
+                className="flex-1 bg-surface-hover h-11 rounded-xl items-center justify-center border border-white/10"
               >
                 <Text className="text-gray-300 font-sans-bold text-xs">Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleAddCustomTopic}
-                className="flex-1 bg-turquoise h-11 rounded-xl items-center justify-center shadow-lg"
+                className="flex-1 bg-teal h-11 rounded-xl items-center justify-center shadow-lg"
               >
                 <Text className="text-ink font-sans-bold text-xs">Insert into Queue</Text>
               </TouchableOpacity>

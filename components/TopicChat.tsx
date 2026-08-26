@@ -1,14 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   Alert,
   FlatList,
-  Keyboard,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  Image,
 } from "react-native";
 import Animated, {
   Easing,
@@ -23,9 +21,10 @@ import Animated, {
 import * as Haptics from "expo-haptics";
 import { router } from "expo-router";
 import { aiService, Citation } from "../services/aiService";
-import { SPECIALTY_KNOWLEDGE } from "../constants/SpecialtyData";
+import { SPECIALTY_KNOWLEDGE, TopicItem } from "../constants/SpecialtyData";
 import { Colors } from "../constants/Colors";
 import FormattedClinicalText from "./FormattedClinicalText";
+import { KnowledgeMap } from "./KnowledgeMap";
 
 const EASE_HEAVY = Easing.bezier(0.32, 0.72, 0, 1);
 
@@ -154,6 +153,267 @@ const ThinkingIndicator: React.FC<{ themeColor: string }> = ({ themeColor }) => 
   );
 };
 
+// AI Message Bubble with Centered Response & Map Tabs
+const TopicAiMessageItem: React.FC<{
+  item: Message;
+  topicName: string;
+  themeColor: string;
+  specialty: any;
+  topicData: any;
+  onAskAi: (query: string) => void;
+  onCopyText: (text: string) => void;
+}> = ({ item, topicName, themeColor, specialty, topicData, onAskAi, onCopyText }) => {
+  const [responseTab, setResponseTab] = useState<'response' | 'map'>('response');
+  const { hasSections, sections, plainText } = useMemo(
+    () => parseMedicalSections(item.text),
+    [item.text]
+  );
+
+  const responseTopicItem = useMemo<TopicItem>(() => {
+    if (topicData) {
+      return topicData;
+    }
+    return {
+      id: `ai-resp-${item.id}`,
+      title: topicName || 'Clinical Response',
+      subtitle: 'Generated Knowledge Graph',
+      type: 'AI Knowledge Graph',
+      aiScopeDescription: '',
+      clinicalContent: sections.map((s) => ({
+        title: s.heading,
+        content: s.content,
+      })),
+    };
+  }, [topicData, topicName, item.id, sections]);
+
+  return (
+    <Animated.View
+      entering={FadeInUp.duration(250).easing(EASE_HEAVY)}
+      className="mb-6 px-4 w-full"
+    >
+      {/* Centered Segmented Response | Map Switcher */}
+      <View className="flex-row justify-center items-center mb-3">
+        <View className="flex-row bg-[#151c1f] p-1 rounded-full border border-white/10 shadow-sm">
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.selectionAsync();
+              setResponseTab('response');
+            }}
+            className={`px-4 py-1.5 rounded-full flex-row items-center gap-1.5 ${
+              responseTab === 'response' ? 'bg-white/15' : ''
+            }`}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="document-text-outline"
+              size={13}
+              color={responseTab === 'response' ? themeColor : '#8e8e93'}
+            />
+            <Text
+              className={`text-xs font-sans-semibold ${
+                responseTab === 'response' ? 'text-white' : 'text-gray-400'
+              }`}
+            >
+              Response
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.selectionAsync();
+              setResponseTab('map');
+            }}
+            className={`px-4 py-1.5 rounded-full flex-row items-center gap-1.5 ${
+              responseTab === 'map' ? 'bg-white/15' : ''
+            }`}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="git-network-outline"
+              size={13}
+              color={responseTab === 'map' ? themeColor : '#8e8e93'}
+            />
+            <Text
+              className={`text-xs font-sans-semibold ${
+                responseTab === 'map' ? 'text-white' : 'text-gray-400'
+              }`}
+            >
+              Map
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Main Content: Seamless Map Tab vs Response Tab */}
+      {responseTab === 'map' ? (
+        <View
+          style={{
+            height: 420,
+            borderRadius: 16,
+            overflow: 'hidden',
+            backgroundColor: '#010101',
+          }}
+        >
+          <KnowledgeMap
+            topic={responseTopicItem}
+            specialty={specialty}
+            themeColor={themeColor}
+            onAskAi={onAskAi}
+          />
+        </View>
+      ) : (
+        <>
+          {/* Header Badge */}
+          <View className="flex-row items-center justify-between mb-2">
+            <View className="flex-row items-center gap-2">
+              <View
+                className="w-6 h-6 rounded-full items-center justify-center border"
+                style={{
+                  backgroundColor: `${themeColor}20`,
+                  borderColor: `${themeColor}40`,
+                }}
+              >
+                <Ionicons name="sparkles" size={12} color={themeColor} />
+              </View>
+              <Text className="text-white text-xs font-sans-bold">{topicName} AI</Text>
+              <View className="px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10">
+                <Text className="text-[10px] font-sans-semibold" style={{ color: themeColor }}>
+                  Scoped RAG
+                </Text>
+              </View>
+            </View>
+            <Text className="text-gray-500 text-[10px] font-mono">{item.timestamp}</Text>
+          </View>
+
+          {/* Structured Medical Cards or Plain Text */}
+          {hasSections ? (
+            <View className="gap-2.5">
+              {plainText.length > 0 && (
+                <View className="bg-[#0e1416] border border-white/10 rounded-2xl p-4">
+                  <FormattedClinicalText text={plainText} />
+                </View>
+              )}
+              {sections.map((sec, sIdx) => {
+                const upperHeading = sec.heading.toUpperCase().trim();
+                const iconName = SECTION_ICONS[upperHeading] || "document-text-outline";
+
+                return (
+                  <View
+                    key={`topic-sec-${sIdx}`}
+                    className="rounded-2xl overflow-hidden bg-[#0e1416] border"
+                    style={{
+                      borderColor: `${themeColor}35`,
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 4,
+                      elevation: 2,
+                    }}
+                  >
+                    <View
+                      className="flex-row items-center gap-2 px-4 py-2.5 border-b"
+                      style={{
+                        backgroundColor: `${themeColor}12`,
+                        borderBottomColor: `${themeColor}25`,
+                      }}
+                    >
+                      <Ionicons name={iconName} size={15} color={themeColor} />
+                      <Text
+                        className="text-xs font-sans-bold uppercase tracking-wider flex-1"
+                        style={{ color: themeColor }}
+                      >
+                        {sec.heading}
+                      </Text>
+                    </View>
+                    <View className="p-4">
+                      <FormattedClinicalText text={sec.content} />
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <View className="bg-[#0e1416] border border-white/10 rounded-3xl rounded-tl-md p-4">
+              <FormattedClinicalText text={item.text} />
+            </View>
+          )}
+
+          {/* Citations Section */}
+          {item.citations && item.citations.length > 0 && (
+            <View className="mt-3.5 pt-3 border-t border-white/5">
+              <View className="flex-row items-center gap-1.5 mb-2 ml-1">
+                <Ionicons name="book-outline" size={12} color={Colors.lavender} />
+                <Text className="text-gray-400 text-[10px] font-sans-bold uppercase tracking-wider">
+                  Guidelines & Citations
+                </Text>
+              </View>
+              {item.citations.map((cit) => (
+                <View
+                  key={cit.id}
+                  className="bg-[#0e1416] border border-white/10 rounded-xl p-3 mb-2"
+                >
+                  <View className="flex-row items-start gap-2">
+                    <View className="px-1.5 py-0.5 rounded-full bg-lavender/20 mt-0.5">
+                      <Text className="text-[10px] text-lavender font-sans-bold">[{cit.id}]</Text>
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-gray-200 text-xs font-sans-semibold leading-4 mb-0.5">
+                        {cit.title}
+                      </Text>
+                      <Text className="text-gray-400 text-[10px] font-sans-medium">
+                        {cit.journal} ({cit.year}) · {cit.author}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Follow-Up Suggestions */}
+          {item.suggestions && item.suggestions.length > 0 && (
+            <View className="mt-3.5 mb-1">
+              <View className="flex-row items-center gap-1.5 mb-2 ml-1">
+                <Ionicons name="sparkles" size={12} color={themeColor} />
+                <Text className="text-gray-400 text-[10px] font-sans-bold uppercase tracking-wider">
+                  Follow-Up Inquiries
+                </Text>
+              </View>
+              <View className="gap-2">
+                {item.suggestions.map((sug, sIdx) => (
+                  <TouchableOpacity
+                    key={`topic-sug-${sIdx}`}
+                    onPress={() => onAskAi(sug)}
+                    activeOpacity={0.7}
+                    className="flex-row items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-[#0e1416] border border-white/10 active:opacity-60"
+                  >
+                    <Ionicons name="arrow-forward-circle" size={14} color={themeColor} />
+                    <Text className="text-gray-200 text-xs font-sans-medium leading-4 flex-1">
+                      {sug}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Action Island */}
+          <View className="flex-row items-center gap-4 mt-3 ml-2">
+            <TouchableOpacity
+              onPress={() => onCopyText(item.text)}
+              className="flex-row items-center gap-1.5"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="copy-outline" size={12} color="#6b7280" />
+              <Text className="text-gray-500 text-[11px] font-sans-medium">Copy</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+    </Animated.View>
+  );
+};
+
 interface TopicChatProps {
   specialtyId: string;
   topicId: string;
@@ -177,7 +437,7 @@ export default function TopicChat({
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
-  const initialQuerySentRef = useRef(false);
+  const lastSentQueryRef = useRef<string | null>(null);
 
   const specialty = SPECIALTY_KNOWLEDGE[specialtyId] || {
     title: "Specialty",
@@ -237,7 +497,7 @@ export default function TopicChat({
         specialtyId as any,
         topicId,
         categoryContext,
-        currentHistory.map(m => ({ text: m.text, isUser: m.isUser }))
+        currentHistory.map((m) => ({ text: m.text, isUser: m.isUser }))
       );
 
       // Check for Out-of-Scope flag from the AI
@@ -289,288 +549,147 @@ export default function TopicChat({
   };
 
   useEffect(() => {
-    if (initialQuery && !initialQuerySentRef.current) {
-      initialQuerySentRef.current = true;
+    if (initialQuery && initialQuery.trim() && initialQuery !== lastSentQueryRef.current) {
+      lastSentQueryRef.current = initialQuery;
       handleTextSend(initialQuery);
     }
   }, [initialQuery]);
 
-  const renderAiMessage = (item: Message) => {
-    const { hasSections, sections, plainText } = parseMedicalSections(item.text);
+  const renderMessageItem = ({ item }: { item: Message }) => {
+    if (item.isUser) {
+      return (
+        <Animated.View
+          entering={FadeInDown.duration(200).easing(EASE_HEAVY)}
+          className="self-end max-w-[85%] mb-4 px-4"
+        >
+          <View
+            className="rounded-3xl rounded-tr-md px-4 py-3 border"
+            style={{
+              backgroundColor: `${themeColor}22`,
+              borderColor: `${themeColor}45`,
+            }}
+          >
+            <Text className="text-white text-sm font-sans-medium leading-5">{item.text}</Text>
+          </View>
+          <Text className="text-gray-500 text-[10px] font-mono self-end mt-1">{item.timestamp}</Text>
+        </Animated.View>
+      );
+    }
+
+    if (item.isError) {
+      return (
+        <View className="mb-4 px-4 w-full">
+          <View className="bg-[#1a0e0e] border border-red-900/40 rounded-2xl p-4">
+            <View className="flex-row items-center gap-2 mb-1.5">
+              <Ionicons name="alert-circle" size={16} color="#ef4444" />
+              <Text className="text-red-400 text-xs font-sans-bold">Inquiry Failed</Text>
+            </View>
+            <Text className="text-gray-300 text-xs font-sans leading-5">{item.text}</Text>
+            {item.failedQuery && (
+              <TouchableOpacity
+                onPress={() => handleTextSend(item.failedQuery)}
+                className="mt-3 flex-row items-center gap-1.5 self-start px-3 py-1.5 rounded-full bg-red-950/40 border border-red-800/40"
+              >
+                <Ionicons name="refresh" size={12} color="#fca5a5" />
+                <Text className="text-red-300 text-xs font-sans-semibold">Retry</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      );
+    }
 
     return (
-      <Animated.View
-        entering={FadeInUp.duration(250).easing(EASE_HEAVY)}
-        className="mb-6 px-4 w-full"
-      >
-        {/* Header Badge */}
-        <View className="flex-row items-center justify-between mb-2">
-          <View className="flex-row items-center gap-2">
-            <View
-              className="w-6 h-6 rounded-full items-center justify-center border"
-              style={{
-                backgroundColor: `${themeColor}20`,
-                borderColor: `${themeColor}40`,
-              }}
-            >
-              <Ionicons name="sparkles" size={12} color={themeColor} />
-            </View>
-            <Text className="text-white text-xs font-sans-bold">{topicName} AI</Text>
-            <View className="px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10">
-              <Text className="text-[10px] font-sans-semibold" style={{ color: themeColor }}>
-                Scoped RAG
-              </Text>
-            </View>
-          </View>
-          <Text className="text-gray-500 text-[10px] font-mono">{item.timestamp}</Text>
-        </View>
-
-        {/* Structured Medical Cards or Plain Text */}
-        {hasSections ? (
-          <View className="gap-2.5">
-            {plainText.length > 0 && (
-              <View className="bg-[#0e1416] border border-white/10 rounded-2xl p-4">
-                <FormattedClinicalText text={plainText} />
-              </View>
-            )}
-            {sections.map((sec, sIdx) => {
-              const upperHeading = sec.heading.toUpperCase().trim();
-              const iconName = SECTION_ICONS[upperHeading] || "document-text-outline";
-
-              return (
-                <View
-                  key={`topic-sec-${sIdx}`}
-                  className="rounded-2xl overflow-hidden bg-[#0e1416] border"
-                  style={{
-                    borderColor: `${themeColor}35`,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.2,
-                    shadowRadius: 4,
-                    elevation: 2,
-                  }}
-                >
-                  <View
-                    className="flex-row items-center gap-2 px-4 py-2.5 border-b"
-                    style={{
-                      backgroundColor: `${themeColor}12`,
-                      borderBottomColor: `${themeColor}25`,
-                    }}
-                  >
-                    <Ionicons name={iconName} size={15} color={themeColor} />
-                    <Text
-                      className="text-xs font-sans-bold uppercase tracking-wider flex-1"
-                      style={{ color: themeColor }}
-                    >
-                      {sec.heading}
-                    </Text>
-                  </View>
-                  <View className="p-4">
-                    <FormattedClinicalText text={sec.content} />
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        ) : (
-          <View className="bg-[#0e1416] border border-white/10 rounded-3xl rounded-tl-md p-4">
-            <FormattedClinicalText text={item.text} />
-          </View>
-        )}
-
-        {/* Citations Card */}
-        {item.citations && item.citations.length > 0 && (
-          <View className="mt-3 pt-3 border-t border-white/5">
-            <View className="flex-row items-center gap-1.5 mb-2 ml-1">
-              <Ionicons name="library-outline" size={12} color={themeColor} />
-              <Text className="text-gray-400 text-[10.5px] font-sans-bold uppercase tracking-wider">
-                Clinical Evidence & Guidelines
-              </Text>
-            </View>
-            {item.citations.map((cit) => (
-              <View
-                key={cit.id}
-                className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-3 mb-2"
-              >
-                <View className="flex-row items-start gap-2">
-                  <View
-                    className="px-2 py-0.5 rounded-full mt-0.5"
-                    style={{ backgroundColor: `${themeColor}20` }}
-                  >
-                    <Text className="text-[10px] font-sans-bold" style={{ color: themeColor }}>
-                      [{cit.id}]
-                    </Text>
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-gray-200 text-xs font-sans-semibold leading-4 mb-0.5">
-                      {cit.title}
-                    </Text>
-                    <Text className="text-gray-400 text-[10px] font-sans-medium">
-                      {cit.journal} ({cit.year})
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Interactive Follow-Up Questions (Suggestions) */}
-        {item.suggestions && item.suggestions.length > 0 && (
-          <View className="mt-3.5 mb-2">
-            <View className="flex-row items-center gap-1.5 mb-2 ml-1">
-              <Ionicons name="sparkles" size={12} color={themeColor} />
-              <Text className="text-gray-400 text-[11px] font-sans-bold uppercase tracking-wider">
-                Related Follow-Up Questions
-              </Text>
-            </View>
-            <View className="flex-row flex-wrap gap-2">
-              {item.suggestions.map((sug, sIdx) => (
-                <TouchableOpacity
-                  key={`sug-${sIdx}`}
-                  onPress={() => handleTextSend(sug)}
-                  disabled={isTyping}
-                  activeOpacity={0.7}
-                  className="flex-row items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-[#141c1e] border active:opacity-60"
-                  style={{ borderColor: `${themeColor}40` }}
-                >
-                  <Ionicons name="arrow-forward-circle" size={14} color={themeColor} />
-                  <Text className="text-gray-200 text-xs font-sans-medium leading-4 flex-shrink">
-                    {sug}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Action Toolbar */}
-        <View className="flex-row items-center gap-4 mt-2.5 pl-1">
-          <TouchableOpacity
-            onPress={() => handleCopyText(item.text)}
-            className="flex-row items-center gap-1.5 active:opacity-60"
-          >
-            <Ionicons name="copy-outline" size={13} color={Colors.grayMuted} />
-            <Text className="text-gray-400 text-xs font-sans-medium">Copy Response</Text>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
+      <TopicAiMessageItem
+        item={item}
+        topicName={topicName}
+        themeColor={themeColor}
+        specialty={specialty}
+        topicData={topicData}
+        onAskAi={handleTextSend}
+        onCopyText={handleCopyText}
+      />
     );
   };
 
-  const renderUserMessage = (item: Message) => (
-    <Animated.View
-      entering={FadeInDown.duration(200).easing(EASE_HEAVY)}
-      className="flex-row justify-end mb-5 px-4"
-    >
-      <View className="max-w-[85%] items-end">
-        <View className="flex-row items-center gap-1.5 mb-1 pr-1">
-          <Text className="text-gray-400 text-[10px] font-mono">{item.timestamp}</Text>
-          <Text className="text-xs font-sans-bold" style={{ color: themeColor }}>
-            Doctor
-          </Text>
-        </View>
-        <View
-          className="rounded-3xl rounded-tr-md overflow-hidden shadow-md px-4 py-3"
-          style={{ backgroundColor: themeColor }}
-        >
-          <Text className="text-[#010101] text-sm font-sans-semibold leading-5">
-            {item.text}
-          </Text>
-        </View>
-      </View>
-    </Animated.View>
-  );
-
   return (
-    <View className="flex-1 bg-[#010101]">
+    <View className="flex-1 bg-background">
       <FlatList
         ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingVertical: 16, paddingBottom: 110, flexGrow: 1 }}
-        keyboardDismissMode="on-drag"
-        keyboardShouldPersistTaps="handled"
-        renderItem={({ item }) => (item.isUser ? renderUserMessage(item) : renderAiMessage(item))}
+        renderItem={renderMessageItem}
+        contentContainerStyle={{
+          paddingTop: 16,
+          paddingBottom: 24,
+        }}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View className="flex-1 justify-center items-center mt-6 mb-8 px-4">
+          <View className="items-center justify-center py-8 px-6">
             <View
-              className="w-24 h-24 rounded-full overflow-hidden mb-4 border-2 items-center justify-center bg-white/[0.03]"
-              style={{ borderColor: `${themeColor}50` }}
+              className="w-16 h-16 rounded-full items-center justify-center mb-4 border"
+              style={{
+                backgroundColor: `${themeColor}15`,
+                borderColor: `${themeColor}35`,
+              }}
             >
-              {specialty.illustration ? (
-                <Image source={specialty.illustration} className="w-full h-full opacity-80" resizeMode="cover" />
-              ) : (
-                <Ionicons name="medical" size={36} color={themeColor} />
-              )}
+              <Ionicons name="chatbubbles" size={28} color={themeColor} />
             </View>
-            <Text className="text-white text-xl font-sans-bold text-center mb-1">{topicName}</Text>
-            {topicData && (
-              <Text className="text-gray-400 text-xs font-sans-medium text-center px-4 mb-4 leading-4">
-                {topicData.subtitle}
-              </Text>
-            )}
+            <Text className="text-white text-lg font-sans-bold text-center mb-1">
+              Ask {topicName} Assistant
+            </Text>
+            <Text className="text-gray-400 text-xs font-sans text-center leading-5 mb-6">
+              Inquire on specific diagnostic criteria, pharmacological dosages, emergency protocols, or view the visual knowledge map.
+            </Text>
 
-            {/* Scoped Information Box */}
-            <View
-              className="bg-[#0e1416] rounded-2xl p-3.5 mx-2 border flex-row items-center mb-6"
-              style={{ borderColor: `${themeColor}30` }}
-            >
-              <Ionicons name="shield-checkmark-outline" size={20} color={themeColor} style={{ marginRight: 10 }} />
-              <Text className="text-gray-300 text-xs flex-1 leading-4 font-sans">
-                Topic AI is strictly scoped to {topicName}. Ask for specific treatments, workups, dosages, or diagnostic criteria.
+            <View className="w-full gap-2.5">
+              <Text className="text-gray-500 text-[11px] font-sans-bold uppercase tracking-wider ml-1">
+                Suggested Inquiries
               </Text>
-            </View>
-
-            {/* Quick Starter Prompts */}
-            <View className="w-full">
-              <Text className="text-gray-400 text-[11px] font-sans-bold uppercase tracking-wider mb-2.5 px-1">
-                Suggested Topics to Explore
-              </Text>
-              <View className="gap-2">
-                {starterPrompts.map((promptText, idx) => (
-                  <TouchableOpacity
-                    key={`starter-${idx}`}
-                    onPress={() => handleTextSend(promptText)}
-                    activeOpacity={0.75}
-                    className="flex-row items-center justify-between p-3 rounded-2xl bg-[#0e1416] border border-white/10 active:opacity-60"
-                  >
-                    <View className="flex-row items-center gap-2.5 flex-1 pr-2">
-                      <Ionicons name="sparkles-outline" size={14} color={themeColor} />
-                      <Text className="text-gray-200 text-xs font-sans-medium" numberOfLines={1}>
-                        {promptText}
-                      </Text>
-                    </View>
-                    <Ionicons name="arrow-up-circle" size={18} color={themeColor} />
-                  </TouchableOpacity>
-                ))}
-              </View>
+              {starterPrompts.map((prompt, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => handleTextSend(prompt)}
+                  className="bg-[#0e1416] border border-white/10 p-3.5 rounded-2xl flex-row items-center justify-between active:opacity-70"
+                >
+                  <Text className="text-gray-200 text-xs font-sans-medium flex-1 mr-2">{prompt}</Text>
+                  <Ionicons name="arrow-forward" size={14} color={themeColor} />
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         }
         ListFooterComponent={isTyping ? <ThinkingIndicator themeColor={themeColor} /> : null}
       />
 
-      {/* Input Composer Island */}
-      <View className="px-4 py-3 bg-[#010101] border-t border-white/5">
-        <View className="flex-row items-end bg-[#0e1416] border border-white/10 rounded-3xl px-4 py-2 min-h-[50px] shadow-lg">
+      {/* Input Bar */}
+      <View className="px-4 py-3 border-t border-white/5 bg-background flex-row items-center gap-2">
+        <View className="flex-1 flex-row items-center bg-[#0e1416] border border-white/10 rounded-full px-4 py-2">
           <TextInput
-            className="flex-1 text-white text-sm max-h-24 pt-2 pb-2 font-sans"
-            placeholder={`Ask a specific question about ${topicName}...`}
-            placeholderTextColor={Colors.graySubtle}
-            multiline
             value={inputText}
             onChangeText={setInputText}
+            placeholder={`Ask about ${topicName}...`}
+            placeholderTextColor="#6b7280"
+            className="flex-1 text-white text-sm font-sans"
+            returnKeyType="send"
+            onSubmitEditing={() => handleTextSend()}
+            editable={!isTyping}
           />
-          <TouchableOpacity
-            onPress={() => handleTextSend()}
-            disabled={!inputText.trim() || isTyping}
-            className="w-9 h-9 rounded-full items-center justify-center mb-0.5 ml-2 active:opacity-70"
-            style={{ backgroundColor: inputText.trim() ? themeColor : "#1e2629" }}
-          >
-            <Ionicons name="arrow-up" size={18} color={inputText.trim() ? "#010101" : Colors.grayMuted} />
-          </TouchableOpacity>
         </View>
+        <TouchableOpacity
+          onPress={() => handleTextSend()}
+          disabled={!inputText.trim() || isTyping}
+          className="w-10 h-10 rounded-full items-center justify-center"
+          style={{
+            backgroundColor: inputText.trim() && !isTyping ? themeColor : "#1f2937",
+          }}
+        >
+          <Ionicons
+            name="arrow-up"
+            size={20}
+            color={inputText.trim() && !isTyping ? "#010101" : "#4b5563"}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );

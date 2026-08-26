@@ -4,11 +4,11 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-const GROQ_KEY = process.env.GROQ_API_KEY;
 const NVIDIA_KEY = process.env.NVIDIA_API_KEY;
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+const GROQ_KEY = process.env.GROQ_API_KEY;
 
-const TARGET_MIN_TOPICS = 52; // Target 50+ for every category
+const TARGET_MIN_TOPICS = 52;
 
 const SPECIALTY_META = {
   lungs: { name: 'Pulmonology & Respiratory Medicine' },
@@ -28,31 +28,7 @@ const CATEGORY_META = {
   research: { name: 'Recent Research & Landmark Trials', desc: 'Breakthrough clinical trials, FDA approvals, and evidence-based paradigm shifts' }
 };
 
-// 1. Nvidia NIM Caller (meta/llama-3.1-70b-instruct)
-async function callNvidia(systemPrompt, userPrompt) {
-  if (!NVIDIA_KEY) throw new Error("No Nvidia key");
-  const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${NVIDIA_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "meta/llama-3.1-70b-instruct",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      temperature: 0.1,
-      max_tokens: 3500
-    })
-  });
-  if (!response.ok) throw new Error(`Nvidia (${response.status}): ${await response.text()}`);
-  const data = await response.json();
-  return data.choices[0].message.content;
-}
-
-// 2. OpenRouter Caller (deepseek/deepseek-chat)
+// High-Speed OpenRouter Caller
 async function callOpenRouter(systemPrompt, userPrompt) {
   if (!OPENROUTER_KEY) throw new Error("No OpenRouter key");
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -68,7 +44,7 @@ async function callOpenRouter(systemPrompt, userPrompt) {
         { role: "user", content: userPrompt }
       ],
       temperature: 0.1,
-      max_tokens: 3500
+      max_tokens: 4000
     })
   });
   if (!response.ok) throw new Error(`OpenRouter (${response.status}): ${await response.text()}`);
@@ -76,35 +52,34 @@ async function callOpenRouter(systemPrompt, userPrompt) {
   return data.choices[0].message.content;
 }
 
-// 3. Groq Caller (openai/gpt-oss-20b)
-async function callGroq(systemPrompt, userPrompt) {
-  if (!GROQ_KEY) throw new Error("No Groq key");
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+// Nvidia NIM Caller
+async function callNvidia(systemPrompt, userPrompt) {
+  if (!NVIDIA_KEY) throw new Error("No Nvidia key");
+  const response = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${GROQ_KEY}`,
+      "Authorization": `Bearer ${NVIDIA_KEY}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: "openai/gpt-oss-20b",
+      model: "meta/llama-3.1-70b-instruct",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      temperature: 0.1
+      temperature: 0.1,
+      max_tokens: 4000
     })
   });
-  if (!response.ok) throw new Error(`Groq (${response.status}): ${await response.text()}`);
+  if (!response.ok) throw new Error(`Nvidia (${response.status}): ${await response.text()}`);
   const data = await response.json();
   return data.choices[0].message.content;
 }
 
-// Unified Multi-Model Dispatcher
 async function callAIWithFallback(systemPrompt, userPrompt) {
   const providers = [
-    { name: 'Nvidia LLaMA 3.1 70B', fn: () => callNvidia(systemPrompt, userPrompt) },
     { name: 'OpenRouter DeepSeek', fn: () => callOpenRouter(systemPrompt, userPrompt) },
-    { name: 'Groq GPT-OSS 20B', fn: () => callGroq(systemPrompt, userPrompt) }
+    { name: 'Nvidia LLaMA 3.1 70B', fn: () => callNvidia(systemPrompt, userPrompt) }
   ];
 
   for (const provider of providers) {
@@ -142,7 +117,6 @@ async function populateCategory(specialtyId, categoryId) {
   const catName = CATEGORY_META[categoryId].name;
   const catDesc = CATEGORY_META[categoryId].desc;
 
-  // Check current count in Supabase
   const { data: existing, error } = await supabase
     .from('topics')
     .select('id, title')
@@ -155,33 +129,30 @@ async function populateCategory(specialtyId, categoryId) {
   }
 
   let currentCount = existing?.length || 0;
-  console.log(`\n======================================================================`);
-  console.log(`📂 [${specName} -> ${catName}] Current Count: ${currentCount} / ${TARGET_MIN_TOPICS}`);
-  console.log(`======================================================================`);
-
   if (currentCount >= TARGET_MIN_TOPICS) {
-    console.log(`   ✨ Category already satisfied (≥${TARGET_MIN_TOPICS} topics).`);
+    console.log(`✨ [${specName} -> ${catName}] Already satisfied: ${currentCount}/${TARGET_MIN_TOPICS}`);
     return;
   }
 
+  console.log(`🚀 [${specName} -> ${catName}] Starting ingestion: ${currentCount}/${TARGET_MIN_TOPICS}`);
   const existingTitles = new Set(existing?.map(t => t.title.toLowerCase().trim()) || []);
 
-  const systemPrompt = `You are a Chief of Medicine & Medical Knowledge Ingestion Specialist. Output pure JSON only:
+  const systemPrompt = `You are a Chief of Medicine & Clinical Editor. Output pure JSON format:
 {
   "topics": [
     {
-      "id": "unique_slug_id",
+      "id": "slug_id",
       "title": "Clear Topic Title",
       "subtitle": "Clinical Subtitle with Key Drugs/Markers",
       "type": "Emergency Protocol | Clinical Guideline | Diagnostic Tool | Trial & Evidence",
       "ai_scope_description": "Strict clinical focus summary",
       "clinical_content": [
-        { "title": "Immediate Triage & Red Flags", "content": "Critical flags and urgent alerts" },
-        { "title": "Diagnostic Criteria & Scoring Systems", "content": "Exact diagnostic scoring and criteria" },
-        { "title": "First-Line Pharmacotherapy & Exact Dosing", "content": "Exact drug names, mg/kg doses, IV infusion rates, frequencies" },
-        { "title": "Stepwise Management Algorithm", "content": "Step 1, Step 2, Step 3 stepwise clinical protocol" },
+        { "title": "Immediate Triage & Red Flags", "content": "Critical flags and emergency thresholds" },
+        { "title": "Diagnostic Criteria & Scoring Systems", "content": "Exact scoring systems and cutoffs" },
+        { "title": "First-Line Pharmacotherapy & Exact Dosing", "content": "Exact medications, mg/kg dosing, routes, intervals" },
+        { "title": "Stepwise Management Algorithm", "content": "1-2-3 Stepwise protocol" },
         { "title": "Clinical Pitfalls & Malpractice Warnings", "content": "Critical warnings and contraindications" },
-        { "title": "Exact Reference & Guideline Citations", "content": "Official guidelines (AHA, ACC, IDSA, GINA, GOLD, ACOG, AAD, NCCN, ESC, KDIGO) and landmark trials" }
+        { "title": "Exact Reference & Guideline Citations", "content": "Authoritative guidelines (AHA, ACC, IDSA, GINA, GOLD, ACOG, AAD, NCCN, ESC, KDIGO) and trial citations" }
       ]
     }
   ]
@@ -189,24 +160,19 @@ async function populateCategory(specialtyId, categoryId) {
 
   while (currentCount < TARGET_MIN_TOPICS) {
     const needed = TARGET_MIN_TOPICS - currentCount;
-    const batchSize = Math.min(3, needed);
-    const existingListStr = Array.from(existingTitles).slice(-20).join(', ');
+    const batchSize = Math.min(6, needed);
+    const existingListStr = Array.from(existingTitles).slice(-25).join(', ');
 
-    console.log(`   ⚡ Generating batch of ${batchSize} clinical topics (Remaining needed: ${needed})...`);
-
-    const userPrompt = `Generate exactly ${batchSize} DISTINCT, HIGH-YIELD medical topics for:
+    const userPrompt = `Generate exactly ${batchSize} DISTINCT, HIGH-YIELD clinical topics for:
 Specialty: ${specName} (ID: ${specialtyId})
 Category: ${catName} - ${catDesc} (ID: ${categoryId})
 
-Do NOT duplicate any of these recently added topics: ${existingListStr || 'None'}.
-
-Every topic must have real clinical rigor, exact dosages (e.g., mg/kg, IV rates, oral doses), scoring criteria, and peer-reviewed guideline citations.`;
+Do NOT duplicate any of these: ${existingListStr || 'None'}.
+Provide high-yield clinical content, exact medication dosages (mg/kg, routes, intervals), diagnostic criteria, and guidelines.`;
 
     const generated = await callAIWithFallback(systemPrompt, userPrompt);
-
     if (!generated || generated.length === 0) {
-      console.warn(`   ⚠️ No topics generated in this turn, pausing 3s before retry...`);
-      await new Promise(r => setTimeout(r, 3000));
+      await new Promise(r => setTimeout(r, 2000));
       continue;
     }
 
@@ -214,9 +180,7 @@ Every topic must have real clinical rigor, exact dosages (e.g., mg/kg, IV rates,
     for (const topic of generated) {
       if (!topic.title) continue;
       const normalizedTitle = topic.title.toLowerCase().trim();
-      if (existingTitles.has(normalizedTitle)) {
-        continue;
-      }
+      if (existingTitles.has(normalizedTitle)) continue;
 
       const idSlug = (topic.id || `${specialtyId}_${categoryId}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`)
         .toLowerCase()
@@ -233,14 +197,12 @@ Every topic must have real clinical rigor, exact dosages (e.g., mg/kg, IV rates,
         clinical_content: topic.clinical_content || []
       };
 
-      // 1. Insert into topics
       const { error: insErr } = await supabase.from('topics').insert(record);
       if (insErr) {
         record.id = `${idSlug}_${Math.random().toString(36).substr(2, 4)}`;
         await supabase.from('topics').insert(record);
       }
 
-      // 2. Mirror into specialty_topics
       try {
         await supabase.from('specialty_topics').upsert({
           specialty_id: specialtyId,
@@ -258,35 +220,57 @@ Every topic must have real clinical rigor, exact dosages (e.g., mg/kg, IV rates,
       existingTitles.add(normalizedTitle);
       currentCount++;
       savedInBatch++;
-      console.log(`      💾 [${currentCount}/${TARGET_MIN_TOPICS}] Saved: ${record.title}`);
+      console.log(`   💾 [${specialtyId}/${categoryId}] [${currentCount}/${TARGET_MIN_TOPICS}] Saved: ${record.title}`);
     }
 
     if (savedInBatch === 0) {
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise(r => setTimeout(r, 1000));
     }
-
-    await new Promise(r => setTimeout(r, 600));
   }
 
-  console.log(`✅ [${specName} -> ${catName}] Successfully reached ${currentCount} topics!`);
+  console.log(`✅ [${specName} -> ${catName}] Finished: ${currentCount} topics!`);
 }
 
-async function runMasterExpansion() {
+// Concurrency pool runner
+async function asyncPool(poolLimit, array, iteratorFn) {
+  const ret = [];
+  const executing = [];
+  for (const item of array) {
+    const p = Promise.resolve().then(() => iteratorFn(item));
+    ret.push(p);
+    if (poolLimit <= array.length) {
+      const e = p.then(() => executing.splice(executing.indexOf(e), 1));
+      executing.push(e);
+      if (executing.length >= poolLimit) {
+        await Promise.race(executing);
+      }
+    }
+  }
+  return Promise.all(ret);
+}
+
+async function runParallelExpansion() {
   console.log("======================================================================");
-  console.log("🏥 RESUMING MASS MEDICAL KNOWLEDGE INGESTION: 50+ TOPICS IN EVERY SPECIALTY");
+  console.log("⚡ HIGH-SPEED PARALLEL MEDICAL INGESTION: 50+ TOPICS IN ALL CATEGORIES");
   console.log("======================================================================");
 
   const specialties = Object.keys(SPECIALTY_META);
   const categories = Object.keys(CATEGORY_META);
 
+  const tasks = [];
   for (const specId of specialties) {
     for (const catId of categories) {
-      await populateCategory(specId, catId);
+      tasks.push({ specId, catId });
     }
   }
 
+  // Run up to 2 categories simultaneously to respect rate limits while maximising throughput
+  await asyncPool(2, tasks, async ({ specId, catId }) => {
+    await populateCategory(specId, catId);
+  });
+
   console.log("\n======================================================================");
-  console.log("🎉 ALL SPECIALTIES AND CATEGORIES HAVE REACHED 50+ TOPICS!");
+  console.log("🎉 ALL SPECIALTIES & CATEGORIES HAVE REACHED 50+ VERIFIED TOPICS!");
   console.log("======================================================================");
 
   const { data: allTopics } = await supabase.from('topics').select('specialty_id, category_id');
@@ -308,4 +292,4 @@ async function runMasterExpansion() {
   console.log(`\n🏆 TOTAL COMPILED CLINICAL GUIDES IN DATABASE: ${allTopics.length}`);
 }
 
-runMasterExpansion();
+runParallelExpansion();

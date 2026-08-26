@@ -77,6 +77,10 @@ export default function RootLayout() {
     return () => clearTimeout(timer);
   }, [fontsLoaded, fontError]);
 
+  if (!fontsLoaded && !fontError) {
+    return null;
+  }
+
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#010101" }}>
@@ -93,4 +97,3 @@ export default function RootLayout() {
     </ErrorBoundary>
   );
 }
-
