@@ -292,8 +292,17 @@ export const DailyClinicalPearls = () => {
                 {/* Footer: Citation & View Protocol */}
                 <View style={styles.cardFooterRow}>
                   <View style={styles.citationBox}>
-                    <Ionicons name="book-outline" size={12} color="#94a3b8" />
-                    <Text style={styles.citationText} numberOfLines={1}>
+                    <Ionicons
+                      name="book-outline"
+                      size={12}
+                      color="#94a3b8"
+                      style={{ flexShrink: 0 }}
+                    />
+                    <Text
+                      style={styles.citationText}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
                       {item.citation}
                     </Text>
                   </View>
@@ -312,6 +321,7 @@ export const DailyClinicalPearls = () => {
                         styles.tapDetailsText,
                         { color: item.specialtyColor },
                       ]}
+                      numberOfLines={1}
                     >
                       View Protocol
                     </Text>
@@ -319,6 +329,7 @@ export const DailyClinicalPearls = () => {
                       name="arrow-forward"
                       size={11}
                       color={item.specialtyColor}
+                      style={{ flexShrink: 0 }}
                     />
                   </View>
                 </View>
@@ -629,6 +640,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
   },
   specialtyPill: {
     flexDirection: 'row',
@@ -638,6 +651,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 12,
     borderWidth: 1,
+    flexShrink: 0,
   },
   specialtyPillText: {
     fontSize: 10,
@@ -655,6 +669,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
     maxWidth: 140,
+    flexShrink: 1,
+    minWidth: 0,
   },
   metricBadgeText: {
     fontSize: 9.5,
@@ -670,6 +686,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   pearlTitle: {
     color: '#ffffff',
@@ -709,18 +726,22 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    gap: 8,
   },
   citationBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     flex: 1,
-    marginRight: 8,
+    flexShrink: 1,
+    minWidth: 0,
   },
   citationText: {
     fontSize: 10,
     fontFamily: 'PlexMono_500Medium',
     color: '#94a3b8',
+    flex: 1,
+    flexShrink: 1,
     includeFontPadding: false,
   },
   tapDetailsBadge: {
@@ -731,6 +752,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3.5,
     borderRadius: 12,
     borderWidth: 1,
+    flexShrink: 0,
   },
   tapDetailsText: {
     fontSize: 10.5,

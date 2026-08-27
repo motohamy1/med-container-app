@@ -264,5 +264,349 @@ export const EXPANDED_SURGICAL_KNOWLEDGE: Record<string, SpecialtyData> = {
         ]
       }
     ]
+  },
+
+  surgery_bariatric: {
+    id: 'surgery_bariatric',
+    name: 'Bariatric',
+    scientificName: 'Bariatric & Metabolic Surgery',
+    icon: 'resize-outline',
+    color: '#ffc3dd', // Rose
+    illustration: require('../../assets/images/specialties/gastroenterology.jpg'),
+    generalScope: 'Laparoscopic sleeve gastrectomy, Roux-en-Y gastric bypass, revision bariatric surgery, and metabolic syndrome resolution.',
+    categories: [
+      {
+        id: 'bariatric_metabolic_procedures',
+        title: 'Bariatric & Metabolic Procedures',
+        description: 'Sleeve gastrectomy, Roux-en-Y gastric bypass, and staple line reinforcement',
+        icon: 'resize-outline',
+        topics: [
+          {
+            id: 'lap_sleeve_gastrectomy',
+            title: 'Laparoscopic Sleeve Gastrectomy (LSG)',
+            subtitle: '36-40 Fr Bougie Calibration, Greater Curvature Skeletonization & Staple Line Reinforcement',
+            type: 'Metabolic & Bariatric Surgery Protocol',
+            aiScopeDescription: 'Laparoscopic sleeve gastrectomy, 36-40 Fr bougie, Endo-GIA stapler heights, angle of His, and methylene blue leak test.',
+            clinicalContent: [
+              {
+                title: 'Case Scenario & Clinical Presentation',
+                content: 'A 36-year-old female with Class III obesity (BMI 44.2 kg/m²), type 2 diabetes mellitus, and severe obstructive sleep apnea presents for elective metabolic surgery. Indication: Laparoscopic Sleeve Gastrectomy (LSG).'
+              },
+              {
+                title: 'Preoperative Risk & Preoperative Preparation',
+                content: '• Multi-disciplinary clearance (dietitian, psychology, bariatric surgeon, pulmonology CPAP compliance); 2-week low-calorie liver-shrinking diet; weight-based enoxaparin 40mg SC BID.'
+              },
+              {
+                title: 'Operative Steps & Techniques',
+                content: '1. Access: 5-trocar layout (12mm camera above umbilicus, 12mm right/left working ports, 5mm assistant and Nathanson liver retractor).\n2. Skeletonization: Mobilize greater curvature using ultrasonic shears starting 4 cm proximal to pylorus up to left crus and Angle of His, taking short gastric vessels.\n3. Bougie Placement: Pass a 36-40 Fr calibrated bougie along lesser curvature into duodenum.\n4. Gastric Transection: Serial Endo-GIA linear stapling (Black/Green cartridges for thick antrum, Purple/Gold for body and fundus) parallel to bougie.\n5. Reinforcement: Over-sew staple line with 3-0 V-Loc running suture or apply seam reinforcement.\n6. Integrity Testing: Intraoperative methylene blue or air-leak test via bougie under saline immersion.'
+              },
+              {
+                title: 'Complications & Intraoperative Management',
+                content: '• Staple Line Leak at Angle of His: Primary over-sewing with 3-0 PDS and omental patch; laparoscopic drain placement.'
+              },
+              {
+                title: 'Post-Operative Critical Care & Monitoring',
+                content: '• ERAS bariatric pathway: Clear liquids at POD 1; early ambulation at 2 hours post-op; lifelong bariatric multivitamins.'
+              },
+              {
+                title: 'Surgical Instruments & Equipment',
+                content: '• 36-40 Fr bariatric bougie, Endo-GIA Tri-Staple 60mm cartridges, Harmonic HD1000i, Nathanson liver retractor.'
+              }
+            ]
+          },
+          {
+            id: 'lap_rygb_protocol',
+            title: 'Laparoscopic Roux-en-Y Gastric Bypass',
+            subtitle: '15-30 mL Gastric Pouch, 100-150 cm Roux Limb & Petersen Defect Closure',
+            type: 'Metabolic & Bariatric Surgery Protocol',
+            aiScopeDescription: 'Roux-en-Y gastric bypass, small gastric pouch, gastrojejunostomy, jejunojejunostomy, and internal hernia closure.',
+            clinicalContent: [
+              {
+                title: 'Case Scenario & Clinical Presentation',
+                content: 'A 42-year-old male with BMI 48.5 kg/m² and refractory GERD with Barrett esophagus presents for metabolic surgery. Indication: Laparoscopic Roux-en-Y Gastric Bypass (RYGB).'
+              },
+              {
+                title: 'Preoperative Risk & Preoperative Preparation',
+                content: '• Pre-op upper endoscopy; H. pylori eradication; stop NSAIDs; preoperative incentive spirometry and DVT prophylaxis.'
+              },
+              {
+                title: 'Operative Steps & Techniques',
+                content: '1. Gastric Pouch: Create 15-30 mL lesser curvature pouch using linear staplers starting 3 cm distal to GE junction.\n2. Biliopancreatic Limb: Measure 50 cm distal to ligament of Treitz and divide jejunum.\n3. Roux Limb: Measure 100-150 cm alimentary limb; create antecolic gastrojejunostomy with linear stapler (25-30mm) or circular stapler.\n4. Jejunojejunostomy: Side-to-side 60mm stapled anastomosis between biliopancreatic and Roux limbs.\n5. Defect Closure: Mandatory non-absorbable continuous closure of Petersen and mesenteric defects to prevent internal herniation.'
+              },
+              {
+                title: 'Complications & Intraoperative Management',
+                content: '• Anastomotic Tension / Leak: Immediate tension-free revision and closed-suction drainage.'
+              },
+              {
+                title: 'Post-Operative Critical Care & Monitoring',
+                content: '• Early oral hydration; monitor for dumping syndrome, marginal ulceration (PPI for 3 months), and fat-soluble vitamin deficiencies.'
+              },
+              {
+                title: 'Surgical Instruments & Equipment',
+                content: '• Endo-GIA stapler, 2-0 Ethibond non-absorbable suture, laparoscopic suction-irrigator.'
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  surgery_hepatobiliary: {
+    id: 'surgery_hepatobiliary',
+    name: 'Hepatobiliary',
+    scientificName: 'Hepatobiliary & Pancreatic Surgery',
+    icon: 'flask-outline',
+    color: '#6dc2bd', // Teal
+    illustration: require('../../assets/images/specialties/gastroenterology.jpg'),
+    generalScope: 'Complex liver resections, classic Whipple pancreaticoduodenectomy, biliary stricture reconstruction, and liver trauma.',
+    categories: [
+      {
+        id: 'pancreatic_hepatic_resections',
+        title: 'HPB Operative Protocols',
+        description: 'Whipple pancreaticoduodenectomy, anatomic hepatectomy, and hepaticojejunostomy',
+        icon: 'flask-outline',
+        topics: [
+          {
+            id: 'classic_whipple_procedure',
+            title: 'Pancreaticoduodenectomy (Whipple Procedure)',
+            subtitle: 'Pancreatic Head Adenocarcinoma, SMV/PV Tunneling & Triple Reconstruction',
+            type: 'Complex Hepatobiliary Protocol',
+            aiScopeDescription: 'Whipple procedure, pancreaticoduodenectomy, Cattell-Braasch maneuver, SMV tunnel, duct-to-mucosa pancreaticojejunostomy, and POPF.',
+            clinicalContent: [
+              {
+                title: 'Case Scenario & Clinical Presentation',
+                content: 'A 63-year-old male presents with painless jaundice (Total Bilirubin 14.2 mg/dL), weight loss, and Courvoisier sign. Pancreatic protocol CT: 2.6 cm resectable mass in pancreatic head without vascular invasion. Indication: Classic Open Pancreaticoduodenectomy (Whipple).'
+              },
+              {
+                title: 'Preoperative Risk & Preoperative Preparation',
+                content: '• Pre-op nutritional optimization, correct coagulopathy with Vitamin K; crossmatch 4 units PRBC; thoracic epidural analgesia.'
+              },
+              {
+                title: 'Operative Steps & Techniques',
+                content: '1. Exploration & Resectability: Right subcostal Chevron incision; extensive Kocher maneuver mobilizing C-loop duodenum past IVC and aorta.\n2. SMV/PV Tunneling: Develop anterior vascular tunnel between neck of pancreas and superior mesenteric vein / portal vein.\n3. Resection: Transect stomach/pylorus, common hepatic duct above cystic duct, neck of pancreas, and proximal jejunum (ligament of Treitz).\n4. Retroperitoneal Margin: Dissect uncinate process off SMA right lateral wall using clips and energy.\n5. Triple Reconstruction (Child method):\n   a. Pancreaticojejunostomy: Two-layer modified Blumgart or duct-to-mucosa (5-0 PDS inner, 3-0 Prolene outer).\n   b. Hepaticojejunostomy: End-to-side biliary anastomosis with interrupted 4-0/5-0 PDS.\n   c. Gastrojejunostomy: Antecolic handsewn or stapled anastomosis 40 cm distal to biliary hookup.\n6. Bilateral closed-suction JP drains placed near anastomoses.'
+              },
+              {
+                title: 'Complications & Intraoperative Management',
+                content: '• Postoperative Pancreatic Fistula (POPF Grade B/C): Drain fluid amylase >3x serum on POD 3; maintain drains, somatostatin analogue, and nutritional support.'
+              },
+              {
+                title: 'Post-Operative Critical Care & Monitoring',
+                content: '• ICU recovery; monitor blood glucose (insulin protocol); daily drain amylase; PPI infusion.'
+              },
+              {
+                title: 'Surgical Instruments & Equipment',
+                content: '• Bookwalter table retractor, vascular clamps (Satinsky), 4-0/5-0 PDS sutures, Jackson-Pratt drains.'
+              }
+            ]
+          },
+          {
+            id: 'lap_right_hepatectomy',
+            title: 'Anatomic Right Hepatectomy',
+            subtitle: 'Segments V-VIII Resection, Pringle Maneuver & CUSA Ultrasonic Cavitron Dissection',
+            type: 'Complex Hepatobiliary Protocol',
+            aiScopeDescription: 'Right hepatectomy, Pringle maneuver, Cantlie line, CUSA parenchymal transection, and post-hepatectomy liver failure.',
+            clinicalContent: [
+              {
+                title: 'Case Scenario & Clinical Presentation',
+                content: 'A 57-year-old female with solitary 6 cm colorectal liver metastasis in segments VI/VII with future liver remnant (FLR) of 38%. Indication: Anatomic Right Hepatectomy.'
+              },
+              {
+                title: 'Preoperative Risk & Preoperative Preparation',
+                content: '• Triphasic liver CT/MRI volumetry; ICG clearance test; low central venous pressure (CVP <5 mmHg) anesthetic plan to minimize back-bleeding.'
+              },
+              {
+                title: 'Operative Steps & Techniques',
+                content: '1. Exposure & Mobilization: Right subcostal incision; take down right triangular and coronary ligaments.\n2. Inflow Control: Dissect porta hepatis; selectively ligate right hepatic artery and right portal vein branch.\n3. Demarcation: Observe ischemic line along Cantlie line (IVC to gallbladder fossa).\n4. Parenchymal Transection: Cavitron Ultrasonic Surgical Aspirator (CUSA) with bipolar electrocautery; apply intermittent Pringle maneuver (15 min clamp / 5 min release).\n5. Outflow Control: Staple right hepatic vein with vascular Endo-GIA (tan/white load).\n6. Hemostasis: Argon plasma coagulation on raw liver surface; tachosil sealant patch.'
+              },
+              {
+                title: 'Complications & Intraoperative Management',
+                content: '• Hepatic Vein Avulsion / Air Embolism: Immediate Pringle clamp, pack liver bed, flood field with saline, repair with 4-0 Prolene.'
+              },
+              {
+                title: 'Post-Operative Critical Care & Monitoring',
+                content: '• Monitor INR, bilirubin, and lactate for post-hepatectomy liver failure (50-50 criteria POD 5); maintain euvolemia.'
+              },
+              {
+                title: 'Surgical Instruments & Equipment',
+                content: '• CUSA ultrasonic aspirator, Pringle tourniquet (rummel), Endo-GIA vascular stapler, Argon beam coagulator.'
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  surgery_maxillofacial: {
+    id: 'surgery_maxillofacial',
+    name: 'Maxillofacial',
+    scientificName: 'Oral & Maxillofacial Surgery',
+    icon: 'happy-outline',
+    color: '#dbd4fd', // Lavender
+    illustration: require('../../assets/images/specialties/psychiatry.jpg'),
+    generalScope: 'Complex orthognathic surgery, facial trauma reconstruction, TMJ arthroplasty, and craniofacial anomalies.',
+    categories: [
+      {
+        id: 'orthognathic_facial_trauma',
+        title: 'Maxillofacial & Trauma Protocols',
+        description: 'Bimaxillary orthognathic osteotomies, mandibular ORIF, and ZMC fracture repair',
+        icon: 'happy-outline',
+        topics: [
+          {
+            id: 'bimaxillary_orthognathic_surgery',
+            title: 'Bimaxillary Orthognathic Surgery (Le Fort I + BSSO)',
+            subtitle: 'Maxillary Impaction/Advancement, Mandibular Bilateral Sagittal Split & Rigid Fixation',
+            type: 'Craniomaxillofacial Protocol',
+            aiScopeDescription: 'Le Fort I osteotomy, BSSO, IAN nerve preservation, intermediate splint, and titanium miniplates.',
+            clinicalContent: [
+              {
+                title: 'Case Scenario & Clinical Presentation',
+                content: 'A 22-year-old male with severe Class III skeletal malocclusion, maxillary hypoplasia, mandibular prognathism, and anterior open bite presents after 18 months of decompensating orthodontic preparation. Indication: Bimaxillary Orthognathic Surgery (Le Fort I Osteotomy + Bilateral Sagittal Split Osteotomy).'
+              },
+              {
+                title: 'Preoperative Risk & Preoperative Preparation',
+                content: '• Virtual Surgical Planning (VSP) with 3D CAD/CAM occlusal splints; nasotracheal intubation; pre-op systemic dexamethasone.'
+              },
+              {
+                title: 'Operative Steps & Techniques',
+                content: '1. Le Fort I Osteotomy: Maxillary vestibular incision from first molar to first molar; osteotomy of anterior/lateral maxillary walls, nasal septum, and pterygomaxillary dysjunction with reciprocating saw.\n2. Downfracture & Mobilization: Downfracture maxilla; mobilize into final position using intermediate 3D-printed wafer splint; secure with 4x 1.5mm L-shaped titanium miniplates.\n3. Mandibular BSSO: Oblique mucosal incision along anterior mandibular ramus; identify lingula and Inferior Alveolar Nerve (IAN).\n4. Sagittal Osteotomy: Horizontal medial cut above lingula, vertical anterior lateral cut at second molar; split ramus using sagittal split osteotomes.\n5. Maxillomandibular Fixation: Intermaxillary fixation (IMF) with final splint; fixate proximal and distal mandibular segments with 2.0mm bicortical screws or miniplates.'
+              },
+              {
+                title: 'Complications & Intraoperative Management',
+                content: '• Bad Split / IAN Injury: Immediate repositioning and stabilization with lag screws; preserve nerve sheath continuity.'
+              },
+              {
+                title: 'Post-Operative Critical Care & Monitoring',
+                content: '• Wire cutters at bedside; elastics guide guidance; cool humidified O2; liquid puree diet for 6 weeks.'
+              },
+              {
+                title: 'Surgical Instruments & Equipment',
+                content: '• Reciprocating / oscillating saws, Smith bone spreaders, 1.5/2.0mm MatrixMIDFACE miniplate sets.'
+              }
+            ]
+          },
+          {
+            id: 'mandible_fracture_orif',
+            title: 'Mandibular Angle & Parasymphyseal ORIF',
+            subtitle: 'Champy Ideal Line of Osteosynthesis, Transoral Approach & 2.0mm Titanium Fixation',
+            type: 'Craniomaxillofacial Protocol',
+            aiScopeDescription: 'Mandible fracture, Champy line, transoral approach, Erich arch bars, and rigid titanium fixation.',
+            clinicalContent: [
+              {
+                title: 'Case Scenario & Clinical Presentation',
+                content: 'A 28-year-old male presents with severe facial trauma following a motor vehicle collision, exhibiting malocclusion, step-off deformity at right mandibular angle, and left parasymphyseal mobility. Indication: Open Reduction and Internal Fixation (ORIF).'
+              },
+              {
+                title: 'Preoperative Risk & Preoperative Preparation',
+                content: '• 3D maxillofacial CT scan; apply Erich arch bars for temporary intermaxillary fixation (IMF) establishing anatomic dental occlusion.'
+              },
+              {
+                title: 'Operative Steps & Techniques',
+                content: '1. Incision: Intraoral vestibular approach with subperiosteal dissection preserving mental nerve.\n2. Reduction: Anatomic reduction of fracture segments confirmed by restoration of native dental intercuspation under IMF.\n3. Fixation (Champy Principle): Place a 2.0mm monocortical miniplate along superior border (tension band) and a 2.0mm load-bearing plate along inferior border.\n4. Angle Fracture: Place superior border miniplate along external oblique ridge transorally with trochar system.\n5. Layered Closure: Copious irrigation and watertight closure with 3-0 chromic gut.'
+              },
+              {
+                title: 'Complications & Intraoperative Management',
+                content: '• Mental Nerve Paresthesia: Gentle retraction; avoid excessive traction on nerve bundle.'
+              },
+              {
+                title: 'Post-Operative Critical Care & Monitoring',
+                content: '• Post-op panoramic radiograph (OPG); soft diet 4-6 weeks; chlorhexidine 0.12% oral rinses.'
+              },
+              {
+                title: 'Surgical Instruments & Equipment',
+                content: '• Erich arch bars, 2.0mm MatrixMANDIBLE plating system, transbuccal trocar set.'
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  surgery_endocrine: {
+    id: 'surgery_endocrine',
+    name: 'Endocrine Surgery',
+    scientificName: 'Endocrine & Thyroid Surgery',
+    icon: 'nuclear-outline',
+    color: '#defff9', // Mint
+    illustration: require('../../assets/images/specialties/endocrinology.jpg'),
+    generalScope: 'Targeted parathyroidectomy, retroperitoneal laparoscopic adrenalectomy, thyroid surgery, and MEN syndrome management.',
+    categories: [
+      {
+        id: 'endocrine_adrenal_parathyroid',
+        title: 'Endocrine Surgical Protocols',
+        description: 'Minimally invasive parathyroidectomy, laparoscopic adrenalectomy, and Miami criteria',
+        icon: 'nuclear-outline',
+        topics: [
+          {
+            id: 'targeted_parathyroidectomy_miami',
+            title: 'Targeted Parathyroidectomy (Miami Criteria)',
+            subtitle: 'Primary Hyperparathyroidism, Intraoperative PTH (ioPTH) Drop >50% & Adenoma Resection',
+            type: 'Endocrine Surgical Protocol',
+            aiScopeDescription: 'Parathyroidectomy, Sestamibi SPECT-CT, Miami criteria, intraoperative PTH monitoring, and recurrent laryngeal nerve preservation.',
+            clinicalContent: [
+              {
+                title: 'Case Scenario & Clinical Presentation',
+                content: 'A 58-year-old postmenopausal female presents with osteoporosis, recurrent nephrolithiasis, elevated serum calcium (11.4 mg/dL), and intact PTH (118 pg/mL). 99mTc-Sestamibi SPECT/CT: Concordant left inferior parathyroid adenoma. Indication: Focused Minimally Invasive Parathyroidectomy (MIP) with Intraoperative PTH monitoring.'
+              },
+              {
+                title: 'Preoperative Risk & Preoperative Preparation',
+                content: '• Baseline intraoperative PTH blood draw (pre-incision and pre-excision); continuous neuromonitoring of RLN.'
+              },
+              {
+                title: 'Operative Steps & Techniques',
+                content: '1. Incision: Focused 2.5 cm lateral neck incision along Langer skin crease.\n2. Dissection: Separate strap muscles from sternocleidomastoid; retract thyroid lobe medially.\n3. Identification: Identify enlarged reddish-brown hypercellular left inferior parathyroid gland (0.8 g).\n4. Resection: Clip and divide single feeding vascular pedicle off inferior thyroid artery without capsule rupture.\n5. Intraoperative PTH (ioPTH) Assay: Draw blood at 5 and 10 minutes post-excision.\n6. Confirmation (Miami Criteria): Confirm >50% drop in ioPTH from baseline into normal range (92 pg/mL dropped to 18 pg/mL at 10 mins).'
+              },
+              {
+                title: 'Complications & Intraoperative Management',
+                content: '• Failure to Drop ioPTH: Perform bilateral neck exploration (BNE) to identify multiglandular disease or ectopic adenoma.'
+              },
+              {
+                title: 'Post-Operative Critical Care & Monitoring',
+                content: '• Monitor for postoperative hypocalcemia (Chvostek / Trousseau signs); oral calcium carbonate 1000mg + Calcitriol 0.25 mcg daily.'
+              },
+              {
+                title: 'Surgical Instruments & Equipment',
+                content: '• Rapid ioPTH analyzer, NIM 3.0 nerve monitor, small jaw bipolar forceps, hemoclips.'
+              }
+            ]
+          },
+          {
+            id: 'lap_adrenalectomy_pheo',
+            title: 'Laparoscopic Transabdominal Adrenalectomy',
+            subtitle: 'Pheochromocytoma, Alpha-Blockade (Phenoxybenzamine), Early Vein Ligation & Hemodynamic Control',
+            type: 'Endocrine Surgical Protocol',
+            aiScopeDescription: 'Adrenalectomy, pheochromocytoma, Roizen criteria, phenoxybenzamine alpha-blockade, and main adrenal vein ligation.',
+            clinicalContent: [
+              {
+                title: 'Case Scenario & Clinical Presentation',
+                content: 'A 45-year-old male presents with episodic headache, diaphoresis, and hypertension. 24-hour urine metanephrines are 5x ULN. Abdominal MRI: 4.2 cm left adrenal mass. Indication: Laparoscopic Transabdominal Left Adrenalectomy.'
+              },
+              {
+                title: 'Preoperative Risk & Preoperative Preparation',
+                content: '• Mandatory pre-op alpha-blockade (Phenoxybenzamine 10-20 mg TID for 14 days) followed by beta-blockade only after alpha-blockade established (Roizen criteria); aggressive pre-op salt loading.'
+              },
+              {
+                title: 'Operative Steps & Techniques',
+                content: '1. Patient Position: Right lateral decubitus at 60 degrees; 4 subcostal trocars.\n2. Splenorenal Mobilization: Incise line of Toldt, mobilize spleen and tail of pancreas medially off retroperitoneum.\n3. Exposure: Identify left renal vein and left gonadal vein crossing.\n4. Central Adrenal Vein: Dissect and doubly clip the main left adrenal vein as it enters left renal vein BEFORE gland manipulation to prevent catecholamine surge.\n5. Circumferential Dissection: Mobilize adrenal gland from surrounding retroperitoneal fat and superior poles using ultrasonic energy.\n6. Specimen Extraction: Retrieve intact in Endocatch bag.'
+              },
+              {
+                title: 'Complications & Intraoperative Management',
+                content: '• Severe Intraoperative Hypotension: Common immediately following adrenal vein ligation (due to sudden catecholamine withdrawal); resuscitate with IV fluids and norepinephrine infusion.'
+              },
+              {
+                title: 'Post-Operative Critical Care & Monitoring',
+                content: '• ICU hemodynamic monitoring for 24 hours; wean vasopressors; monitor blood glucose (rebound hypoglycemia risk).'
+              },
+              {
+                title: 'Surgical Instruments & Equipment',
+                content: '• Harmonic ACE+, vascular titanium clips (Hem-o-lok), Endocatch specimen bag, arterial line.'
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 };

@@ -254,7 +254,7 @@ const ThinkingIndicator: React.FC = () => {
   );
 };
 
-// Chat Bubble Component with Centered Response & Map Tab Support
+// Chat Bubble Component with Cent Response & Map Tab Support
 const ChatBubble: React.FC<{
   message: Message;
   topicContext?: TopicItem | null;
@@ -596,6 +596,7 @@ const ChatTab = () => {
   const insets = useSafeAreaInsets();
   const floatingBottom = insets.bottom > 0 ? insets.bottom : 10;
   const DOCK_BAR_HEIGHT = 72;
+  const TAB_BAR_GAP = 8; // 8px margin between input area and tabs bar
   
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [activeMode, setActiveMode] = useState<'chat' | 'map'>('chat');
@@ -821,6 +822,8 @@ const ChatTab = () => {
             ref={flatListRef}
             data={messages}
             keyExtractor={(item) => item.id}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             renderItem={({ item }) => (
               <ChatBubble
                 message={item}
@@ -833,7 +836,7 @@ const ChatTab = () => {
             )}
             contentContainerStyle={{
               paddingTop: 16,
-              paddingBottom: isKeyboardVisible ? 20 : DOCK_BAR_HEIGHT + floatingBottom + 16,
+              paddingBottom: isKeyboardVisible ? 20 : DOCK_BAR_HEIGHT + floatingBottom + TAB_BAR_GAP + 24,
             }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
@@ -885,35 +888,48 @@ const ChatTab = () => {
             ListFooterComponent={isTyping ? <ThinkingIndicator /> : null}
           />
 
-          {/* Input Dock */}
+          {/* Input Dock - Increased height by 25% + 8px separation from Tab Bar */}
           <View
             style={{
-              paddingBottom: isKeyboardVisible ? 8 : floatingBottom + 70,
+              paddingBottom: isKeyboardVisible ? 10 : floatingBottom + DOCK_BAR_HEIGHT + TAB_BAR_GAP,
             }}
-            className="px-4 pt-2 bg-background border-t border-white/5"
+            className="px-4 pt-2.5 bg-background border-t border-white/5"
           >
-            <View className="flex-row items-center bg-[#0c1017] border border-white/10 rounded-full px-4 py-2">
+            <View
+              className="flex-row items-center bg-[#0c1017] border border-white/10 rounded-2xl px-4 py-2.5"
+              style={{
+                minHeight: 52, // +25% spacious height
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 6,
+                elevation: 3,
+              }}
+            >
               <TextInput
                 value={inputText}
                 onChangeText={setInputText}
                 placeholder="Ask about guidelines, dosages, criteria..."
                 placeholderTextColor="#6b7280"
-                className="flex-1 text-white text-sm font-sans"
+                className="flex-1 text-white text-[15px] font-sans py-1 leading-5"
                 returnKeyType="send"
                 onSubmitEditing={() => handleSend()}
                 editable={!isTyping}
+                multiline={false}
               />
               <TouchableOpacity
                 onPress={() => handleSend()}
                 disabled={!inputText.trim() || isTyping}
-                className="w-8 h-8 rounded-full items-center justify-center ml-2"
+                className="w-10 h-10 rounded-xl items-center justify-center ml-2.5 active:opacity-75"
                 style={{
-                  backgroundColor: inputText.trim() && !isTyping ? TURQUOISE : "#1f2937",
+                  backgroundColor: inputText.trim() && !isTyping ? TURQUOISE : "#1a2228",
+                  borderWidth: 1,
+                  borderColor: inputText.trim() && !isTyping ? "rgba(0, 240, 255, 0.4)" : "rgba(255, 255, 255, 0.05)",
                 }}
               >
                 <Ionicons
                   name="arrow-up"
-                  size={18}
+                  size={20}
                   color={inputText.trim() && !isTyping ? "#010101" : "#4b5563"}
                 />
               </TouchableOpacity>

@@ -214,11 +214,11 @@ export const SURGERY_CATEGORIES: SurgeryCategoryItem[] = [
       {
         name: 'Pre-Op Cardiac Risk Assessment',
         detail: 'Functional capacity measured in METs (>4 METs = climbing 2 flights of stairs without stopping).',
-        protocol: 'If RCRI ≥2 or METs <4 with high-risk surgery, obtain preoperative 12-lead ECG, NT-proBNP, and cardiology consultation for pharmacologic stress testing.'
+        protocol: 'If RCRI \u22652 or METs <4 with high-risk surgery, obtain preoperative 12-lead ECG, NT-proBNP, and cardiology consultation for pharmacologic stress testing.'
       },
       {
         name: 'Anticoagulation Bridging Protocol',
-        detail: 'High thrombotic risk (Mechanical mitral valve, AFib CHA2DS2-VASc ≥7, recent VTE <3 months): Bridge with therapeutic LMWH (Enoxaparin 1 mg/kg SC BID).',
+        detail: 'High thrombotic risk (Mechanical mitral valve, AFib CHA2DS2-VASc \u22657, recent VTE <3 months): Bridge with therapeutic LMWH (Enoxaparin 1 mg/kg SC BID).',
         protocol: 'Stop LMWH 24 hours prior to surgery. Resume LMWH 24-48 hours post-op once surgical hemostasis is secured.'
       }
     ],
@@ -235,8 +235,8 @@ export const SURGERY_CATEGORIES: SurgeryCategoryItem[] = [
     description: 'Resuscitation in catastrophic hemorrhage, abrogation of the "Lethal Triad" (Hypothermia, Acidosis, Coagulopathy), and rapid abbreviated operative staging.',
     keyPoints: [
       'Damage Control Surgery Principle: Abbreviated initial laparotomy (<60-90 mins) to control hemorrhage and contamination, followed by ICU resuscitation and definitive second-look repair',
-      'The Trauma Lethal Triad: Body temp <35°C, pH <7.20, and progressive coagulopathy',
-      'Massive Transfusion Protocol (MTP): Balanced 1:1:1 ratio (Packed Red Blood Cells : Fresh Frozen Plasma : Platelets) + Tranexamic Acid (TXA 1g IV within 3h of injury)',
+      'The Trauma Lethal Triad: Body temp <35\u00b0C, pH <7.20, and progressive coagulopathy',
+      'Massive Transfusion Protocol (MTP): Balanced 1:1:1 ratio (Packed Red Blood Cells : Fresh practical Frozen Plasma : Platelets) + Tranexamic Acid (TXA 1g IV within 3h of injury)',
       'FAST Ultrasound: 4 views (Pericardial, RUQ Morison pouch, LUQ Splenorenal, Pelvic pouch of Douglas)'
     ],
     casesOrExamples: [
@@ -263,7 +263,7 @@ export const SURGERY_CATEGORIES: SurgeryCategoryItem[] = [
 export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
   {
     id: 'nephrology',
-    name: 'Renal',
+    name: 'Nephrology',
     scientificName: 'Nephrology & Renal Medicine',
     badge: 'NEPHROLOGY',
     icon: 'water-outline',
@@ -273,7 +273,7 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
     highYieldTopics: [
       {
         title: 'Acute Kidney Injury (KDIGO Staging)',
-        summary: 'Stage 1: SCr 1.5-1.9x baseline or urine <0.5 mL/kg/h for 6-12h. Stage 2: SCr 2.0-2.9x baseline. Stage 3: SCr ≥3.0x baseline, SCr ≥4.0 mg/dL, or initiation of RRT.',
+        summary: 'Stage 1: SCr 1.5-1.9x baseline or urine <0.5 mL/kg/h for 6-12h. Stage 2: SCr 2.0-2.9x baseline. Stage 3: SCr \u22653.0x baseline, SCr \u22654.0 mg/dL, or initiation of RRT.',
         guideline: '2023 KDIGO AKI Clinical Practice Guidelines'
       },
       {
@@ -292,7 +292,7 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
   },
   {
     id: 'endocrinology',
-    name: 'Endo',
+    name: 'Endocrinology',
     scientificName: 'Endocrinology & Metabolism',
     badge: 'ENDOCRINOLOGY',
     icon: 'speedometer-outline',
@@ -306,7 +306,7 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
         guideline: '2024 ADA Standards of Care in Diabetes'
       },
       {
-        title: 'Thyroid Storm (Burch-Wartofsky Score ≥45)',
+        title: 'Thyroid Storm (Burch-Wartofsky Score \u226545)',
         summary: 'Quadruple Therapy: 1. Beta-blockade: Propranolol 60-80 mg PO q4h or IV Esmolol; 2. Thionamide: Propylthiouracil (PTU) 500-1000 mg loading then 200 mg q4h (blocks peripheral T4->T3 conversion); 3. Iodine Solution (Lugol / SSKI) given 1 HOUR AFTER thionamide; 4. Glucocorticoid: IV Hydrocortisone 100 mg q8h.',
         guideline: '2023 American Thyroid Association Guidelines'
       },
@@ -321,7 +321,7 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
   },
   {
     id: 'critical_care',
-    name: 'ICU',
+    name: 'Critical Care',
     scientificName: 'Emergency & Critical Care Medicine',
     badge: 'CRITICAL CARE',
     icon: 'medkit-outline',
@@ -350,7 +350,7 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
   },
   {
     id: 'hematology_oncology',
-    name: 'Heme-Onc',
+    name: 'Hematology',
     scientificName: 'Hematology & Medical Oncology',
     badge: 'HEME / ONC',
     icon: 'fitness-outline',
@@ -360,17 +360,17 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
     highYieldTopics: [
       {
         title: 'Febrile Neutropenia Emergency',
-        summary: 'Definition: Single oral temp ≥38.3°C (101°F) with Absolute Neutrophil Count (ANC) <500 cells/µL. Immediate empiric anti-pseudomonal monotherapy (Cefepime 2g IV q8h, Piperacillin-Tazobactam 4.5g IV q6h, or Meropenem 1g IV q8h) within 60 minutes of arrival.',
+        summary: 'Definition: Single oral temp \u226538.3\u00b0C (101\u00b0F) with Absolute Neutrophil Count (ANC) <500 cells/\u00b5L. Immediate empiric anti-pseudomonal monotherapy (Cefepime 2g IV q8h, Piperacillin-Tazobactam 4.5g IV q6h, or Meropenem 1g IV q8h) within 60 minutes of arrival.',
         guideline: '2023 ASCO/IDSA Clinical Practice Guideline'
       },
       {
         title: 'Tumor Lysis Syndrome (TLS)',
-        summary: 'Metabolic abnormalities: Hyperuricemia (>8 mg/dL), Hyperkalemia (>6.0 mEq/L), Hyperphosphatemia (>4.5 mg/dL), Hypocalcemia (<7.0 mg/dL). Prevention/Treatment: Aggressive IV hydration (2.5-3 L/m²/day) + Allopurinol (prevention) or Rasburicase 0.2 mg/kg IV (active lysis/high uric acid).',
+        summary: 'Metabolic abnormalities: Hyperuricemia (>8 mg/dL), Hyperkalemia (>6.0 mEq/L), Hyperphosphatemia (>4.5 mg/dL), Hypocalcemia (<7.0 mg/dL). Prevention/Treatment: Aggressive IV hydration (2.5-3 L/m\u00b2/day) + Allopurinol (prevention) or Rasburicase 0.2 mg/kg IV (active lysis/high uric acid).',
         guideline: 'Cairo-Bishop TLS Classification & Guidelines'
       },
       {
         title: 'Heparin-Induced Thrombocytopenia (HIT)',
-        summary: '4Ts Score (Thrombocytopenia >50% drop, Timing d5-10, Thrombosis, oTher causes). If score ≥4: Stop all heparin products immediately, order Anti-PF4/Heparin ELISA, and initiate non-heparin anticoagulation (Argatroban 2 mcg/kg/min or Fondaparinux).',
+        summary: '4Ts Score (Thrombocytopenia >50% drop, Timing d5-10, Thrombosis, oTher causes). If score \u22654: Stop all heparin products immediately, order Anti-PF4/Heparin ELISA, and initiate non-heparin anticoagulation (Argatroban 2 mcg/kg/min or Fondaparinux).',
         guideline: '2022 American Society of Hematology (ASH) Guidelines'
       }
     ],
@@ -379,7 +379,7 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
   },
   {
     id: 'rheumatology',
-    name: 'Rheum',
+    name: 'Rheumatology',
     scientificName: 'Rheumatology & Autoimmune Diseases',
     badge: 'RHEUMATOLOGY',
     icon: 'body-outline',
@@ -394,7 +394,7 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
       },
       {
         title: 'Acute Monoarthritis Workup',
-        summary: 'Mandatory Arthrocentesis prior to antibiotics: Synovial fluid analysis for WBC count, differential, Gram stain, and polarized light microscopy (Monosodium urate needle crystals: negatively birefringent; CPPD rhomboid crystals: positively birefringent). Synovial WBC >50,000/µL with >90% PMNs = treat as Septic Arthritis until cultures negative.',
+        summary: 'Mandatory Arthrocentesis prior to antibiotics: Synovial fluid analysis for WBC count, differential, Gram stain, and polarized light microscopy (Monosodium urate needle crystals: negatively birefringent; CPPD rhomboid crystals: positively birefringent). Synovial WBC >50,000/\u00b5L with >90% PMNs = treat as Septic Arthritis until cultures negative.',
         guideline: 'ACR Gout & Septic Joint Guidelines'
       }
     ],
@@ -403,7 +403,7 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
   },
   {
     id: 'pediatrics',
-    name: 'Peds',
+    name: 'Pediatrics',
     scientificName: 'Pediatrics & Neonatal Medicine',
     badge: 'PEDIATRICS',
     icon: 'happy-outline',
@@ -423,7 +423,7 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
       },
       {
         title: 'Pediatric Fluid Resuscitation (Holliday-Segar)',
-        summary: 'Maintenance Fluid (4-2-1 Rule): 4 mL/kg/h for first 10kg + 2 mL/kg/h for next 10kg + 1 mL/kg/h for each kg above 20kg. Bolus for Hypovolemic Shock: 20 mL/kg IV isotonic crystalloid (Lactated Ringer’s or Normal Saline) pushed over 10-20 minutes.',
+        summary: 'Maintenance Fluid (4-2-1 Rule): 4 mL/kg/h for first 10kg + 2 mL/kg/h for next 10kg + 1 mL/kg/h for each kg above 20kg. Bolus for Hypovolemic Shock: 20 mL/kg IV isotonic crystalloid (Lactated Ringer\u2019s or Normal Saline) pushed over 10-20 minutes.',
         guideline: 'PALS / AAP Fluid Guidelines'
       }
     ],
@@ -432,7 +432,7 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
   },
   {
     id: 'psychiatry',
-    name: 'Psych',
+    name: 'Psychiatry',
     scientificName: 'Psychiatry & Behavioral Health',
     badge: 'PSYCHIATRY',
     icon: 'sparkles-outline',
@@ -447,21 +447,21 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
       },
       {
         title: 'Serotonin Syndrome vs Neuroleptic Malignant Syndrome (NMS)',
-        summary: 'Serotonin Syndrome: Caused by serotonergic excess (SSRIs, SNRIs, MAOIs, Tramadol). Hallmark: Hyperreflexia, spontaneous Clonus, myoclonus, tremor, diarrhea, rapid onset (<24h). Treatment: Stop agent, IV Lorazepam, Cyproheptadine (5-HT2A antagonist 12 mg initial). NMS: Caused by D2 blockade (antipsychotics). Hallmark: "Lead-pipe" muscle rigidity, hyporeflexia, extreme hyperthermia, high CK >10,000, slow onset (days). Treatment: Dantrolene, Bromocriptine.',
+        summary: 'Serotonin Syndrome: Caused by serotonergic excess (SSRIs, practical SNRIs, MAOIs, Tramadol). Hallmark: Hyperreflexia, spontaneous Clonus, myoclonus, tremor, diarrhea, rapid onset (<24h). Treatment: Stop agent, IV Lorazepam, Cyproheptadine (5-HT2A antagonist 12 mg initial). NMS: Caused by D2 blockade (antipsychotics). Hallmark: "Lead-pipe" muscle rigidity, hyporeflexia, extreme hyperthermia, high CK >10,000, slow onset (days). practical Treatment: Dantrolene, Bromocriptine.',
         guideline: 'Toxicology & Neurocritical Care Guidelines'
       },
       {
         title: 'Alcohol Withdrawal & Delirium Tremens (CIWA-Ar)',
-        summary: 'Symptom-triggered Benzodiazepine protocol based on CIWA-Ar score (score ≥8-10 = active treatment). Diazepam 10-20 mg PO/IV or Lorazepam 2-4 mg IV q1-2h until calm and CIWA <8. Always give IV Thiamine 500 mg TID BEFORE glucose to prevent Wernicke encephalopathy.',
+        summary: 'Symptom-triggered Benzodiazepine protocol based on CIWA-Ar score (score \u22658-10 = active treatment). Diazepam 10-20 mg PO/IV or Lorazepam 2-4 mg IV q1-2h until calm and CIWA <8. Always give IV Thiamine 500 mg TID BEFORE glucose to prevent Wernicke encephalopathy.',
         guideline: 'ASAM Clinical Practice Guideline on Alcohol Withdrawal'
       }
     ],
     clinicalPearls: 'Always administer high-dose intravenous Thiamine BEFORE or concurrent with any glucose/dextrose infusions in patients with alcohol use disorder or malnutrition; infusing glucose alone rapidly exhausts remaining thiamine stores and triggers acute irreversible Wernicke encephalopathy.',
-    aiPrompt: 'Provide behavioral health and psychiatric emergency guidance covering acute agitation tranquilization, CIWA alcohol withdrawal protocols, and serotonin syndrome vs NMS differentiation.'
+    aiPrompt: 'Provide behavioral health and psychiatric emergency guidance covering acute agitation practical tranquilization, CIWA alcohol withdrawal protocols, and serotonin syndrome vs NMS differentiation.'
   },
   {
     id: 'ophthalmology',
-    name: 'Ophtho',
+    name: 'Ophthalmology',
     scientificName: 'Ophthalmology & Visual Sciences',
     badge: 'OPHTHALMOLOGY',
     icon: 'eye-outline',
@@ -472,7 +472,7 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
       {
         title: 'Acute Angle-Closure Glaucoma',
         summary: 'Sudden severe eye pain, halos around lights, fixed mid-dilated pupil, IOP >40 mmHg. Emergency treatment: Topical Timolol 0.5% + Pilocarpine 2% + IV Acetazolamide 500 mg + IV Mannitol 1-2 g/kg. Definitive: Laser peripheral iridotomy.',
-        guideline: 'AAO Preferred Practice Pattern — Primary Angle Closure'
+        guideline: 'AAO Preferred Practice Pattern \u2014 Primary Angle Closure'
       },
       {
         title: 'Central Retinal Artery Occlusion (CRAO)',
@@ -481,7 +481,7 @@ export const EXPANDED_MEDICINE_SPECIALTIES: MedicineSpecialtyItem[] = [
       },
       {
         title: 'Chemical Eye Burn Emergency',
-        summary: 'Immediate copious irrigation with isotonic saline or Ringer lactate for minimum 30 minutes before any examination. Check pH every 5 minutes until neutral (7.0-7.4). Alkali burns (worse prognosis) penetrate deeper than acid burns. Grade severity with Roper-Hall classification.',
+        summary: 'Immediate copious irrigation with isotonic saline or Ringer lactate for minimum 30 minutes before any examination. Check pH every 5 minutes until neutral (7.0-7.4). Alkali burns (worse prognosis) practical penetrate deeper than acid burns. Grade severity with Roper-Hall classification.',
         guideline: 'AAO Emergency Ophthalmology Guidelines'
       }
     ],

@@ -1,5 +1,15 @@
 import { supabase } from '../lib/supabase';
-import { SpecialtyData, SpecialtyCategory, TopicItem, TopicSearchResult, SPECIALTY_KNOWLEDGE } from '../constants/SpecialtyData';
+import {
+  SpecialtyData,
+  SpecialtyCategory,
+  TopicItem,
+  TopicSearchResult,
+  SPECIALTY_KNOWLEDGE,
+  getSpecialtyKnowledge,
+  getCategoryKnowledge,
+  getTopicKnowledge,
+  synthesizeFallbackTopic,
+} from '../constants/SpecialtyData';
 import { Colors } from '../constants/Colors';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
@@ -44,11 +54,14 @@ function scoreResult(q: string, r: TopicSearchResult): number {
   return 10;
 }
 
-export const dbService = {
-  async getSpecialty(specialtyId: string): Promise<SpecialtyData | null> {
-    const localSpec = SPECIALTY_KNOWLEDGE[specialtyId] || null;
+const timeoutPromise = <T>(ms: number, fallbackValue: T): Promise<T> =>
+  new Promise((resolve) => setTimeout(() => resolve(fallbackValue), ms));
 
-    try {
+export const dbService = {
+  async getSpecialty(specialtyId: string): Promise<SpecialtyData> {
+    const localSpec = getSpecialtyKnowledge(specialtyId);
+
+    const remoteFetch = async (): Promise<SpecialtyData> => {
       const { data: specialty, error: specError } = await supabase
         .from('specialties')
         .select('*')
@@ -117,16 +130,19 @@ export const dbService = {
         illustration: localSpec?.illustration || null,
         categories: mappedCategories,
       };
-    } catch (e) {
-      console.warn('[dbService] getSpecialty network error, using local fallback:', e);
+    };
+
+    try {
+      return await Promise.race([remoteFetch(), timeoutPromise(1200, localSpec)]);
+    } catch {
       return localSpec;
     }
   },
 
   async getCategory(specialtyId: string, categoryId: string): Promise<SpecialtyCategory | null> {
-    const localCat = SPECIALTY_KNOWLEDGE[specialtyId]?.categories?.find((c) => c.id === categoryId) || null;
+    const localCat = getCategoryKnowledge(specialtyId, categoryId);
 
-    try {
+    const remoteFetch = async (): Promise<SpecialtyCategory | null> => {
       const { data: cat, error } = await supabase
         .from('categories')
         .select(`
@@ -161,18 +177,19 @@ export const dbService = {
         icon: (cat.icon as any) || localCat?.icon || 'book',
         topics: Array.from(topicMap.values()),
       };
-    } catch (e) {
-      console.warn('[dbService] getCategory network error, using local fallback:', e);
+    };
+
+    try {
+      return await Promise.race([remoteFetch(), timeoutPromise(1200, localCat)]);
+    } catch {
       return localCat;
     }
   },
 
-  async getTopic(specialtyId: string, topicId: string): Promise<TopicItem | null> {
-    const localTopic = SPECIALTY_KNOWLEDGE[specialtyId]?.categories
-      ?.flatMap((c) => c.topics)
-      ?.find((t) => t.id === topicId) || null;
+  async getTopic(specialtyId: string, topicId: string): Promise<TopicItem> {
+    const { topic: localTopic } = getTopicKnowledge(specialtyId, topicId);
 
-    try {
+    const remoteFetch = async (): Promise<TopicItem> => {
       const { data: topic, error } = await supabase
         .from('topics')
         .select('*')
@@ -192,8 +209,11 @@ export const dbService = {
         aiScopeDescription: topic.ai_scope_description || localTopic?.aiScopeDescription || '',
         clinicalContent: topic.clinical_content || localTopic?.clinicalContent || [],
       };
-    } catch (e) {
-      console.warn('[dbService] getTopic network error, using local fallback:', e);
+    };
+
+    try {
+      return await Promise.race([remoteFetch(), timeoutPromise(1200, localTopic)]);
+    } catch {
       return localTopic;
     }
   },
@@ -202,7 +222,8 @@ export const dbService = {
     const q = queryText.toLowerCase().trim();
     if (!q) return [];
 
-    const localTopics = (SPECIALTY_KNOWLEDGE[specialtyId]?.categories || [])
+    const spec = getSpecialtyKnowledge(specialtyId);
+    const localTopics = (spec?.categories || [])
       .flatMap((c) => c.topics)
       .filter((t) =>
         t.title.toLowerCase().includes(q) ||
@@ -266,7 +287,7 @@ export const dbService = {
         for (const t of remoteTopics) {
           const specId = t.specialty_id as string | undefined;
           const catId = t.category_id as string | undefined;
-          const spec = specId ? SPECIALTY_KNOWLEDGE[specId] : undefined;
+          const spec = specId ? getSpecialtyKnowledge(specId) : undefined;
           const cat = spec?.categories?.find((c) => c.id === catId);
 
           // Skip remote rows that duplicate an existing local hit (same topic id)
@@ -323,7 +344,9 @@ export const dbService = {
     } catch (err) {
       console.warn('[dbService] synthesizeTopicFromReference failed:', err);
     }
-    return null;
+    
+    // Fallback synthesis on client
+    return synthesizeFallbackTopic(specialtyId, query.toLowerCase().replace(/\s+/g, '_'), query);
   },
 
   async getDailyClinicalPearls(offset: number = 0, count: number = 5): Promise<import('../constants/DailyPearlsData').ClinicalPearl[]> {

@@ -1,29 +1,21 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
+import { View } from 'react-native';
 import {
-  Dimensions,
-  Text,
-  TouchableOpacity,
-  View,
-  type DimensionValue,
-} from 'react-native';
+  ORBIT_SIZE,
+  CENTER_SIZE,
+  BUTTON_SIZE,
+  ORBIT_NODE_POSITIONS,
+  OrbitRings,
+  OrbitNode,
+  OrbitCenterHub,
+  OrbitSectionLabel,
+  type OrbitSpecialtyNode,
+} from './OrbitPrimitives';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const ORBIT_SIZE = Math.min(SCREEN_WIDTH * 0.78, 300);
-const CENTER_SIZE = ORBIT_SIZE * 0.42;
-const BUTTON_SIZE = ORBIT_SIZE * 0.19;
+export type SurgicalSpecialtyItem = OrbitSpecialtyNode;
 
-export type SurgicalSpecialtyItem = {
-  id: string;
-  name: string;
-  scientificName: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-  description: string;
-};
-
-// 8 Orbit Specialties (7 primary surgical disciplines + More)
+// 8 Orbit Specialties (7 primary surgical disciplines + Plastics)
 export const SURGICAL_ORBIT_SPECIALTIES: SurgicalSpecialtyItem[] = [
   {
     id: 'surgery_gi',
@@ -159,68 +151,12 @@ export const EXPANDED_SURGICAL_SPECIALTIES: SurgicalSpecialtyItem[] = [
   },
 ];
 
-// Orbit Button Component
-const SurgicalOrbitButton = ({
-  specialty,
-  size,
-  top,
-  left,
-  onPress,
-}: {
-  specialty: SurgicalSpecialtyItem;
-  size: number;
-  top: DimensionValue;
-  left: DimensionValue;
-  onPress: () => void;
-}) => {
-  return (
-    <View
-      className="absolute items-center justify-start"
-      style={{ top, left, marginTop: -size / 2, width: 120, marginLeft: -60 }}
-      pointerEvents="box-none"
-    >
-      <TouchableOpacity
-        onPress={onPress}
-        className="items-center justify-center"
-        hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
-        activeOpacity={0.75}
-      >
-        <View
-          className="border items-center justify-center rounded-full"
-          style={{
-            width: size,
-            height: size,
-            backgroundColor: '#080c0e',
-            borderColor: `${specialty.color}45`,
-            shadowColor: specialty.color,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.35,
-            shadowRadius: 8,
-            elevation: 7,
-          }}
-        >
-          <Ionicons name={specialty.icon} size={19} color={specialty.color} />
-        </View>
-        <Text
-          className="text-[11px] font-sans-semibold text-gray-200 mt-1.5 text-center leading-tight max-w-[100px]"
-          numberOfLines={2}
-          allowFontScaling={false}
-          style={{ includeFontPadding: false }}
-        >
-          {specialty.name}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
 export const SurgicalOrbitSection: React.FC = () => {
   const handleOpenSpecialty = (specialtyId: string) => {
     router.push(`/specialty/${specialtyId}` as any);
   };
 
   const handleCenterHubPress = () => {
-    // Navigates directly to the Surgical AI Suite / Chat
     router.push({
       pathname: '/(tabs)/ChatTab',
       params: { query: 'Surgical Operative Protocol and Procedure Guide' },
@@ -228,139 +164,50 @@ export const SurgicalOrbitSection: React.FC = () => {
   };
 
   return (
-    <View className="mt-8 pt-8 pb-10 border-t border-white/5 px-6">
-      {/* Section Header with generous breathing space */}
-      <View className="items-center mb-6">
-        <View className="flex-row items-center gap-1.5 mb-2 px-3 py-1 rounded-full bg-[#ffc3dd]15 border border-[#ffc3dd]30">
-          <Ionicons name="cut" size={13} color="#ffc3dd" />
-          <Text className="text-[10.5px] font-mono text-[#ffc3dd] font-bold uppercase tracking-wider">
-            Surgical Specialties & Operative Arena
-          </Text>
-        </View>
-        <Text className="text-[19px] font-sans-bold text-white text-center">
-          Surgical Specialties & Procedures
-        </Text>
-        <Text className="text-[12px] font-sans text-gray-400 text-center mt-1 max-w-[280px]">
-          Tap any surgical specialty to explore operative cases, techniques, pre-op clearance & critical care
-        </Text>
-      </View>
+    <View className="px-6 pb-8" style={{ paddingTop: 14 }}>
+      {/* Section Header with Surgical Domain Identifier */}
+      <OrbitSectionLabel
+        variant="surgical"
+        badgeLabel="SURGICAL"
+        badgeSubtitle="Operative specialties"
+        title="Surgical Specialties & Procedures"
+        description="Tap any surgical specialty to explore operative cases, techniques, pre-op clearance & critical care"
+      />
 
-      {/* Circular Surgical Orbit */}
+      {/* Circular Surgical Orbit — Engineered Precision & Segmented Ticks */}
       <View
-        className="mx-auto mt-4 mb-10 relative"
-        style={{ width: ORBIT_SIZE, height: ORBIT_SIZE }}
+        className="mx-auto mb-10 relative"
+        style={{ width: ORBIT_SIZE, height: ORBIT_SIZE, marginTop: BUTTON_SIZE / 2 }}
       >
-        {/* Inner dashed ring */}
-        <View
-          className="mx-10 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/5 border-dashed"
-          style={{ width: ORBIT_SIZE * 0.68, height: ORBIT_SIZE * 0.68 }}
-        />
+        {/* Surgical Segmented Double-Ring with Calibrated Ticks & Crosshairs */}
+        <OrbitRings variant="surgical" size={ORBIT_SIZE} />
 
-        {/* Outer solid ring */}
-        <View
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/5"
-          style={{ width: ORBIT_SIZE * 0.98, height: ORBIT_SIZE * 0.98 }}
-        />
-
-        {/* Center hub — elevated Surgical Suite AI Advisor in Rose/Pastel Pink */}
-        <TouchableOpacity
+        {/* Center hub — Surgical Suite AI Advisor in Technical Obsidian & Surgical Teal */}
+        <OrbitCenterHub
+          title="Ask Surgical AI"
+          icon="cut"
+          variant="surgical"
+          size={CENTER_SIZE}
           onPress={handleCenterHubPress}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full items-center justify-center border-4 border-[#010101] z-10 px-2 text-center"
-          style={{
-            width: CENTER_SIZE,
-            height: CENTER_SIZE,
-            backgroundColor: '#ffc3dd',
-            shadowColor: '#ffc3dd',
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.5,
-            shadowRadius: 12,
-            elevation: 8,
-          }}
-          activeOpacity={0.85}
-        >
-          <Ionicons name="cut" size={24} color="#010101" />
-          <Text className="text-[11px] font-sans-bold text-[#010101] text-center mt-0.5 leading-tight" allowFontScaling={false} style={{ includeFontPadding: false }}>
-            Surgical AI
-          </Text>
-          <Text className="text-[9.5px] text-[#010101]/80 font-sans-bold" allowFontScaling={false} style={{ includeFontPadding: false }}>
-            OR Advisor
-          </Text>
-        </TouchableOpacity>
-
-        {/* 8 Circular Orbit Nodes Arranged at 45° Intervals */}
-        {/* Node 1: Top (0°) -> GI & General Surgery */}
-        <SurgicalOrbitButton
-          specialty={SURGICAL_ORBIT_SPECIALTIES[0]}
-          size={BUTTON_SIZE}
-          top="0%"
-          left="50%"
-          onPress={() => handleOpenSpecialty('surgery_gi')}
         />
 
-        {/* Node 2: Top Right (45°) -> Neurosurgery */}
-        <SurgicalOrbitButton
-          specialty={SURGICAL_ORBIT_SPECIALTIES[1]}
-          size={BUTTON_SIZE}
-          top="14.6%"
-          left="82%"
-          onPress={() => handleOpenSpecialty('surgery_neuro')}
-        />
-
-        {/* Node 3: Middle Right (90°) -> Cardiothoracic Surgery */}
-        <SurgicalOrbitButton
-          specialty={SURGICAL_ORBIT_SPECIALTIES[2]}
-          size={BUTTON_SIZE}
-          top="50%"
-          left="95%"
-          onPress={() => handleOpenSpecialty('surgery_cardio')}
-        />
-
-        {/* Node 4: Bottom Right (135°) -> Vascular Surgery */}
-        <SurgicalOrbitButton
-          specialty={SURGICAL_ORBIT_SPECIALTIES[3]}
-          size={BUTTON_SIZE}
-          top="85.4%"
-          left="82%"
-          onPress={() => handleOpenSpecialty('surgery_vascular')}
-        />
-
-        {/* Node 5: Bottom (180°) -> Trauma & Emergency Surgery */}
-        <SurgicalOrbitButton
-          specialty={SURGICAL_ORBIT_SPECIALTIES[4]}
-          size={BUTTON_SIZE}
-          top="100%"
-          left="50%"
-          onPress={() => handleOpenSpecialty('surgery_trauma')}
-        />
-
-        {/* Node 6: Bottom Left (225°) -> Orthopedic Surgery */}
-        <SurgicalOrbitButton
-          specialty={SURGICAL_ORBIT_SPECIALTIES[5]}
-          size={BUTTON_SIZE}
-          top="85.4%"
-          left="18%"
-          onPress={() => handleOpenSpecialty('surgery_ortho')}
-        />
-
-        {/* Node 7: Middle Left (270°) -> Urology */}
-        <SurgicalOrbitButton
-          specialty={SURGICAL_ORBIT_SPECIALTIES[6]}
-          size={BUTTON_SIZE}
-          top="50%"
-          left="5%"
-          onPress={() => handleOpenSpecialty('surgery_urology')}
-        />
-
-        {/* Node 8: Top Left (315°) -> Plastic Surgery */}
-        <SurgicalOrbitButton
-          specialty={SURGICAL_ORBIT_SPECIALTIES[7]}
-          size={BUTTON_SIZE}
-          top="14.6%"
-          left="18%"
-          onPress={() => handleOpenSpecialty('surgery_plastics')}
-        />
+        {/* 8 Precision Calibrated Surgical Nodes */}
+        {SURGICAL_ORBIT_SPECIALTIES.map((spec, index) => {
+          const pos = ORBIT_NODE_POSITIONS[index];
+          if (!pos) return null;
+          return (
+            <OrbitNode
+              key={spec.id}
+              specialty={spec}
+              size={BUTTON_SIZE}
+              top={pos.top}
+              left={pos.left}
+              variant="surgical"
+              onPress={() => handleOpenSpecialty(spec.id)}
+            />
+          );
+        })}
       </View>
-
     </View>
   );
 };

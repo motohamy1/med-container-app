@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   Alert,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   Text,
   TextInput,
   TouchableOpacity,
@@ -314,7 +316,7 @@ const TopicAiMessageItem: React.FC<{
                       className="flex-row items-center gap-2 px-4 py-2.5 border-b"
                       style={{
                         backgroundColor: `${themeColor}12`,
-                        borderBottomColor: `${themeColor}25`,
+                        borderBottomColor: `${themeColor}25` ,
                       }}
                     >
                       <Ionicons name={iconName} size={15} color={themeColor} />
@@ -613,84 +615,103 @@ export default function TopicChat({
   };
 
   return (
-    <View className="flex-1 bg-background">
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMessageItem}
-        contentContainerStyle={{
-          paddingTop: 16,
-          paddingBottom: 24,
-        }}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View className="items-center justify-center py-8 px-6">
-            <View
-              className="w-16 h-16 rounded-full items-center justify-center mb-4 border"
-              style={{
-                backgroundColor: `${themeColor}15`,
-                borderColor: `${themeColor}35`,
-              }}
-            >
-              <Ionicons name="chatbubbles" size={28} color={themeColor} />
-            </View>
-            <Text className="text-white text-lg font-sans-bold text-center mb-1">
-              Ask {topicName} Assistant
-            </Text>
-            <Text className="text-gray-400 text-xs font-sans text-center leading-5 mb-6">
-              Inquire on specific diagnostic criteria, pharmacological dosages, emergency protocols, or view the visual knowledge map.
-            </Text>
-
-            <View className="w-full gap-2.5">
-              <Text className="text-gray-500 text-[11px] font-sans-bold uppercase tracking-wider ml-1">
-                Suggested Inquiries
-              </Text>
-              {starterPrompts.map((prompt, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  onPress={() => handleTextSend(prompt)}
-                  className="bg-[#0e1416] border border-white/10 p-3.5 rounded-2xl flex-row items-center justify-between active:opacity-70"
-                >
-                  <Text className="text-gray-200 text-xs font-sans-medium flex-1 mr-2">{prompt}</Text>
-                  <Ionicons name="arrow-forward" size={14} color={themeColor} />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        }
-        ListFooterComponent={isTyping ? <ThinkingIndicator themeColor={themeColor} /> : null}
-      />
-
-      {/* Input Bar */}
-      <View className="px-4 py-3 border-t border-white/5 bg-background flex-row items-center gap-2">
-        <View className="flex-1 flex-row items-center bg-[#0e1416] border border-white/10 rounded-full px-4 py-2">
-          <TextInput
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder={`Ask about ${topicName}...`}
-            placeholderTextColor="#6b7280"
-            className="flex-1 text-white text-sm font-sans"
-            returnKeyType="send"
-            onSubmitEditing={() => handleTextSend()}
-            editable={!isTyping}
-          />
-        </View>
-        <TouchableOpacity
-          onPress={() => handleTextSend()}
-          disabled={!inputText.trim() || isTyping}
-          className="w-10 h-10 rounded-full items-center justify-center"
-          style={{
-            backgroundColor: inputText.trim() && !isTyping ? themeColor : "#1f2937",
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={{ flex: 1 }}
+    >
+      <View className="flex-1 bg-background">
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          renderItem={renderMessageItem}
+          contentContainerStyle={{
+            paddingTop: 16,
+            paddingBottom: 24,
           }}
-        >
-          <Ionicons
-            name="arrow-up"
-            size={20}
-            color={inputText.trim() && !isTyping ? "#010101" : "#4b5563"}
-          />
-        </TouchableOpacity>
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View className="items-center justify-center py-8 px-6">
+              <View
+                className="w-16 h-16 rounded-full items-center justify-center mb-4 border"
+                style={{
+                  backgroundColor: `${themeColor}15`,
+                  borderColor: `${themeColor}35`,
+                }}
+              >
+                <Ionicons name="chatbubbles" size={28} color={themeColor} />
+              </View>
+              <Text className="text-white text-lg font-sans-bold text-center mb-1">
+                Ask {topicName} Assistant
+              </Text>
+              <Text className="text-gray-400 text-xs font-sans text-center leading-5 mb-6">
+                Inquire on specific diagnostic criteria, pharmacological dosages, emergency protocols, or view the visual knowledge map.
+              </Text>
+
+              <View className="w-full gap-2.5">
+                <Text className="text-gray-500 text-[11px] font-sans-bold uppercase tracking-wider ml-1">
+                  Suggested Inquiries
+                </Text>
+                {starterPrompts.map((prompt, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    onPress={() => handleTextSend(prompt)}
+                    className="bg-[#0e1416] border border-white/10 p-3.5 rounded-2xl flex-row items-center justify-between active:opacity-70"
+                  >
+                    <Text className="text-gray-200 text-xs font-sans-medium flex-1 mr-2">{prompt}</Text>
+                    <Ionicons name="arrow-forward" size={14} color={themeColor} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          }
+          ListFooterComponent={isTyping ? <ThinkingIndicator themeColor={themeColor} /> : null}
+        />
+
+        {/* Input Bar - Enhanced Height (+25%) & Styling */}
+        <View className="px-4 pt-2.5 pb-4 border-t border-white/5 bg-background flex-row items-center gap-2">
+          <View
+            className="flex-1 flex-row items-center bg-[#0e1416] border border-white/10 rounded-2xl px-4 py-2.5"
+            style={{
+              minHeight: 52,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.2,
+              shadowRadius: 4,
+              elevation: 2,
+            }}
+          >
+            <TextInput
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder={`Ask about ${topicName}...`}
+              placeholderTextColor="#6b7280"
+              className="flex-1 text-white text-[15px] font-sans py-1 leading-5"
+              returnKeyType="send"
+              onSubmitEditing={() => handleTextSend()}
+              editable={!isTyping}
+            />
+          </View>
+          <TouchableOpacity
+            onPress={() => handleTextSend()}
+            disabled={!inputText.trim() || isTyping}
+            className="w-10 h-10 rounded-xl items-center justify-center active:opacity-75"
+            style={{
+              backgroundColor: inputText.trim() && !isTyping ? themeColor : "#1a2228",
+              borderWidth: 1,
+              borderColor: inputText.trim() && !isTyping ? `${themeColor}60` : "rgba(255, 255, 255, 0.05)",
+            }}
+          >
+            <Ionicons
+              name="arrow-up"
+              size={20}
+              color={inputText.trim() && !isTyping ? "#010101" : "#4b5563"}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

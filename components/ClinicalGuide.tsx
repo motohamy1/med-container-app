@@ -9,6 +9,7 @@ interface ClinicalGuideProps {
   themeColor: string;
   specialtyIllustration?: any;
   targetSectionIndex?: number;
+  onBackToMap?: () => void;
 }
 
 export default function ClinicalGuide({
@@ -16,6 +17,7 @@ export default function ClinicalGuide({
   themeColor,
   specialtyIllustration,
   targetSectionIndex,
+  onBackToMap,
 }: ClinicalGuideProps) {
   const illustration = topicData.illustration || specialtyIllustration;
   const scrollViewRef = useRef<ScrollView>(null);
@@ -140,7 +142,7 @@ export default function ClinicalGuide({
         </ScrollView>
       )}
 
-      {/* Active Filter Pill Notice */}
+      {/* Active Filter Pill Notice or Return to Map Pill */}
       {activeSectionFilter !== null && allSections[activeSectionFilter] && (
         <View className="px-5 mb-3 flex-row items-center justify-between">
           <View className="flex-row items-center gap-1.5">
@@ -149,13 +151,26 @@ export default function ClinicalGuide({
               Focused Section View
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={() => setActiveSectionFilter(null)}
-            className="flex-row items-center gap-1 px-2.5 py-1 rounded-full bg-white/[0.08] border border-white/10"
-          >
-            <Text className="text-xs font-sans-medium text-gray-300">View All</Text>
-            <Ionicons name="close-circle" size={13} color="#94a3b8" />
-          </TouchableOpacity>
+          <View className="flex-row items-center gap-2">
+            {onBackToMap && (
+              <TouchableOpacity
+                onPress={onBackToMap}
+                className="flex-row items-center gap-1 px-2.5 py-1 rounded-full bg-white/[0.12] border border-white/20 active:opacity-60"
+              >
+                <Ionicons name="git-network-outline" size={12} color={themeColor} />
+                <Text className="text-xs font-sans-semibold" style={{ color: themeColor }}>
+                  Back to Map
+                </Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={() => setActiveSectionFilter(null)}
+              className="flex-row items-center gap-1 px-2.5 py-1 rounded-full bg-white/[0.08] border border-white/10"
+            >
+              <Text className="text-xs font-sans-medium text-gray-300">View All</Text>
+              <Ionicons name="close-circle" size={13} color="#94a3b8" />
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 

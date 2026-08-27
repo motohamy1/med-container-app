@@ -382,8 +382,13 @@ export default function PearlsTab() {
                             name="book-outline"
                             size={12}
                             color="#94a3b8"
+                            style={{ flexShrink: 0 }}
                           />
-                          <Text style={styles.citationText} numberOfLines={1}>
+                          <Text
+                            style={styles.citationText}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                          >
                             {item.citation}
                           </Text>
                         </View>
@@ -402,6 +407,7 @@ export default function PearlsTab() {
                               styles.tapDetailsText,
                               { color: item.specialtyColor },
                             ]}
+                            numberOfLines={1}
                           >
                             View Protocol
                           </Text>
@@ -409,6 +415,7 @@ export default function PearlsTab() {
                             name="arrow-forward"
                             size={11}
                             color={item.specialtyColor}
+                            style={{ flexShrink: 0 }}
                           />
                         </View>
                       </View>
@@ -552,11 +559,16 @@ export default function PearlsTab() {
                     {savedItem.rule}
                   </Text>
 
-                  <View className="flex-row items-center justify-between pt-2 border-t border-white/5">
-                    <Text className="text-[10px] font-mono text-gray-400" numberOfLines={1} style={{ includeFontPadding: false }}>
+                  <View className="flex-row items-center justify-between pt-2 border-t border-white/5 gap-2">
+                    <Text
+                      className="text-[10px] font-mono text-gray-400 flex-1"
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      style={{ flexShrink: 1, includeFontPadding: false }}
+                    >
                       {savedItem.citation}
                     </Text>
-                    <View className="flex-row items-center gap-1 px-2.5 py-1 rounded-full bg-main/15 border border-main/30">
+                    <View className="flex-row items-center gap-1 px-2.5 py-1 rounded-full bg-main/15 border border-main/30 flex-shrink-0">
                       <Ionicons name="sparkles" size={10} color={Colors.main} />
                       <Text className="text-main text-[10.5px] font-sans-semibold" style={{ includeFontPadding: false }}>
                         View Details
@@ -909,6 +921,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
   },
   specialtyPill: {
     flexDirection: 'row',
@@ -937,6 +951,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.12)',
     maxWidth: 160,
     flexShrink: 1,
+    minWidth: 0,
   },
   metricBadgeText: {
     fontSize: 9.5,
@@ -954,6 +969,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
+    flexShrink: 0,
   },
   pearlTitle: {
     color: '#ffffff',
@@ -993,18 +1009,22 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.06)',
+    gap: 8,
   },
   citationBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     flex: 1,
-    marginRight: 8,
+    flexShrink: 1,
+    minWidth: 0,
   },
   citationText: {
     fontSize: 10,
     fontFamily: 'PlexMono_500Medium',
     color: '#94a3b8',
+    flex: 1,
+    flexShrink: 1,
     includeFontPadding: false,
   },
   tapDetailsBadge: {
@@ -1015,6 +1035,7 @@ const styles = StyleSheet.create({
     paddingVertical: 3.5,
     borderRadius: 12,
     borderWidth: 1,
+    flexShrink: 0,
   },
   tapDetailsText: {
     fontSize: 10.5,

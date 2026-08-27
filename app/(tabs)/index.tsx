@@ -1,16 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { router, useNavigation, useScrollToTop } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   ScrollView,
   StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
-  type DimensionValue
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
@@ -19,11 +19,17 @@ import { dbService } from '../../services/dbService';
 import { SurgicalOrbitSection } from '../../components/SurgicalOrbitSection';
 import { ExpandedSurgicalOrbitSection } from '../../components/ExpandedSurgicalOrbitSection';
 import { ExpandedMedicalOrbitSection } from '../../components/ExpandedMedicalOrbitSection';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const ORBIT_SIZE = Math.min(SCREEN_WIDTH * 0.78, 300);
-const CENTER_SIZE = ORBIT_SIZE * 0.42;
-const BUTTON_SIZE = ORBIT_SIZE * 0.19;
+import {
+  ORBIT_SIZE,
+  CENTER_SIZE,
+  BUTTON_SIZE,
+  ORBIT_NODE_POSITIONS,
+  OrbitRings,
+  OrbitNode,
+  OrbitCenterHub,
+  OrbitSectionLabel,
+  type OrbitSpecialtyNode,
+} from '../../components/OrbitPrimitives';
 
 // Category routes mapping
 const categoryRoutes: Record<string, string> = {
@@ -45,12 +51,7 @@ type RecentInquiry = {
   timestamp: string;
 };
 
-type SpecialtyCategory = {
-  id: string;
-  name: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  color: string;
-};
+type SpecialtyCategory = OrbitSpecialtyNode;
 
 type SearchState = {
   query: string;
@@ -58,6 +59,8 @@ type SearchState = {
   loading: boolean;
   searched: boolean;
 };
+
+type HomeDomainTab = 'medicine' | 'surgery';
 
 const EMPTY_SEARCH: SearchState = { query: '', results: [], loading: false, searched: false };
 
@@ -89,7 +92,7 @@ const Header = () => {
           <Ionicons name="medical" size={14} color={Colors.lime} />
           <Text className="text-[12.5px] text-lime font-sans-bold">{getGreeting()}</Text>
         </View>
-        <Text className="text-[22px] font-sans-bold leading-tight text-white">Dr. Alex Doe</Text>
+        <Text className="text-[22px] font-sans-bold leading-tight text-white">Dr. Mahmoud</Text>
       </View>
 
       {/* Profile Avatar / Quick Access with Depth */}
@@ -173,66 +176,7 @@ const SearchBar = ({
   );
 };
 
-// Orbit Button Component
-const OrbitButton = ({
-  category,
-  size,
-  top,
-  left,
-}: {
-  category: SpecialtyCategory;
-  size: number;
-  top: DimensionValue;
-  left: DimensionValue;
-}) => {
-  const route = categoryRoutes[category.name];
-  const handlePress = () => {
-    if (route) {
-      router.push(route as any);
-    }
-  };
-
-  return (
-    <View
-      className="absolute items-center justify-start"
-      style={{ top, left, marginTop: -size / 2, width: 120, marginLeft: -60 }}
-      pointerEvents="box-none"
-    >
-      <TouchableOpacity
-        onPress={handlePress}
-        className="items-center justify-center"
-        hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
-      >
-        <View
-          className="border items-center justify-center rounded-full"
-          style={{
-            width: size,
-            height: size,
-            backgroundColor: '#080c0e',
-            borderColor: `${category.color}45`,
-            shadowColor: category.color,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.35,
-            shadowRadius: 8,
-            elevation: 7,
-          }}
-        >
-          <Ionicons name={category.icon} size={20} color={category.color} />
-        </View>
-        <Text
-          className="text-[11px] font-sans-medium text-gray-200 mt-1.5 text-center leading-tight max-w-[100px]"
-          numberOfLines={2}
-          allowFontScaling={false}
-          style={{ includeFontPadding: false }}
-        >
-          {category.name}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-// Orbit Navigation Component
+// Primary Medical Orbit Navigation Component (Wheel 1 in Medicine tab)
 const OrbitNavigation = () => {
   const categories: SpecialtyCategory[] = [
     { id: '1', name: 'Cardiology', icon: 'heart', color: Colors.specialty.cardiology },
@@ -245,58 +189,64 @@ const OrbitNavigation = () => {
     { id: '8', name: 'Nephrology', icon: 'water', color: Colors.specialty.more },
   ];
 
+  const handleCategoryPress = (catName: string) => {
+    const route = categoryRoutes[catName];
+    if (route) {
+      router.push(route as any);
+    }
+  };
+
+  const handleCenterHubPress = () => {
+    router.push('/(tabs)/ChatTab');
+  };
+
   return (
-    <View className="px-6 pb-8" style={{ paddingTop: 12 }}>
+    <View className="px-6 pb-8" style={{ paddingTop: 14 }}>
+      {/* Header text above the first wheel in Medicine Tab */}
+      <OrbitSectionLabel
+        variant="medical"
+        badgeLabel="MEDICAL"
+        badgeSubtitle="Clinical specialties"
+        title="Medical Specialties"
+        description="Tap any specialty to explore categorized evidence guidelines, acute protocols & diagnostics"
+      />
+
       <View
         className="mx-auto mb-10 relative"
         style={{ width: ORBIT_SIZE, height: ORBIT_SIZE, marginTop: BUTTON_SIZE / 2 }}
       >
-        <View
-          className="mx-10 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/5 border-dashed"
-          style={{ width: ORBIT_SIZE * 0.68, height: ORBIT_SIZE * 0.68 }}
+        {/* Medical continuous smooth orbit rings */}
+        <OrbitRings variant="medical" size={ORBIT_SIZE} />
+
+        {/* Center hub — Primary focal point in Luminous Frosted Aqua/Lime */}
+        <OrbitCenterHub
+          title="Ask Medical AI"
+          icon="medical"
+          variant="medical"
+          size={CENTER_SIZE}
+          isPrimaryHub
+          onPress={handleCenterHubPress}
         />
 
-        <View
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/5"
-          style={{ width: ORBIT_SIZE * 0.98, height: ORBIT_SIZE * 0.98 }}
-        />
-
-        {/* Center hub — elevated medical AI focal point in Electric Lime */}
-        <TouchableOpacity
-          onPress={() => router.push('/(tabs)/ChatTab')}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-lime rounded-full items-center justify-center border-4 border-[#010101] z-10 px-2 text-center"
-          style={{
-            width: CENTER_SIZE,
-            height: CENTER_SIZE,
-            shadowColor: Colors.lime,
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 0.5,
-            shadowRadius: 12,
-            elevation: 8,
-          }}
-        >
-          <Ionicons name="medical" size={26} color="#010101" />
-          <Text className="text-[11px] font-sans-bold text-[#010101] text-center mt-1" allowFontScaling={false} style={{ includeFontPadding: false }}>
-            Medical Arena AI
-          </Text>
-          <Text className="text-[10px] text-[#010101]/80 font-sans-bold" allowFontScaling={false} style={{ includeFontPadding: false }}>
-            Clinical Advisor
-          </Text>
-        </TouchableOpacity>
-        <OrbitButton category={categories[0]} size={BUTTON_SIZE} top="0%" left="50%" />
-        <OrbitButton category={categories[1]} size={BUTTON_SIZE} top="14.6%" left="82%" />
-        <OrbitButton category={categories[2]} size={BUTTON_SIZE} top="50%" left="95%" />
-        <OrbitButton category={categories[3]} size={BUTTON_SIZE} top="85.4%" left="82%" />
-        <OrbitButton category={categories[4]} size={BUTTON_SIZE} top="100%" left="50%" />
-        <OrbitButton category={categories[5]} size={BUTTON_SIZE} top="85.4%" left="18%" />
-        <OrbitButton category={categories[6]} size={BUTTON_SIZE} top="50%" left="5%" />
-        <OrbitButton category={categories[7]} size={BUTTON_SIZE} top="14.6%" left="18%" />
+        {categories.map((category, index) => {
+          const pos = ORBIT_NODE_POSITIONS[index];
+          if (!pos) return null;
+          return (
+            <OrbitNode
+              key={category.id}
+              specialty={category}
+              size={BUTTON_SIZE}
+              top={pos.top}
+              left={pos.left}
+              variant="medical"
+              onPress={() => handleCategoryPress(category.name)}
+            />
+          );
+        })}
       </View>
     </View>
   );
 };
-
-
 
 // Build grouped structure: specialty -> category -> topics
 function groupResults(results: TopicSearchResult[]): SpecialtyGroup[] {
@@ -344,7 +294,7 @@ const ResultRow = ({ item, onOpen }: { item: TopicSearchResult; onOpen: (r: Topi
       }}
     >
       <View
-        className="w-10 h-10 rounded-xl items-center justify-center border"
+        className="w-10 h-10 rounded-xl items-center justify-center border flex-shrink-0"
         style={{
           backgroundColor: `${item.specialtyColor}20`,
           borderColor: `${item.specialtyColor}40`,
@@ -357,28 +307,47 @@ const ResultRow = ({ item, onOpen }: { item: TopicSearchResult; onOpen: (r: Topi
       >
         <Ionicons name={item.specialtyIcon} size={18} color={item.specialtyColor} />
       </View>
-      <View className="flex-1">
-        <View className="flex-row items-center gap-1.5 mb-0.5">
+      <View className="flex-1 min-w-0" style={{ flex: 1, minWidth: 0, flexShrink: 1 }}>
+        <View className="flex-row items-center gap-1.5 mb-0.5 min-w-0" style={{ minWidth: 0 }}>
           {item.type ? (
             <View
-              className="px-1.5 py-0.5 rounded border"
+              className="px-1.5 py-0.5 rounded border flex-shrink-0"
               style={{ backgroundColor: `${item.specialtyColor}20`, borderColor: `${item.specialtyColor}40` }}
             >
-              <Text className="text-[9px] font-sans-bold uppercase" style={{ color: item.specialtyColor }}>
+              <Text className="text-[9px] font-sans-bold uppercase" style={{ color: item.specialtyColor, includeFontPadding: false }}>
                 {item.type}
               </Text>
             </View>
           ) : null}
           {item.categoryTitle ? (
-            <Text className="text-gray-400 text-[10px] font-sans-medium">{item.categoryTitle}</Text>
+            <Text
+              className="text-gray-400 text-[10px] font-sans-medium flex-1"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              style={{ flexShrink: 1, includeFontPadding: false }}
+            >
+              {item.categoryTitle}
+            </Text>
           ) : null}
         </View>
-        <Text className="text-[15px] font-sans-semibold text-white leading-tight" numberOfLines={1}>
+        <Text
+          className="text-[15px] font-sans-semibold text-white leading-tight"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          style={{ includeFontPadding: false }}
+        >
           {item.title}
         </Text>
-        <Text className="text-[12px] font-sans text-gray-muted mt-0.5" numberOfLines={1}>{item.subtitle}</Text>
+        <Text
+          className="text-[12px] font-sans text-gray-muted mt-0.5"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          style={{ includeFontPadding: false }}
+        >
+          {item.subtitle}
+        </Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={item.specialtyColor} />
+      <Ionicons name="chevron-forward" size={18} color={item.specialtyColor} style={{ flexShrink: 0 }} />
     </TouchableOpacity>
   );
 };
@@ -481,16 +450,16 @@ const SearchResults = ({
           {/* Specialty header */}
           <View className="flex-row items-center gap-2 mb-3">
             <View
-              className="w-7 h-7 rounded-full items-center justify-center border"
+              className="w-7 h-7 rounded-full items-center justify-center border flex-shrink-0"
               style={{ backgroundColor: `${spec.color}20`, borderColor: `${spec.color}40` }}
             >
               <Ionicons name={spec.icon} size={14} color={spec.color} />
             </View>
-            <View className="flex-1">
-              <Text className="text-white text-[15px] font-sans-bold leading-tight">
+            <View className="flex-1 min-w-0" style={{ minWidth: 0, flexShrink: 1 }}>
+              <Text className="text-white text-[15px] font-sans-bold leading-tight" numberOfLines={1} ellipsizeMode="tail" style={{ includeFontPadding: false }}>
                 {spec.scientificName}
               </Text>
-              <Text className="text-gray-muted text-[11px]">
+              <Text className="text-gray-muted text-[11px]" numberOfLines={1} style={{ includeFontPadding: false }}>
                 {spec.topicCount} {spec.topicCount === 1 ? 'topic' : 'topics'}
               </Text>
             </View>
@@ -500,9 +469,14 @@ const SearchResults = ({
           {spec.categories.map((cat) => (
             <View key={cat.categoryId || cat.title} className="mb-3">
               {cat.title ? (
-                <View className="flex-row items-center gap-1.5 mb-2 ml-0.5">
-                  <View className="w-1 h-1 rounded-full" style={{ backgroundColor: spec.color }} />
-                  <Text className="text-gray-muted text-[11px] font-sans-semibold uppercase tracking-wider">
+                <View className="flex-row items-center gap-1.5 mb-2 ml-0.5 min-w-0">
+                  <View className="w-1 h-1 rounded-full flex-shrink-0" style={{ backgroundColor: spec.color }} />
+                  <Text
+                    className="text-gray-muted text-[11px] font-sans-semibold uppercase tracking-wider flex-1"
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    style={{ flexShrink: 1, includeFontPadding: false }}
+                  >
                     {cat.title}
                   </Text>
                 </View>
@@ -522,6 +496,7 @@ const SearchResults = ({
 
 export default function Index() {
   const [search, setSearch] = useState<SearchState>(EMPTY_SEARCH);
+  const [activeTab, setActiveTab] = useState<HomeDomainTab>('medicine');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reqIdRef = useRef(0);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -598,10 +573,12 @@ export default function Index() {
     runSearch(search.query);
   }, [runSearch, search.query]);
 
-  const handlePressMore = useCallback(() => {
-    // Scrolls down smoothly to the second medical specialties orbit wheel
-    scrollViewRef.current?.scrollTo({ y: gridYRef.current || 850, animated: true });
-  }, []);
+  const handleTabSwitch = useCallback((newTab: HomeDomainTab) => {
+    if (newTab === activeTab) return;
+    Haptics.selectionAsync();
+    setActiveTab(newTab);
+    scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+  }, [activeTab]);
 
   const isSearching = search.query.trim().length > 0;
 
@@ -618,6 +595,71 @@ export default function Index() {
           onSubmit={handleSubmit}
           loading={search.loading}
         />
+
+        {/* Domain Switcher Tab Bar (Medicine / Surgery) */}
+        {!isSearching && (
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                activeTab === 'medicine' && [
+                  styles.tabButtonActive,
+                  {
+                    backgroundColor: `${Colors.main}18`,
+                    borderColor: `${Colors.main}45`,
+                  },
+                ],
+              ]}
+              onPress={() => handleTabSwitch('medicine')}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="medical"
+                size={14}
+                color={activeTab === 'medicine' ? Colors.main : '#8e8e93'}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'medicine' && { color: Colors.main, fontWeight: '700' },
+                ]}
+              >
+                Medicine
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.tabButton,
+                activeTab === 'surgery' && [
+                  styles.tabButtonActive,
+                  {
+                    backgroundColor: 'rgba(109, 194, 189, 0.16)',
+                    borderColor: 'rgba(109, 194, 189, 0.45)',
+                  },
+                ],
+              ]}
+              onPress={() => handleTabSwitch('surgery')}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="cut"
+                size={14}
+                color={activeTab === 'surgery' ? '#6dc2bd' : '#8e8e93'}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'surgery' && { color: '#6dc2bd', fontWeight: '700' },
+                ]}
+              >
+                Surgery
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       <ScrollView
@@ -635,19 +677,64 @@ export default function Index() {
             onOpen={handleOpenTopic}
             onAskAi={handleAskAi}
           />
-        ) : (
+        ) : activeTab === 'medicine' ? (
           <>
+            {/* First Wheel: Primary Medicine with Header Text */}
             <OrbitNavigation />
+
+            {/* Second Wheel: Expanded Medicine with NO Header Text */}
             <ExpandedMedicalOrbitSection
+              hideHeader
               onLayout={(e) => {
                 gridYRef.current = e.nativeEvent.layout.y;
               }}
             />
+          </>
+        ) : (
+          <>
+            {/* First Wheel: Primary Surgery with Header Text */}
             <SurgicalOrbitSection />
-            <ExpandedSurgicalOrbitSection />
+
+            {/* Second Wheel: Expanded Surgery with NO Header Text */}
+            <ExpandedSurgicalOrbitSection hideHeader />
           </>
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  tabContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 24,
+    marginTop: 10,
+    marginBottom: 4,
+    backgroundColor: '#121719',
+    padding: 3.5,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  tabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  tabButtonActive: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  tabText: {
+    fontSize: 13,
+    fontFamily: 'PlexSans_600SemiBold',
+    color: '#8e8e93',
+  },
+});

@@ -15,30 +15,41 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { dbService } from '../../../../services/dbService';
-import { SpecialtyData, SpecialtyCategory, TopicItem } from '../../../../constants/SpecialtyData';
+import {
+  SpecialtyData,
+  SpecialtyCategory,
+  getSpecialtyKnowledge,
+  getCategoryKnowledge,
+} from '../../../../constants/SpecialtyData';
 import { Colors } from '../../../../constants/Colors';
 
 export default function CategoryPage() {
   const { id, categoryId } = useLocalSearchParams<{ id: string; categoryId: string }>();
 
-  const [specialty, setSpecialty] = useState<SpecialtyData | null>(null);
-  const [category, setCategory] = useState<SpecialtyCategory | null>(null);
-  const [loading, setLoading] = useState(true);
+  const specId = id || 'heart';
+  const catId = categoryId || 'emergencies';
+
+  // Instant synchronous local state initialization prevents any stuck/reloading spinners
+  const initialSpecialty = useMemo(() => getSpecialtyKnowledge(specId), [specId]);
+  const initialCategory = useMemo(() => getCategoryKnowledge(specId, catId), [specId, catId]);
+
+  const [specialty, setSpecialty] = useState<SpecialtyData>(initialSpecialty);
+  const [category, setCategory] = useState<SpecialtyCategory | null>(initialCategory);
   const [searchText, setSearchText] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
 
   useEffect(() => {
-    async function loadData() {
-      const specId = id || 'heart';
-      const spec = await dbService.getSpecialty(specId);
-      const cat = await dbService.getCategory(specId, categoryId);
-      setSpecialty(spec);
-      setCategory(cat);
-      setLoading(false);
-    }
-    loadData();
-  }, [id, categoryId]);
+    setSpecialty(getSpecialtyKnowledge(specId));
+    setCategory(getCategoryKnowledge(specId, catId));
+
+    // Non-blocking background enhancement
+    dbService.getCategory(specId, catId).then((remoteCat) => {
+      if (remoteCat) {
+        setCategory(remoteCat);
+      }
+    });
+  }, [specId, catId]);
 
   const topicsList = category?.topics || [];
 
@@ -106,7 +117,8 @@ export default function CategoryPage() {
     }
   };
 
-  if (loading || !specialty || !category) {
+  const displayCategory = category || initialCategory;
+  if (!displayCategory) {
     return (
       <SafeAreaView className="flex-1 bg-background justify-center items-center">
         <Stack.Screen options={{ headerShown: false }} />
@@ -125,17 +137,17 @@ export default function CategoryPage() {
         <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2 active:opacity-60">
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <View className="flex-1 ml-2">
-          <Text className="text-white text-lg font-sans-bold" numberOfLines={1}>{category.title}</Text>
-          <Text className="text-xs font-sans-semibold uppercase tracking-wider" style={{ color: specialty.color }}>
+        <View className="flex-1 ml-2 min-w-0">
+          <Text className="text-white text-lg font-sans-bold" numberOfLines={1} ellipsizeMode="tail" style={{ includeFontPadding: false }}>{displayCategory.title}</Text>
+          <Text className="text-xs font-sans-semibold uppercase tracking-wider" numberOfLines={1} style={{ color: specialty.color, includeFontPadding: false }}>
             {specialty.scientificName} • {topicsList.length} Verified Protocols
           </Text>
         </View>
         <View 
-          className="w-9 h-9 rounded-full items-center justify-center border border-white/10"
+          className="w-9 h-9 rounded-full items-center justify-center border border-white/10 flex-shrink-0"
           style={{ backgroundColor: `${specialty.color}20` }}
         >
-          <Ionicons name={category.icon} size={18} color={specialty.color} />
+          <Ionicons name={displayCategory.icon} size={18} color={specialty.color} />
         </View>
       </View>
 
@@ -145,7 +157,7 @@ export default function CategoryPage() {
           <Ionicons name="search" size={18} color={specialty.color} />
           <TextInput
             className="flex-1 text-white ml-2.5 font-sans-medium text-sm"
-            placeholder={`Filter ${category.title.toLowerCase()} topics...`}
+            placeholder={`Filter ${displayCategory.title.toLowerCase()} topics...`}
             placeholderTextColor={Colors.grayMuted}
             value={searchText}
             onChangeText={setSearchText}
@@ -167,7 +179,7 @@ export default function CategoryPage() {
                 <TouchableOpacity
                   key={chip}
                   onPress={() => setSelectedFilter(chip)}
-                  className="px-3 py-1 rounded-full border"
+                  className="px-3 py-1 rounded-full border flex-shrink-0"
                   style={{
                     backgroundColor: isSelected ? `${specialty.color}25` : '#121719',
                     borderColor: isSelected ? specialty.color : 'rgba(255,255,255,0.08)',
@@ -175,7 +187,7 @@ export default function CategoryPage() {
                 >
                   <Text
                     className="text-[11px] font-sans-bold capitalize"
-                    style={{ color: isSelected ? specialty.color : '#9e9e9e' }}
+                    style={{ color: isSelected ? specialty.color : '#9e9e9e', includeFontPadding: false }}
                   >
                     {chip === 'all' ? 'All Types' : chip}
                   </Text>
@@ -189,7 +201,7 @@ export default function CategoryPage() {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-5 py-4 pb-28">
           <Text className="text-gray-400 text-xs mb-4 leading-4 px-1">
-            {category.description}
+            {displayCategory.description}
           </Text>
 
           {filteredTopics.length === 0 ? (
@@ -246,7 +258,7 @@ export default function CategoryPage() {
                     end={{ x: 1, y: 1 }}
                     style={styles.topicCardGradient}
                   >
-                    <View className="flex-1 mr-3">
+                    <View className="flex-1 mr-3 min-w-0" style={{ flex: 1, minWidth: 0, flexShrink: 1 }}>
                       <View 
                         style={[
                           styles.topicTypeBadge,
@@ -258,12 +270,13 @@ export default function CategoryPage() {
                       >
                         <Text 
                           style={[styles.topicTypeText, { color: specialty.color }]}
+                          numberOfLines={1}
                         >
                           {topic.type}
                         </Text>
                       </View>
-                      <Text style={styles.topicTitle}>{topic.title}</Text>
-                      <Text style={styles.topicSubtitle} numberOfLines={2}>{topic.subtitle}</Text>
+                      <Text style={styles.topicTitle} numberOfLines={1} ellipsizeMode="tail">{topic.title}</Text>
+                      <Text style={styles.topicSubtitle} numberOfLines={2} ellipsizeMode="tail">{topic.subtitle}</Text>
                     </View>
                     <View 
                       style={[
@@ -301,7 +314,7 @@ export default function CategoryPage() {
               <Ionicons name="chatbubbles" size={16} color={Colors.ink} />
             </View>
             <Text style={styles.floatingText} numberOfLines={1}>
-              Ask AI about {category.title}
+              Ask AI about {displayCategory.title}
             </Text>
             <Ionicons name="arrow-forward" size={14} color={Colors.ink} />
           </LinearGradient>
@@ -356,6 +369,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PlexSans_700Bold',
     fontWeight: '700',
     textTransform: 'uppercase',
+    includeFontPadding: false,
   },
   topicTitle: {
     color: '#ffffff',
@@ -363,12 +377,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     marginBottom: 3,
+    includeFontPadding: false,
   },
   topicSubtitle: {
     color: '#cbd5e1',
     fontFamily: 'PlexSans_400Regular',
     fontSize: 11.5,
     lineHeight: 16,
+    includeFontPadding: false,
   },
   topicArrowBadge: {
     width: 34,
@@ -377,6 +393,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    flexShrink: 0,
   },
   floatingContainer: {
     position: 'absolute',
@@ -417,5 +434,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PlexSans_700Bold',
     fontSize: 13.5,
     fontWeight: '700',
+    includeFontPadding: false,
   },
 });

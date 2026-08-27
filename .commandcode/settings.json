@@ -17,7 +17,8 @@
       "Shell(where specify 2>$null; if ($?) { specify --version } else { echo \"specify not found\" })",
       "Shell(specify:*)",
       "Shell(cmd:*)",
-      "Shell(node oklch2hex.mjs)"
+      "Shell(node oklch2hex.mjs)",
+      "powershell"
     ],
     "deny": [],
     "defaultMode": "default"

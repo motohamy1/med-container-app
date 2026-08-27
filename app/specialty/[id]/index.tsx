@@ -10,12 +10,11 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-  ActivityIndicator,
-  StyleSheet
+  StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { dbService } from '../../../services/dbService';
-import { SpecialtyData, TopicItem, SPECIALTY_KNOWLEDGE } from '../../../constants/SpecialtyData';
+import { SpecialtyData, SPECIALTY_KNOWLEDGE, getSpecialtyKnowledge } from '../../../constants/SpecialtyData';
 import { Colors } from '../../../constants/Colors';
 
 // Category theme config matching the 4-color base palette (#defff9, #6dc2bd, #dbd4fd, #ffc3dd)
@@ -109,21 +108,25 @@ export default function SpecialtyDashboard() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [searchText, setSearchText] = useState('');
   
-  const [specialty, setSpecialty] = useState<SpecialtyData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Instant synchronous initialization prevents any stuck/reloading spinners
+  const initialData = useMemo(() => getSpecialtyKnowledge(id || 'heart'), [id]);
+  const [specialty, setSpecialty] = useState<SpecialtyData>(initialData);
 
   useEffect(() => {
-    async function loadData() {
-      const data = await dbService.getSpecialty(id || 'heart');
-      setSpecialty(data);
-      setLoading(false);
-    }
-    loadData();
+    // Keep in sync when id changes
+    setSpecialty(getSpecialtyKnowledge(id || 'heart'));
+
+    // Non-blocking background enhancement
+    dbService.getSpecialty(id || 'heart').then((remote) => {
+      if (remote) {
+        setSpecialty(remote);
+      }
+    });
   }, [id]);
 
   // All topics flattened for instant search
   const allTopics = useMemo(() => {
-    if (!specialty) return [];
+    if (!specialty || !specialty.categories) return [];
     return specialty.categories.flatMap((c) => 
       (c.topics || []).map((t) => ({ ...t, categoryTitle: c.title, categoryId: c.id }))
     );
@@ -169,16 +172,7 @@ export default function SpecialtyDashboard() {
     }
   };
 
-  if (loading || !specialty) {
-    return (
-      <SafeAreaView className="flex-1 bg-background justify-center items-center">
-        <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator size="large" color={Colors.main} />
-      </SafeAreaView>
-    );
-  }
-
-  const localSpec = SPECIALTY_KNOWLEDGE[specialty.id];
+  const localSpec = SPECIALTY_KNOWLEDGE[specialty.id] || specialty;
   const illustration = localSpec ? localSpec.illustration : null;
   const totalTopicsCount = allTopics.length;
 
@@ -192,14 +186,14 @@ export default function SpecialtyDashboard() {
         <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2 active:opacity-60">
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <View className="flex-1 ml-3">
-          <Text className="text-white text-xl font-sans-bold">{specialty.scientificName}</Text>
-          <Text className="text-main text-xs font-sans-semibold uppercase tracking-wider">
+        <View className="flex-1 ml-3 min-w-0">
+          <Text className="text-white text-xl font-sans-bold" numberOfLines={1} ellipsizeMode="tail" style={{ includeFontPadding: false }}>{specialty.scientificName}</Text>
+          <Text className="text-main text-xs font-sans-semibold uppercase tracking-wider" numberOfLines={1} style={{ includeFontPadding: false }}>
             {specialty.name} Reference Hub
           </Text>
         </View>
         <View 
-          className="w-10 h-10 rounded-full items-center justify-center border border-white/10"
+          className="w-10 h-10 rounded-full items-center justify-center border border-white/10 flex-shrink-0"
           style={{ backgroundColor: `${specialty.color}20` }}
         >
           <Ionicons name={specialty.icon} size={20} color={specialty.color} />
@@ -280,22 +274,28 @@ export default function SpecialtyDashboard() {
                         end={{ x: 1, y: 1 }}
                         className="p-3.5 flex-row items-center justify-between"
                       >
-                        <View className="flex-1 mr-2">
-                          <View className="flex-row items-center gap-2 mb-1">
+                        <View className="flex-1 mr-2 min-w-0" style={{ minWidth: 0, flexShrink: 1 }}>
+                          <View className="flex-row items-center gap-2 mb-1 min-w-0">
                             <View 
-                              className="px-2 py-0.5 rounded border"
+                              className="px-2 py-0.5 rounded border flex-shrink-0"
                               style={{ backgroundColor: `${theme.color}20`, borderColor: `${theme.color}45` }}
                             >
-                              <Text className="text-[9px] font-sans-bold uppercase" style={{ color: theme.color }}>
+                              <Text className="text-[9px] font-sans-bold uppercase" style={{ color: theme.color, includeFontPadding: false }}>
                                 {topic.type}
                               </Text>
                             </View>
-                            <Text className="text-gray-400 text-[10px]">{topic.categoryTitle}</Text>
+                            <Text className="text-gray-400 text-[10px] flex-1" numberOfLines={1} ellipsizeMode="tail" style={{ flexShrink: 1, includeFontPadding: false }}>
+                              {topic.categoryTitle}
+                            </Text>
                           </View>
-                          <Text className="text-white font-sans-bold text-sm mb-0.5">{topic.title}</Text>
-                          <Text className="text-gray-300 text-xs" numberOfLines={1}>{topic.subtitle}</Text>
+                          <Text className="text-white font-sans-bold text-sm mb-0.5" numberOfLines={1} ellipsizeMode="tail" style={{ includeFontPadding: false }}>
+                            {topic.title}
+                          </Text>
+                          <Text className="text-gray-300 text-xs" numberOfLines={1} ellipsizeMode="tail" style={{ includeFontPadding: false }}>
+                            {topic.subtitle}
+                          </Text>
                         </View>
-                        <Ionicons name="chevron-forward" size={18} color={theme.color} />
+                        <Ionicons name="chevron-forward" size={18} color={theme.color} style={{ flexShrink: 0 }} />
                       </LinearGradient>
                     </TouchableOpacity>
                   );

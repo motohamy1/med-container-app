@@ -104,7 +104,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
           {/* Top Header Row */}
           <View className="flex-row items-center justify-between mb-2.5">
             <View
-              className="px-2.5 py-1 rounded-lg border flex-row items-center gap-1.5"
+              className="px-2.5 py-1 rounded-lg border flex-row items-center gap-1.5 flex-shrink-0"
               style={{
                 backgroundColor: `${theme.color}20`,
                 borderColor: `${theme.color}45`,
@@ -119,7 +119,7 @@ export const MedicalUpdatesCarousel: React.FC = () => {
               </Text>
             </View>
 
-            <View className="px-2 py-0.5 rounded-full bg-white/10 border border-white/10 flex-row items-center gap-1">
+            <View className="px-2 py-0.5 rounded-full bg-white/10 border border-white/10 flex-row items-center gap-1 flex-shrink-0">
               <Ionicons name="calendar-outline" size={10} color="#cbd5e1" />
               <Text className="text-[10px] font-sans-medium text-gray-300" style={{ includeFontPadding: false }}>
                 {item.date}
@@ -167,18 +167,19 @@ export const MedicalUpdatesCarousel: React.FC = () => {
           </View>
 
           {/* Card Footer */}
-          <View className="pt-2.5 border-t border-white/10 flex-row items-center justify-between mt-auto">
+          <View className="pt-2.5 border-t border-white/10 flex-row items-center justify-between mt-auto gap-2">
             <Text
-              className="text-[10px] font-mono text-gray-400 flex-1 mr-2"
+              className="text-[10px] font-mono text-gray-400 flex-1"
               numberOfLines={1}
-              style={{ includeFontPadding: false }}
+              ellipsizeMode="tail"
+              style={{ flexShrink: 1, includeFontPadding: false }}
             >
               📄 {item.journalOrSource}
             </Text>
             <View
-              className="flex-row items-center gap-1 px-2.5 py-1 rounded-full border"
+              className="flex-row items-center gap-1 px-2.5 py-1 rounded-full border flex-shrink-0"
               style={{
-                backgroundColor: `${theme.color}18`,
+                backgroundColor: `${theme.color}18` ,
                 borderColor: `${theme.color}50`,
               }}
             >
