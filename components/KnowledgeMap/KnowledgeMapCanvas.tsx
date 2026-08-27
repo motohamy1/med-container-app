@@ -59,8 +59,8 @@ export const KnowledgeMapCanvas = forwardRef<KnowledgeMapCanvasRef, KnowledgeMap
     }, [layout.positions]);
 
     // Reanimated Shared Values
-    const scale = useSharedValue<number>(1.0);
-    const savedScale = useSharedValue<number>(1.0);
+    const scale = useSharedValue<number>(GRAPH_CONFIG.defaultZoom);
+    const savedScale = useSharedValue<number>(GRAPH_CONFIG.defaultZoom);
     const translateX = useSharedValue<number>(0);
     const savedTranslateX = useSharedValue<number>(0);
     const translateY = useSharedValue<number>(0);
@@ -69,7 +69,7 @@ export const KnowledgeMapCanvas = forwardRef<KnowledgeMapCanvasRef, KnowledgeMap
     // Initial transform calculation
     const calculateInitialTransform = useCallback(() => {
       const { bounds } = layout;
-      const initialScale = 1.0;
+      const initialScale = GRAPH_CONFIG.defaultZoom;
       const initX = viewportWidth / 2 - bounds.centerX * initialScale;
       const initY = 30;
 

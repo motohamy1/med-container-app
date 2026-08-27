@@ -3,22 +3,22 @@ import { Colors } from '../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 
 export const GRAPH_CONFIG = {
-  minZoom: 0.55,
+  minZoom: 0.35,
   maxZoom: 2.8,
-  defaultZoom: 0.9,
+  defaultZoom: 0.68, // 2 zoom steps lower than 1.0 (1.0 * 0.8 * 0.8 ≈ 0.64-0.68) for broader initial visibility
 
-  rootWidth: 220,
-  rootHeight: 58,
+  rootWidth: 240,
+  rootHeight: 56,
 
-  sectionWidth: 180,
-  sectionHeight: 48,
+  sectionWidth: 204,
+  sectionHeight: 50,
 
-  conceptWidth: 148,
-  conceptHeight: 44,
+  conceptWidth: 178,
+  conceptHeight: 48,
 
-  horizontalGap: 20,
-  sectionGap: 52,
-  verticalGap: 86,
+  horizontalGap: 24,
+  sectionGap: 56,
+  verticalGap: 90,
 
   maxNodesInitial: 40,
   maxEdgesInitial: 60,

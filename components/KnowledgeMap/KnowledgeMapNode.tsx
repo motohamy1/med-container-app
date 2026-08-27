@@ -163,11 +163,13 @@ export const KnowledgeMapNode: React.FC<KnowledgeMapNodeProps> = React.memo(
                   styles.nodeLabel,
                   {
                     color: config.text,
-                    fontSize: node.type === 'root' ? 12.5 : node.type === 'section' ? 11 : 10,
-                    fontWeight: node.type === 'root' ? '700' : '600',
+                    fontSize: node.type === 'root' ? 12.5 : node.type === 'section' ? 11.5 : 10.5,
+                    fontFamily: node.type === 'root' ? 'PlexSans_700Bold' : 'PlexSans_600SemiBold',
+                    lineHeight: node.type === 'root' ? 16 : node.type === 'section' ? 15 : 13.5,
                   },
                 ]}
-                numberOfLines={2}
+                numberOfLines={3}
+                ellipsizeMode="tail"
               >
                 {node.label}
               </Text>
@@ -203,12 +205,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     justifyContent: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 7,
   },
   iconDot: {
     width: 24,
@@ -217,26 +219,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    flexShrink: 0,
   },
   textWrapper: {
     flex: 1,
     justifyContent: 'center',
   },
   nodeLabel: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    lineHeight: 14,
+    fontFamily: 'PlexSans_600SemiBold',
+    includeFontPadding: false,
   },
   badge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
     borderRadius: 8,
     borderWidth: 0.8,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   badgeText: {
     fontSize: 9,
-    fontFamily: 'PlusJakartaSans-Bold',
+    fontFamily: 'PlexSans_700Bold',
     fontWeight: '700',
   },
 });

@@ -51,24 +51,73 @@ function parseMedicalSections(text: string): {
   sections: MedicalSection[];
   plainText: string;
 } {
-  const parts = text.split(/##(.*?)##/);
-  const sections: MedicalSection[] = [];
-  let plainText = parts[0]?.trim() || "";
+  // 1. Try ##HEADING## format
+  if (text.includes('##')) {
+    const parts = text.split(/##(.*?)##/);
+    const sections: MedicalSection[] = [];
+    let plainText = parts[0]?.trim() || "";
 
-  for (let i = 1; i < parts.length; i += 2) {
-    const heading = parts[i]?.trim();
-    let content = parts[i + 1] || "";
-    content = content.replace(/##END##/gi, "").trim();
+    for (let i = 1; i < parts.length; i += 2) {
+      const heading = parts[i]?.trim();
+      let content = parts[i + 1] || "";
+      content = content.replace(/##END##/gi, "").trim();
 
-    if (heading && heading !== "END" && heading !== "SUGGESTIONS") {
-      sections.push({ heading, content });
+      if (heading && heading !== "END" && heading !== "SUGGESTIONS") {
+        sections.push({ heading, content });
+      }
+    }
+
+    if (sections.length > 0) {
+      return { hasSections: true, sections, plainText };
     }
   }
 
+  // 2. Try markdown ### or ## or bold headings (e.g. ### 1. Emergency Protocol or **Criteria:**)
+  const mdHeadingRegex = /(?:^|\n)(?:###?|\*\*)\s*([A-Za-z0-9\s/&,–—\(\):-]+?)(?:\*\*|:)?\s*\n/g;
+  const matches = [...text.matchAll(mdHeadingRegex)];
+  if (matches.length >= 2) {
+    const sections: MedicalSection[] = [];
+    for (let i = 0; i < matches.length; i++) {
+      const heading = matches[i][1].replace(/[*_#]/g, '').trim();
+      const startIndex = matches[i].index! + matches[i][0].length;
+      const endIndex = i + 1 < matches.length ? matches[i + 1].index! : text.length;
+      const content = text.slice(startIndex, endIndex).trim();
+      if (heading && content && heading.length <= 60) {
+        sections.push({ heading, content });
+      }
+    }
+    if (sections.length > 0) {
+      return { hasSections: true, sections, plainText: "" };
+    }
+  }
+
+  // 3. Fallback: split long responses into logical thematic sections for dynamic map generation
+  const paragraphs = text.split(/\n\n+/).map(p => p.trim()).filter(p => p.length > 15);
+  if (paragraphs.length >= 2) {
+    const defaultHeadings = [
+      'Clinical Assessment',
+      'Management Protocol',
+      'Investigations & Criteria',
+      'Pharmacotherapy & Dosing',
+      'Red Flags & Pearls',
+    ];
+    const sections = paragraphs.slice(0, 5).map((p, idx) => {
+      const leadBold = p.match(/^\*\*([^*]+)\*\*:?\s*([\s\S]*)/);
+      if (leadBold) {
+        return { heading: leadBold[1].trim(), content: leadBold[2].trim() || p };
+      }
+      return {
+        heading: defaultHeadings[idx] || `Section ${idx + 1}`,
+        content: p,
+      };
+    });
+    return { hasSections: true, sections, plainText: "" };
+  }
+
   return {
-    hasSections: sections.length > 0,
-    sections,
-    plainText,
+    hasSections: false,
+    sections: [],
+    plainText: text,
   };
 }
 
@@ -172,21 +221,37 @@ const TopicAiMessageItem: React.FC<{
   );
 
   const responseTopicItem = useMemo<TopicItem>(() => {
-    if (topicData) {
+    if (sections.length > 0) {
+      const firstHeading = sections[0].heading.replace(/[*_#]/g, '').trim();
+      return {
+        id: `ai-resp-${item.id}`,
+        title: topicName || firstHeading || 'Clinical Response',
+        subtitle: 'Dynamic Inquiry Map',
+        type: 'AI Knowledge Graph',
+        aiScopeDescription: '',
+        clinicalContent: sections.map((s) => ({
+          title: s.heading,
+          content: s.content,
+        })),
+      };
+    }
+
+    if (topicData && topicData.clinicalContent && topicData.clinicalContent.length > 0) {
       return topicData;
     }
+
     return {
       id: `ai-resp-${item.id}`,
       title: topicName || 'Clinical Response',
-      subtitle: 'Generated Knowledge Graph',
+      subtitle: 'Dynamic Inquiry Map',
       type: 'AI Knowledge Graph',
       aiScopeDescription: '',
-      clinicalContent: sections.map((s) => ({
-        title: s.heading,
-        content: s.content,
-      })),
+      clinicalContent: [
+        { title: 'Clinical Assessment', content: item.text.slice(0, 250) },
+        { title: 'Key Protocol', content: item.text.slice(250, 500) || item.text },
+      ],
     };
-  }, [topicData, topicName, item.id, sections]);
+  }, [topicData, topicName, item.id, item.text, sections]);
 
   return (
     <Animated.View
@@ -616,7 +681,8 @@ export default function TopicChat({
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "padding"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       style={{ flex: 1 }}
     >
       <View className="flex-1 bg-background">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Path, G, Text as SvgText, Rect } from 'react-native-svg';
+import { Path, G, Text as SvgText, Rect, Circle } from 'react-native-svg';
 import { KnowledgeMapEdge as EdgeType } from '../../types/knowledgeMap';
 import { Colors } from '../../constants/Colors';
 
@@ -13,8 +13,8 @@ interface KnowledgeMapEdgeProps {
 }
 
 /**
- * Flexible, organic rope connector that dynamically calculates natural tension
- * and anchor points between nodes based on their relative positioning.
+ * NotebookLM-style sleek organic Bezier wire connector with dynamic anchor pins,
+ * elastic S-curve curvature, and real-time reactive dragging flexibility.
  */
 export const KnowledgeMapEdge: React.FC<KnowledgeMapEdgeProps> = React.memo(
   function KnowledgeMapEdge({ edge, sourcePos, targetPos, isSelected = false, isDimmed = false, themeColor }) {
@@ -29,57 +29,63 @@ export const KnowledgeMapEdge: React.FC<KnowledgeMapEdgeProps> = React.memo(
     let y2 = targetPos.y + (isTargetBelow ? -targetPos.height / 2 : targetPos.height / 2);
 
     // If nodes are side-by-side rather than stacked
-    if (Math.abs(dx) > Math.abs(dy) * 1.8) {
+    const isSideBySide = Math.abs(dx) > Math.abs(dy) * 1.6;
+    if (isSideBySide) {
       x1 = sourcePos.x + (isTargetRight ? sourcePos.width / 2 : -sourcePos.width / 2);
       y1 = sourcePos.y;
       x2 = targetPos.x + (isTargetRight ? -targetPos.width / 2 : targetPos.width / 2);
       y2 = targetPos.y;
     }
 
-    const dist = Math.hypot(x2 - x1, y2 - y1);
-    // Dynamic organic rope sag & elastic curvature
-    const sagY = Math.min(Math.max(Math.abs(y2 - y1) * 0.5, 30), 100);
-    const sagX = Math.min(Math.abs(x2 - x1) * 0.25, 60);
+    // Google NotebookLM-style smooth S-curve interpolation
+    let cp1x: number;
+    let cp1y: number;
+    let cp2x: number;
+    let cp2y: number;
 
-    let cp1x = x1;
-    let cp1y = y1 + (isTargetBelow ? sagY : -sagY);
-    let cp2x = x2;
-    let cp2y = y2 + (isTargetBelow ? -sagY : sagY);
-
-    if (Math.abs(dx) > Math.abs(dy) * 1.8) {
-      cp1x = x1 + (isTargetRight ? sagX : -sagX);
+    if (isSideBySide) {
+      const tensionX = Math.max(Math.abs(x2 - x1) * 0.5, 35);
+      cp1x = x1 + (isTargetRight ? tensionX : -tensionX);
       cp1y = y1;
-      cp2x = x2 + (isTargetRight ? -sagX : sagX);
+      cp2x = x2 + (isTargetRight ? -tensionX : tensionX);
       cp2y = y2;
+    } else {
+      const tensionY = Math.max(Math.abs(y2 - y1) * 0.55, 30);
+      cp1x = x1;
+      cp1y = y1 + (isTargetBelow ? tensionY : -tensionY);
+      cp2x = x2;
+      cp2y = y2 + (isTargetBelow ? -tensionY : tensionY);
     }
 
     const pathData = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
 
     const accent = themeColor || Colors.accent;
-    const strokeColor = isSelected ? accent : '#2a3b3e';
-    const glowColor = isSelected ? `${accent}40` : 'transparent';
-    const strokeWidth = isSelected ? 2.4 : 1.6;
-    const strokeOpacity = isDimmed ? 0.15 : isSelected ? 1.0 : 0.65;
+    const strokeColor = isSelected ? accent : '#384d52';
+    const underGlowColor = isSelected ? `${accent}45` : 'rgba(78, 115, 122, 0.18)';
+    const strokeWidth = isSelected ? 2.4 : 1.7;
+    const strokeOpacity = isDimmed ? 0.15 : isSelected ? 1.0 : 0.75;
 
-    // Midpoint for edge label
+    // Midpoint for edge label badge
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
 
+    const pinColor = isSelected ? accent : '#527278';
+    const pinGlow = isSelected ? `${accent}66` : 'rgba(82, 114, 120, 0.3)';
+
     return (
       <G>
-        {/* Soft glowing rope shadow / ambient depth */}
-        {isSelected && (
-          <Path
-            d={pathData}
-            stroke={glowColor}
-            strokeWidth={strokeWidth + 4}
-            strokeOpacity={0.5}
-            fill="none"
-            strokeLinecap="round"
-          />
-        )}
+        {/* Ambient Depth / Soft Glowing Underlayer */}
+        <Path
+          d={pathData}
+          stroke={underGlowColor}
+          strokeWidth={strokeWidth + (isSelected ? 4 : 2)}
+          strokeOpacity={isDimmed ? 0.08 : isSelected ? 0.6 : 0.4}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
 
-        {/* Main Flexible Rope */}
+        {/* Main Sleek NotebookLM Wire */}
         <Path
           d={pathData}
           stroke={strokeColor}
@@ -87,28 +93,51 @@ export const KnowledgeMapEdge: React.FC<KnowledgeMapEdgeProps> = React.memo(
           strokeOpacity={strokeOpacity}
           fill="none"
           strokeLinecap="round"
+          strokeLinejoin="round"
         />
 
-        {/* Connected Label Badge */}
+        {/* NotebookLM Connection Pin - Source Anchor Dot */}
+        <Circle
+          cx={x1}
+          cy={y1}
+          r={isSelected ? 3.5 : 2.5}
+          fill={pinColor}
+          stroke={pinGlow}
+          strokeWidth={1.5}
+          opacity={isDimmed ? 0.2 : 0.9}
+        />
+
+        {/* NotebookLM Connection Pin - Target Anchor Dot */}
+        <Circle
+          cx={x2}
+          cy={y2}
+          r={isSelected ? 3.5 : 2.5}
+          fill={pinColor}
+          stroke={pinGlow}
+          strokeWidth={1.5}
+          opacity={isDimmed ? 0.2 : 0.9}
+        />
+
+        {/* Interactive Edge Label Badge */}
         {isSelected && edge.label && (
           <G>
             <Rect
-              x={midX - 38}
-              y={midY - 10}
-              width={76}
-              height={20}
-              rx={6}
+              x={midX - 42}
+              y={midY - 11}
+              width={84}
+              height={22}
+              rx={7}
               fill="#080e10"
               stroke={strokeColor}
-              strokeWidth={0.9}
-              strokeOpacity={0.85}
+              strokeWidth={1}
+              strokeOpacity={0.9}
             />
             <SvgText
               x={midX}
               y={midY + 3.5}
               fill={strokeColor}
-              fontSize="9.5"
-              fontWeight="600"
+              fontSize="10"
+              fontWeight="700"
               textAnchor="middle"
               alignmentBaseline="middle"
             >

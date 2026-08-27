@@ -168,24 +168,73 @@ function parseMedicalSections(text: string): {
   sections: { heading: string; content: string }[];
   plainText: string;
 } {
-  const parts = text.split(/##(.*?)##/);
-  const sections: { heading: string; content: string }[] = [];
-  let plainText = parts[0]?.trim() || "";
+  // 1. Try ##HEADING## format
+  if (text.includes('##')) {
+    const parts = text.split(/##(.*?)##/);
+    const sections: { heading: string; content: string }[] = [];
+    let plainText = parts[0]?.trim() || "";
 
-  for (let i = 1; i < parts.length; i += 2) {
-    const heading = parts[i]?.trim();
-    let content = parts[i + 1] || "";
-    content = content.replace(/##END##/gi, "").trim();
+    for (let i = 1; i < parts.length; i += 2) {
+      const heading = parts[i]?.trim();
+      let content = parts[i + 1] || "";
+      content = content.replace(/##END##/gi, "").trim();
 
-    if (heading && heading !== "END" && heading !== "SUGGESTIONS") {
-      sections.push({ heading, content });
+      if (heading && heading !== "END" && heading !== "SUGGESTIONS") {
+        sections.push({ heading, content });
+      }
+    }
+
+    if (sections.length > 0) {
+      return { hasSections: true, sections, plainText };
     }
   }
 
+  // 2. Try markdown ### or ## or bold headings (e.g. ### 1. Emergency Protocol or **Criteria:**)
+  const mdHeadingRegex = /(?:^|\n)(?:###?|\*\*)\s*([A-Za-z0-9\s/&,–—\(\):-]+?)(?:\*\*|:)?\s*\n/g;
+  const matches = [...text.matchAll(mdHeadingRegex)];
+  if (matches.length >= 2) {
+    const sections: { heading: string; content: string }[] = [];
+    for (let i = 0; i < matches.length; i++) {
+      const heading = matches[i][1].replace(/[*_#]/g, '').trim();
+      const startIndex = matches[i].index! + matches[i][0].length;
+      const endIndex = i + 1 < matches.length ? matches[i + 1].index! : text.length;
+      const content = text.slice(startIndex, endIndex).trim();
+      if (heading && content && heading.length <= 60) {
+        sections.push({ heading, content });
+      }
+    }
+    if (sections.length > 0) {
+      return { hasSections: true, sections, plainText: "" };
+    }
+  }
+
+  // 3. Fallback: split long responses into logical thematic sections for dynamic map generation
+  const paragraphs = text.split(/\n\n+/).map(p => p.trim()).filter(p => p.length > 15);
+  if (paragraphs.length >= 2) {
+    const defaultHeadings = [
+      'Clinical Assessment',
+      'Management Protocol',
+      'Investigations & Criteria',
+      'Pharmacotherapy & Dosing',
+      'Red Flags & Pearls',
+    ];
+    const sections = paragraphs.slice(0, 5).map((p, idx) => {
+      const leadBold = p.match(/^\*\*([^*]+)\*\*:?\s*([\s\S]*)/);
+      if (leadBold) {
+        return { heading: leadBold[1].trim(), content: leadBold[2].trim() || p };
+      }
+      return {
+        heading: defaultHeadings[idx] || `Section ${idx + 1}`,
+        content: p,
+      };
+    });
+    return { hasSections: true, sections, plainText: "" };
+  }
+
   return {
-    hasSections: sections.length > 0,
-    sections,
-    plainText,
+    hasSections: false,
+    sections: [],
+    plainText: text,
   };
 }
 
@@ -273,19 +322,38 @@ const ChatBubble: React.FC<{
   );
 
   const responseTopicItem = useMemo<TopicItem>(() => {
-    if (topicContext) return topicContext;
+    // Generate tailored knowledge map for each specific chat response
+    if (sections.length > 0) {
+      const firstHeading = sections[0].heading.replace(/[*_#]/g, '').trim();
+      return {
+        id: `chat-resp-${message.id}`,
+        title: topicContext?.title || firstHeading || 'Clinical Analysis',
+        subtitle: 'Dynamic Inquiry Map',
+        type: 'AI Knowledge Graph',
+        aiScopeDescription: '',
+        clinicalContent: sections.map((s) => ({
+          title: s.heading,
+          content: s.content,
+        })),
+      };
+    }
+
+    if (topicContext && topicContext.clinicalContent && topicContext.clinicalContent.length > 0) {
+      return topicContext;
+    }
+
     return {
       id: `chat-resp-${message.id}`,
       title: 'Clinical Inquiry',
-      subtitle: 'Generated Knowledge Graph',
+      subtitle: 'Dynamic Inquiry Map',
       type: 'AI Knowledge Graph',
       aiScopeDescription: '',
-      clinicalContent: sections.map((s) => ({
-        title: s.heading,
-        content: s.content,
-      })),
+      clinicalContent: [
+        { title: 'Clinical Assessment', content: message.text.slice(0, 250) },
+        { title: 'Key Protocol', content: message.text.slice(250, 500) || message.text },
+      ],
     };
-  }, [topicContext, message.id, sections]);
+  }, [topicContext, message.id, message.text, sections]);
 
   if (message.isError) {
     return (
@@ -814,7 +882,7 @@ const ChatTab = () => {
         </View>
       ) : (
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "padding"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
           style={{ flex: 1 }}
         >

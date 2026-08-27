@@ -162,7 +162,7 @@ export function layoutTopicGraph(
     currentY += secDims.height + 36;
 
     if (!isCollapsed && childIds.length > 0) {
-      const colOffset = 90; // Balanced horizontal offset for child pairs
+      const colOffset = 108; // Balanced horizontal offset for wider child pairs
 
       for (let i = 0; i < childIds.length; i += 2) {
         const leftChildId = childIds[i];
@@ -198,10 +198,10 @@ export function layoutTopicGraph(
           });
         }
 
-        currentY += 56;
+        currentY += 60;
       }
 
-      currentY += 22;
+      currentY += 24;
     } else {
       currentY += 16;
     }
