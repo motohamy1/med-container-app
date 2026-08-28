@@ -8,7 +8,10 @@ import {
   Alert,
   FlatList,
   Keyboard,
-  KeyboardAvoidingView,
+  Animated as RNAnimated,
+  Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
   ScrollView,
   StatusBar,
@@ -23,7 +26,6 @@ import Animated, {
   FadeIn,
   FadeInDown,
   FadeInUp,
-  interpolate,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
@@ -31,9 +33,10 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import { aiService, DoctorCategory, Citation } from "../../services/aiService";
 import { dbService } from "../../services/dbService";
+import { chatStorageService, ChatSession, ChatMessage } from "../../services/chatStorageService";
 import { TopicItem, SpecialtyData } from "../../constants/SpecialtyData";
 import { Colors } from "../../constants/Colors";
 import FormattedClinicalText from "../../components/FormattedClinicalText";
@@ -45,19 +48,6 @@ const EASE_HEAVY = Easing.bezier(0.32, 0.72, 0, 1);
 const MOTION = { enter: 250, stagger: 60 } as const;
 
 const TURQUOISE = Colors.accent;
-
-// Types
-type Message = {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: string;
-  category?: DoctorCategory;
-  citations?: Citation[];
-  suggestions?: string[];
-  isError?: boolean;
-  failedQuery?: string;
-};
 
 // Medical section config for structured AI rendering — harmonized with 4 main colors
 const SECTION_CONFIG: Record<
@@ -168,7 +158,6 @@ function parseMedicalSections(text: string): {
   sections: { heading: string; content: string }[];
   plainText: string;
 } {
-  // 1. Try ##HEADING## format
   if (text.includes('##')) {
     const parts = text.split(/##(.*?)##/);
     const sections: { heading: string; content: string }[] = [];
@@ -189,7 +178,6 @@ function parseMedicalSections(text: string): {
     }
   }
 
-  // 2. Try markdown ### or ## or bold headings (e.g. ### 1. Emergency Protocol or **Criteria:**)
   const mdHeadingRegex = /(?:^|\n)(?:###?|\*\*)\s*([A-Za-z0-9\s/&,–—\(\):-]+?)(?:\*\*|:)?\s*\n/g;
   const matches = [...text.matchAll(mdHeadingRegex)];
   if (matches.length >= 2) {
@@ -208,8 +196,7 @@ function parseMedicalSections(text: string): {
     }
   }
 
-  // 3. Fallback: split long responses into logical thematic sections for dynamic map generation
-  const paragraphs = text.split(/\n\n+/).map(p => p.trim()).filter(p => p.length > 15);
+  const paragraphs = text.split(/\n\n+/).map((p) => p.trim()).filter((p) => p.length > 15);
   if (paragraphs.length >= 2) {
     const defaultHeadings = [
       'Clinical Assessment',
@@ -238,7 +225,6 @@ function parseMedicalSections(text: string): {
   };
 }
 
-// Hook for reduced motion preference
 const useReducedMotion = () => {
   const [reducedMotion, setReducedMotion] = useState(false);
   useEffect(() => {
@@ -252,7 +238,6 @@ const useReducedMotion = () => {
   return reducedMotion;
 };
 
-// Animated Thinking Wave
 const ThinkingIndicator: React.FC = () => {
   const reducedMotion = useReducedMotion();
   const dot1 = useSharedValue(0.3);
@@ -303,9 +288,8 @@ const ThinkingIndicator: React.FC = () => {
   );
 };
 
-// Chat Bubble Component with Cent Response & Map Tab Support
 const ChatBubble: React.FC<{
-  message: Message;
+  message: ChatMessage;
   topicContext?: TopicItem | null;
   specialtyContext?: SpecialtyData | null;
   onCopy: (text: string) => void;
@@ -322,7 +306,6 @@ const ChatBubble: React.FC<{
   );
 
   const responseTopicItem = useMemo<TopicItem>(() => {
-    // Generate tailored knowledge map for each specific chat response
     if (sections.length > 0) {
       const firstHeading = sections[0].heading.replace(/[*_#]/g, '').trim();
       return {
@@ -396,7 +379,6 @@ const ChatBubble: React.FC<{
         entering={reducedMotion ? undefined : FadeInUp.duration(MOTION.enter).easing(EASE_HEAVY)}
         className="mb-7 px-4 w-full"
       >
-        {/* Centered Segmented Response | Map Switcher */}
         <View className="flex-row justify-center items-center mb-3">
           <View className="flex-row bg-[#151c1f] p-1 rounded-full border border-white/10 shadow-sm">
             <TouchableOpacity
@@ -449,7 +431,6 @@ const ChatBubble: React.FC<{
           </View>
         </View>
 
-        {/* Content: Seamless Map Tab vs Response Tab */}
         {responseTab === 'map' ? (
           <View
             style={{
@@ -468,7 +449,6 @@ const ChatBubble: React.FC<{
           </View>
         ) : (
           <>
-            {/* AI Header */}
             <View className="flex-row items-center justify-between mb-2.5">
               <View className="flex-row items-center gap-2.5">
                 <View className="w-7 h-7 rounded-full bg-turquoise/15 items-center justify-center border border-turquoise/35">
@@ -482,7 +462,6 @@ const ChatBubble: React.FC<{
               <Text className="text-gray-500 text-[10px] font-mono">{message.timestamp}</Text>
             </View>
 
-            {/* Structured Medical Cards or Formatted Fallback */}
             {hasSections ? (
               <View className="gap-3">
                 {plainText.length > 0 && (
@@ -546,7 +525,6 @@ const ChatBubble: React.FC<{
               </View>
             )}
 
-            {/* Citations section */}
             {message.citations && message.citations.length > 0 && (
               <View className="mt-3.5 pt-3 border-t border-white/5">
                 <View className="flex-row items-center gap-1.5 mb-2 ml-1">
@@ -578,7 +556,6 @@ const ChatBubble: React.FC<{
               </View>
             )}
 
-            {/* Interactive Follow-Up Suggestions */}
             {message.suggestions && message.suggestions.length > 0 && (
               <View className="mt-3.5 mb-1">
                 <View className="flex-row items-center gap-1.5 mb-2 ml-1">
@@ -605,7 +582,6 @@ const ChatBubble: React.FC<{
               </View>
             )}
 
-            {/* Action Toolbar for AI message */}
             <View className="flex-row items-center gap-4 mt-2.5 pl-2">
               <TouchableOpacity
                 onPress={() => onCopy(message.text)}
@@ -664,12 +640,68 @@ const ChatTab = () => {
   const insets = useSafeAreaInsets();
   const floatingBottom = insets.bottom > 0 ? insets.bottom : 10;
   const DOCK_BAR_HEIGHT = 72;
-  const TAB_BAR_GAP = 8; // 8px margin between input area and tabs bar
+  const TAB_BAR_GAP = 8;
   
-  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const keyboardHeightAnim = useRef(new RNAnimated.Value(0)).current;
   const [activeMode, setActiveMode] = useState<'chat' | 'map'>('chat');
   const [contextSpecialty, setContextSpecialty] = useState<SpecialtyData | null>(null);
   const [contextTopic, setContextTopic] = useState<TopicItem | null>(null);
+
+  // Session state & History
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
+
+  // Jump arrow scroll tracking
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputText, setInputText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [presetBatches] = useState<QuickPrompt[][]>(() => getDailyPromptBatches());
+  const [batchIndex, setBatchIndex] = useState(0);
+
+  const flatListRef = useRef<FlatList>(null);
+  const isHandlingAutoSend = useRef(false);
+  const lastProcessedQuery = useRef<string | null>(null);
+  const activeSessionIdRef = useRef<string | null>(null);
+
+  // Keep ref in sync
+  useEffect(() => {
+    activeSessionIdRef.current = currentSessionId;
+  }, [currentSessionId]);
+
+  // Load saved sessions on mount
+  useEffect(() => {
+    async function initSessions() {
+      const all = await chatStorageService.getAllSessions();
+      setSessions(all);
+
+      const activeId = await chatStorageService.getActiveSessionId();
+      if (activeId) {
+        const found = all.find((s) => s.id === activeId);
+        if (found) {
+          setCurrentSessionId(found.id);
+          setMessages(found.messages);
+          return;
+        }
+      }
+
+      if (all.length > 0) {
+        setCurrentSessionId(all[0].id);
+        setMessages(all[0].messages);
+      } else {
+        // Create initial session
+        const newSess = await chatStorageService.createNewSession();
+        setCurrentSessionId(newSess.id);
+        setMessages([]);
+        setSessions([newSess]);
+      }
+    }
+    initSessions();
+  }, []);
 
   // Load medical context if specialtyId and topicId are provided in route params
   useEffect(() => {
@@ -691,30 +723,105 @@ const ChatTab = () => {
     loadContext();
   }, [params.specialtyId, params.topicId]);
 
+  // Track keyboard height
   useEffect(() => {
-    const showSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      () => setKeyboardVisible(true)
-    );
-    const hideSub = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setKeyboardVisible(false)
-    );
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      const h = e.endCoordinates.height;
+      setKeyboardHeight(h);
+      RNAnimated.timing(keyboardHeightAnim, {
+        toValue: h,
+        duration: Platform.OS === 'ios' ? 250 : 80,
+        useNativeDriver: false,
+      }).start();
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+      RNAnimated.timing(keyboardHeightAnim, {
+        toValue: 0,
+        duration: Platform.OS === 'ios' ? 200 : 80,
+        useNativeDriver: false,
+      }).start();
+    });
     return () => {
       showSub.remove();
       hideSub.remove();
     };
-  }, []);
+  }, [keyboardHeightAnim]);
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [presetBatches] = useState<QuickPrompt[][]>(() => getDailyPromptBatches());
-  const [batchIndex, setBatchIndex] = useState(0);
+  // Auto-save session messages
+  const persistCurrentMessages = async (updatedMsgs: ChatMessage[]) => {
+    let sessId = activeSessionIdRef.current;
+    if (!sessId) {
+      const created = await chatStorageService.createNewSession({
+        specialtyId: params.specialtyId,
+        topicId: params.topicId,
+        topicName: params.topicName || contextTopic?.title,
+      });
+      sessId = created.id;
+      setCurrentSessionId(created.id);
+    }
 
-  const flatListRef = useRef<FlatList>(null);
-  const isHandlingAutoSend = useRef(false);
-  const lastProcessedQuery = useRef<string | null>(null);
+    const sessionObj: ChatSession = {
+      id: sessId,
+      title: 'Clinical Inquiry',
+      messages: updatedMsgs,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      specialtyId: params.specialtyId,
+      topicId: params.topicId,
+      topicName: params.topicName || contextTopic?.title,
+    };
+
+    await chatStorageService.saveSession(sessionObj);
+    const refreshed = await chatStorageService.getAllSessions();
+    setSessions(refreshed);
+  };
+
+  // Start New Chat Handler (Pen icon)
+  const handleStartNewChat = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const newSession = await chatStorageService.createNewSession({
+      specialtyId: params.specialtyId,
+      topicId: params.topicId,
+      topicName: params.topicName || contextTopic?.title,
+    });
+    setCurrentSessionId(newSession.id);
+    setMessages([]);
+    setInputText("");
+    setIsHistoryModalVisible(false);
+    const refreshed = await chatStorageService.getAllSessions();
+    setSessions(refreshed);
+  };
+
+  // Switch to a past session
+  const handleSelectSession = (session: ChatSession) => {
+    Haptics.selectionAsync();
+    setCurrentSessionId(session.id);
+    setMessages(session.messages);
+    chatStorageService.setActiveSessionId(session.id);
+    setIsHistoryModalVisible(false);
+  };
+
+  // Delete a session
+  const handleDeleteSession = async (sessionId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    const remaining = await chatStorageService.deleteSession(sessionId);
+    setSessions(remaining);
+    if (currentSessionId === sessionId) {
+      if (remaining.length > 0) {
+        setCurrentSessionId(remaining[0].id);
+        setMessages(remaining[0].messages);
+      } else {
+        const fresh = await chatStorageService.createNewSession();
+        setCurrentSessionId(fresh.id);
+        setMessages([]);
+        setSessions([fresh]);
+      }
+    }
+  };
 
   // Preset rotation
   const currentPresets = presetBatches[batchIndex] || [];
@@ -733,6 +840,28 @@ const ChatTab = () => {
     }
   };
 
+  // Scroll tracking for jump arrows
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+    const offsetY = contentOffset.y;
+    const contentHeight = contentSize.height;
+    const layoutHeight = layoutMeasurement.height;
+
+    setShowScrollTop(offsetY > 240);
+    const distanceFromBottom = contentHeight - offsetY - layoutHeight;
+    setShowScrollBottom(distanceFromBottom > 240 && messages.length >= 2);
+  };
+
+  const scrollToTop = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
+  const scrollToBottom = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    flatListRef.current?.scrollToEnd({ animated: true });
+  };
+
   // Main send handler
   const handleSend = async (queryText?: string) => {
     const textToSend = (queryText || inputText).trim();
@@ -742,7 +871,7 @@ const ChatTab = () => {
     setIsTyping(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    const userMessage: Message = {
+    const userMessage: ChatMessage = {
       id: Date.now().toString(),
       text: textToSend,
       isUser: true,
@@ -751,6 +880,7 @@ const ChatTab = () => {
 
     const currentHistory = [...messages, userMessage];
     setMessages(currentHistory);
+    persistCurrentMessages(currentHistory);
 
     try {
       const { reply, citations, suggestions } = await aiService.sendMessageByText(
@@ -762,7 +892,7 @@ const ChatTab = () => {
         currentHistory.map((m) => ({ text: m.text, isUser: m.isUser })),
       );
 
-      const aiMessage: Message = {
+      const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         text: reply,
         isUser: false,
@@ -771,12 +901,14 @@ const ChatTab = () => {
         suggestions,
       };
 
-      setMessages((prev) => [...prev, aiMessage]);
+      const finalHistory = [...currentHistory, aiMessage];
+      setMessages(finalHistory);
+      persistCurrentMessages(finalHistory);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err) {
       console.error(err);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      const errorMessage: Message = {
+      const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         text: "The clinical service did not respond.",
         isUser: false,
@@ -784,7 +916,9 @@ const ChatTab = () => {
         isError: true,
         failedQuery: textToSend,
       };
-      setMessages((prev) => [...prev, errorMessage]);
+      const finalHistory = [...currentHistory, errorMessage];
+      setMessages(finalHistory);
+      persistCurrentMessages(finalHistory);
     } finally {
       setIsTyping(false);
     }
@@ -806,65 +940,96 @@ const ChatTab = () => {
     <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
 
-      {/* Header with Title & Context Switcher if Medical Context exists */}
-      <View className="flex-row items-center justify-between px-4 py-3 border-b border-white/5 bg-background">
-        <View className="flex-row items-center gap-2.5">
-          <View className="w-8 h-8 rounded-full bg-turquoise/15 items-center justify-center border border-turquoise/35">
-            <Ionicons name="medical" size={16} color={TURQUOISE} />
-          </View>
-          <View>
-            <Text className="text-white text-base font-sans-bold">
+      {/* Header with Title, Pen Icon (New Chat), History Modal button, and Map Switcher */}
+      <View className="flex-row items-center justify-between px-4 py-3 border-b border-white/5 bg-background z-20">
+        <View className="flex-row items-center gap-2.5 flex-1 mr-2">
+          {contextTopic ? (
+            <TouchableOpacity
+              onPress={() => {
+                setContextTopic(null);
+                setContextSpecialty(null);
+              }}
+              className="p-1.5 -ml-1 rounded-full bg-white/5 active:opacity-60"
+            >
+              <Ionicons name="arrow-back" size={20} color="#fff" />
+            </TouchableOpacity>
+          ) : (
+            <View className="w-8 h-8 rounded-full bg-turquoise/15 items-center justify-center border border-turquoise/35">
+              <Ionicons name="medical" size={16} color={TURQUOISE} />
+            </View>
+          )}
+
+          <View className="flex-1 min-w-0">
+            <Text className="text-white text-base font-sans-bold" numberOfLines={1}>
               {contextTopic ? contextTopic.title : "Clinical Hub"}
             </Text>
-            <Text className="text-gray-400 text-xs font-sans-medium">
+            <Text className="text-gray-400 text-xs font-sans-medium" numberOfLines={1}>
               {contextSpecialty ? contextSpecialty.scientificName : "Universal Evidence AI"}
             </Text>
           </View>
         </View>
 
-        {contextTopic && (
-          <View className="flex-row bg-[#121719] p-1 rounded-xl border border-white/10">
-            <TouchableOpacity
-              onPress={() => setActiveMode('chat')}
-              className={`px-3 py-1 rounded-lg flex-row items-center gap-1.5 ${
-                activeMode === 'chat' ? 'bg-turquoise/20 border border-turquoise/40' : ''
-              }`}
-            >
-              <Ionicons
-                name="chatbubbles-outline"
-                size={12}
-                color={activeMode === 'chat' ? TURQUOISE : '#8e8e93'}
-              />
-              <Text
-                className={`text-xs font-sans-semibold ${
-                  activeMode === 'chat' ? 'text-turquoise' : 'text-gray-400'
-                }`}
-              >
-                Chat
-              </Text>
-            </TouchableOpacity>
+        {/* Right Header Actions */}
+        <View className="flex-row items-center gap-2">
+          {/* History Button */}
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setIsHistoryModalVisible(true);
+            }}
+            className="p-2 rounded-xl bg-[#121719] border border-white/10 flex-row items-center gap-1.5 active:opacity-70"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="time-outline" size={18} color="#9ca3af" />
+            {sessions.length > 0 && (
+              <View className="px-1.5 py-0.2 rounded-full bg-white/10">
+                <Text className="text-[10px] text-gray-300 font-mono font-bold">
+                  {sessions.length}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => setActiveMode('map')}
-              className={`px-3 py-1 rounded-lg flex-row items-center gap-1.5 ${
-                activeMode === 'map' ? 'bg-turquoise/20 border border-turquoise/40' : ''
-              }`}
-            >
-              <Ionicons
-                name="git-network-outline"
-                size={12}
-                color={activeMode === 'map' ? TURQUOISE : '#8e8e93'}
-              />
-              <Text
-                className={`text-xs font-sans-semibold ${
-                  activeMode === 'map' ? 'text-turquoise' : 'text-gray-400'
+          {/* New Chat Pen Icon Button */}
+          <TouchableOpacity
+            onPress={handleStartNewChat}
+            className="p-2 rounded-xl bg-turquoise/20 border border-turquoise/40 flex-row items-center gap-1 active:opacity-70"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="create-outline" size={18} color={TURQUOISE} />
+            <Text className="text-turquoise text-xs font-sans-bold hidden sm:flex">New</Text>
+          </TouchableOpacity>
+
+          {/* Map toggle if topic exists */}
+          {contextTopic && (
+            <View className="flex-row bg-[#121719] p-1 rounded-xl border border-white/10 ml-1">
+              <TouchableOpacity
+                onPress={() => setActiveMode('chat')}
+                className={`px-2.5 py-1 rounded-lg ${
+                  activeMode === 'chat' ? 'bg-turquoise/20 border border-turquoise/40' : ''
                 }`}
               >
-                Map
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={12}
+                  color={activeMode === 'chat' ? TURQUOISE : '#8e8e93'}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setActiveMode('map')}
+                className={`px-2.5 py-1 rounded-lg ${
+                  activeMode === 'map' ? 'bg-turquoise/20 border border-turquoise/40' : ''
+                }`}
+              >
+                <Ionicons
+                  name="git-network-outline"
+                  size={12}
+                  color={activeMode === 'map' ? TURQUOISE : '#8e8e93'}
+                />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </View>
 
       {/* Screen Body: Knowledge Map Mode vs Chat Stream Mode */}
@@ -881,17 +1046,15 @@ const ChatTab = () => {
           />
         </View>
       ) : (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "padding"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
-          style={{ flex: 1 }}
-        >
+        <View style={{ flex: 1 }}>
           <FlatList
             ref={flatListRef}
             data={messages}
             keyExtractor={(item) => item.id}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
             renderItem={({ item }) => (
               <ChatBubble
                 message={item}
@@ -904,7 +1067,9 @@ const ChatTab = () => {
             )}
             contentContainerStyle={{
               paddingTop: 16,
-              paddingBottom: isKeyboardVisible ? 20 : DOCK_BAR_HEIGHT + floatingBottom + TAB_BAR_GAP + 24,
+              paddingBottom: keyboardHeight > 0
+                ? 20
+                : DOCK_BAR_HEIGHT + floatingBottom + TAB_BAR_GAP + 24,
             }}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
@@ -956,17 +1121,51 @@ const ChatTab = () => {
             ListFooterComponent={isTyping ? <ThinkingIndicator /> : null}
           />
 
-          {/* Input Dock - Increased height by 25% + 8px separation from Tab Bar */}
+          {/* Floating Jump to Top & Jump to Bottom Arrows */}
           <View
+            style={[
+              styles.jumpControlsContainer,
+              {
+                bottom: keyboardHeight > 0
+                  ? keyboardHeight + 65
+                  : floatingBottom + DOCK_BAR_HEIGHT + TAB_BAR_GAP + 55,
+              },
+            ]}
+            pointerEvents="box-none"
+          >
+            {showScrollTop && (
+              <TouchableOpacity
+                onPress={scrollToTop}
+                activeOpacity={0.8}
+                style={styles.jumpArrowBtn}
+              >
+                <Ionicons name="chevron-up" size={18} color={TURQUOISE} />
+              </TouchableOpacity>
+            )}
+
+            {showScrollBottom && (
+              <TouchableOpacity
+                onPress={scrollToBottom}
+                activeOpacity={0.8}
+                style={styles.jumpArrowBtn}
+              >
+                <Ionicons name="chevron-down" size={18} color={TURQUOISE} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Input Dock - lifts above keyboard using real keyboard height */}
+          <RNAnimated.View
             style={{
-              paddingBottom: isKeyboardVisible ? 10 : floatingBottom + DOCK_BAR_HEIGHT + TAB_BAR_GAP,
+              paddingBottom: keyboardHeight > 0 ? 10 : floatingBottom + DOCK_BAR_HEIGHT + TAB_BAR_GAP,
+              marginBottom: keyboardHeightAnim,
             }}
             className="px-4 pt-2.5 bg-background border-t border-white/5"
           >
             <View
               className="flex-row items-center bg-[#0c1017] border border-white/10 rounded-2xl px-4 py-2.5"
               style={{
-                minHeight: 52, // +25% spacious height
+                minHeight: 52,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.25,
@@ -1002,11 +1201,185 @@ const ChatTab = () => {
                 />
               </TouchableOpacity>
             </View>
-          </View>
-        </KeyboardAvoidingView>
+          </RNAnimated.View>
+        </View>
       )}
+
+      {/* Full History & Sessions Modal */}
+      <Modal
+        visible={isHistoryModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsHistoryModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            onPress={() => setIsHistoryModalVisible(false)}
+            activeOpacity={1}
+          />
+          <View style={styles.modalSheetContainer}>
+            {/* Modal Drag Handle */}
+            <View style={styles.modalDragHandle} />
+
+            {/* Modal Header */}
+            <View className="flex-row items-center justify-between px-5 py-4 border-b border-white/10">
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="time-outline" size={20} color={TURQUOISE} />
+                <Text className="text-white text-base font-sans-bold">
+                  Consultation History
+                </Text>
+              </View>
+
+              <View className="flex-row items-center gap-2">
+                <TouchableOpacity
+                  onPress={handleStartNewChat}
+                  className="flex-row items-center gap-1.5 px-3 py-1.5 rounded-full bg-turquoise/20 border border-turquoise/40 active:opacity-70"
+                >
+                  <Ionicons name="add" size={14} color={TURQUOISE} />
+                  <Text className="text-turquoise text-xs font-sans-bold">New Chat</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setIsHistoryModalVisible(false)}
+                  className="p-1.5 rounded-full bg-white/10 active:opacity-60"
+                >
+                  <Ionicons name="close" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Sessions List */}
+            <ScrollView
+              className="flex-1 px-5 py-3"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 30 }}
+            >
+              {sessions.length === 0 ? (
+                <View className="items-center justify-center py-16">
+                  <Ionicons name="chatbubbles-outline" size={40} color="#4b5563" />
+                  <Text className="text-gray-400 text-sm font-sans-medium mt-3">
+                    No past consultations yet
+                  </Text>
+                  <TouchableOpacity
+                    onPress={handleStartNewChat}
+                    className="mt-4 px-4 py-2 rounded-full bg-turquoise/20 border border-turquoise/40"
+                  >
+                    <Text className="text-turquoise text-xs font-sans-bold">Start First Inquiry</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                sessions.map((sess) => {
+                  const isActive = sess.id === currentSessionId;
+                  const dateStr = new Date(sess.updatedAt).toLocaleDateString([], {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  });
+
+                  return (
+                    <TouchableOpacity
+                      key={sess.id}
+                      onPress={() => handleSelectSession(sess)}
+                      activeOpacity={0.75}
+                      className={`p-3.5 mb-2.5 rounded-2xl border flex-row items-center justify-between ${
+                        isActive
+                          ? 'bg-[#112428] border-turquoise/50'
+                          : 'bg-[#0d1316] border-white/10'
+                      }`}
+                    >
+                      <View className="flex-1 mr-3 min-w-0">
+                        <View className="flex-row items-center gap-2 mb-1">
+                          {isActive && (
+                            <View className="px-1.5 py-0.5 rounded bg-turquoise/30 border border-turquoise/50">
+                              <Text className="text-[9px] text-turquoise font-bold uppercase">
+                                Active
+                              </Text>
+                            </View>
+                          )}
+                          <Text className="text-gray-400 text-[11px] font-mono">
+                            {dateStr}
+                          </Text>
+                          <Text className="text-gray-500 text-[10px]">
+                            • {sess.messages.length} msgs
+                          </Text>
+                        </View>
+                        <Text
+                          className={`font-sans-semibold text-sm ${
+                            isActive ? 'text-white' : 'text-gray-200'
+                          }`}
+                          numberOfLines={1}
+                        >
+                          {sess.title}
+                        </Text>
+                      </View>
+
+                      <TouchableOpacity
+                        onPress={() => handleDeleteSession(sess.id)}
+                        className="p-2 rounded-lg bg-red-950/30 border border-red-800/30 active:opacity-60"
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons name="trash-outline" size={15} color="#f87171" />
+                      </TouchableOpacity>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  jumpControlsContainer: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 50,
+    gap: 8,
+    alignItems: 'center',
+  },
+  jumpArrowBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#0c1619',
+    borderWidth: 1.2,
+    borderColor: 'rgba(0, 240, 255, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'flex-end',
+  },
+  modalSheetContainer: {
+    backgroundColor: '#0c1214',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderTopWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    maxHeight: '75%',
+    minHeight: 380,
+    overflow: 'hidden',
+  },
+  modalDragHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    alignSelf: 'center',
+    marginTop: 10,
+  },
+});
 
 export default ChatTab;

@@ -2,9 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   Alert,
+  Animated as RNAnimated,
   FlatList,
-  KeyboardAvoidingView,
+  Keyboard,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -503,8 +507,59 @@ export default function TopicChat({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const keyboardHeightAnim = useRef(new RNAnimated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
   const lastSentQueryRef = useRef<string | null>(null);
+
+  // Jump arrow scroll tracking
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+    const offsetY = contentOffset.y;
+    const contentHeight = contentSize.height;
+    const layoutHeight = layoutMeasurement.height;
+
+    setShowScrollTop(offsetY > 240);
+    const distanceFromBottom = contentHeight - offsetY - layoutHeight;
+    setShowScrollBottom(distanceFromBottom > 240 && messages.length >= 2);
+  };
+
+  const scrollToTop = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
+  const scrollToBottom = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    flatListRef.current?.scrollToEnd({ animated: true });
+  };
+
+  // Track real keyboard height — works in Android production/edge-to-edge builds
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      const h = e.endCoordinates.height;
+      setKeyboardHeight(h);
+      RNAnimated.timing(keyboardHeightAnim, {
+        toValue: h,
+        duration: Platform.OS === 'ios' ? 250 : 80,
+        useNativeDriver: false,
+      }).start();
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+      RNAnimated.timing(keyboardHeightAnim, {
+        toValue: 0,
+        duration: Platform.OS === 'ios' ? 200 : 80,
+        useNativeDriver: false,
+      }).start();
+    });
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, [keyboardHeightAnim]);
 
   const specialty = SPECIALTY_KNOWLEDGE[specialtyId] || {
     title: "Specialty",
@@ -680,11 +735,7 @@ export default function TopicChat({
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "padding"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
-      style={{ flex: 1 }}
-    >
+    <View style={{ flex: 1 }}>
       <View className="flex-1 bg-background">
         <FlatList
           ref={flatListRef}
@@ -692,6 +743,8 @@ export default function TopicChat({
           keyExtractor={(item) => item.id}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
           renderItem={renderMessageItem}
           contentContainerStyle={{
             paddingTop: 16,
@@ -736,8 +789,42 @@ export default function TopicChat({
           ListFooterComponent={isTyping ? <ThinkingIndicator themeColor={themeColor} /> : null}
         />
 
-        {/* Input Bar - Enhanced Height (+25%) & Styling */}
-        <View className="px-4 pt-2.5 pb-4 border-t border-white/5 bg-background flex-row items-center gap-2">
+        {/* Floating Jump to Top & Jump to Bottom Arrows */}
+        <View
+          style={[
+            styles.jumpControlsContainer,
+            {
+              bottom: keyboardHeight > 0 ? keyboardHeight + 65 : 75,
+            },
+          ]}
+          pointerEvents="box-none"
+        >
+          {showScrollTop && (
+            <TouchableOpacity
+              onPress={scrollToTop}
+              activeOpacity={0.8}
+              style={[styles.jumpArrowBtn, { borderColor: `${themeColor}60` }]}
+            >
+              <Ionicons name="chevron-up" size={18} color={themeColor} />
+            </TouchableOpacity>
+          )}
+
+          {showScrollBottom && (
+            <TouchableOpacity
+              onPress={scrollToBottom}
+              activeOpacity={0.8}
+              style={[styles.jumpArrowBtn, { borderColor: `${themeColor}60` }]}
+            >
+              <Ionicons name="chevron-down" size={18} color={themeColor} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Input Bar - lifts above keyboard using real keyboard height */}
+        <RNAnimated.View
+          className="px-4 pt-2.5 pb-4 border-t border-white/5 bg-background flex-row items-center gap-2"
+          style={{ marginBottom: keyboardHeightAnim }}
+        >
           <View
             className="flex-1 flex-row items-center bg-[#0e1416] border border-white/10 rounded-2xl px-4 py-2.5"
             style={{
@@ -776,8 +863,32 @@ export default function TopicChat({
               color={inputText.trim() && !isTyping ? "#010101" : "#4b5563"}
             />
           </TouchableOpacity>
-        </View>
+        </RNAnimated.View>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  jumpControlsContainer: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 50,
+    gap: 8,
+    alignItems: 'center',
+  },
+  jumpArrowBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#0c1619',
+    borderWidth: 1.2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+});

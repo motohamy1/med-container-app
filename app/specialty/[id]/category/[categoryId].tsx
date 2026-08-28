@@ -11,6 +11,7 @@ import {
   View,
   ActivityIndicator,
   Alert,
+  RefreshControl,
   StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,27 +30,47 @@ export default function CategoryPage() {
   const specId = id || 'heart';
   const catId = categoryId || 'emergencies';
 
-  // Instant synchronous local state initialization prevents any stuck/reloading spinners
-  const initialSpecialty = useMemo(() => getSpecialtyKnowledge(specId), [specId]);
-  const initialCategory = useMemo(() => getCategoryKnowledge(specId, catId), [specId, catId]);
+  const initialSpecialty = useMemo(() => {
+    const cached = dbService.getCachedSpecialty(specId);
+    return cached || getSpecialtyKnowledge(specId);
+  }, [specId]);
+
+  const initialCategory = useMemo(() => {
+    return initialSpecialty?.categories?.find((c) => c.id === catId) || getCategoryKnowledge(specId, catId);
+  }, [initialSpecialty, specId, catId]);
 
   const [specialty, setSpecialty] = useState<SpecialtyData>(initialSpecialty);
   const [category, setCategory] = useState<SpecialtyCategory | null>(initialCategory);
   const [searchText, setSearchText] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const loadData = async (forceRefresh = false) => {
+    try {
+      const [remoteSpec, remoteCat] = await Promise.all([
+        dbService.getSpecialty(specId, forceRefresh),
+        dbService.getCategory(specId, catId, forceRefresh),
+      ]);
+      if (remoteSpec) setSpecialty(remoteSpec);
+      if (remoteCat) setCategory(remoteCat);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    setSpecialty(getSpecialtyKnowledge(specId));
-    setCategory(getCategoryKnowledge(specId, catId));
-
-    // Non-blocking background enhancement
-    dbService.getCategory(specId, catId).then((remoteCat) => {
-      if (remoteCat) {
-        setCategory(remoteCat);
-      }
-    });
+    const cached = dbService.getCachedSpecialty(specId);
+    setSpecialty(cached || getSpecialtyKnowledge(specId));
+    setCategory(cached?.categories?.find((c) => c.id === catId) || getCategoryKnowledge(specId, catId));
+    loadData(false);
   }, [specId, catId]);
+
+  const onRefresh = () => {
+    setIsRefreshing(true);
+    dbService.invalidateCache(specId);
+    loadData(true);
+  };
 
   const topicsList = category?.topics || [];
 
@@ -198,7 +219,18 @@ export default function CategoryPage() {
         )}
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={specialty.color}
+            colors={[specialty.color]}
+          />
+        }
+      >
         <View className="px-5 py-4 pb-28">
           <Text className="text-gray-400 text-xs mb-4 leading-4 px-1">
             {displayCategory.description}

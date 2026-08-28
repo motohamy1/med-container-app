@@ -54,39 +54,160 @@ function scoreResult(q: string, r: TopicSearchResult): number {
   return 10;
 }
 
-const timeoutPromise = <T>(ms: number, fallbackValue: T): Promise<T> =>
-  new Promise((resolve) => setTimeout(() => resolve(fallbackValue), ms));
+// In-memory caching for instant fast loading
+const specialtyMemoryCache = new Map<string, SpecialtyData>();
+const categoryMemoryCache = new Map<string, SpecialtyCategory>();
 
 export const dbService = {
-  async getSpecialty(specialtyId: string): Promise<SpecialtyData> {
+  /**
+   * Clears memory cache for a specialty or all specialties
+   */
+  invalidateCache(specialtyId?: string) {
+    if (specialtyId) {
+      specialtyMemoryCache.delete(specialtyId);
+      for (const key of categoryMemoryCache.keys()) {
+        if (key.startsWith(`${specialtyId}:`)) {
+          categoryMemoryCache.delete(key);
+        }
+      }
+    } else {
+      specialtyMemoryCache.clear();
+      categoryMemoryCache.clear();
+    }
+  },
+
+  /**
+   * Synchronously peek at memory cache if already loaded
+   */
+  getCachedSpecialty(specialtyId: string): SpecialtyData | null {
+    return specialtyMemoryCache.get(specialtyId) || null;
+  },
+
+  async getSpecialty(specialtyId: string, forceRefresh = false): Promise<SpecialtyData> {
+    if (!forceRefresh && specialtyMemoryCache.has(specialtyId)) {
+      return specialtyMemoryCache.get(specialtyId)!;
+    }
+
     const localSpec = getSpecialtyKnowledge(specialtyId);
 
-    const remoteFetch = async (): Promise<SpecialtyData> => {
-      const { data: specialty, error: specError } = await supabase
-        .from('specialties')
-        .select('*')
-        .eq('id', specialtyId)
-        .single();
+    try {
+      // 10-second timeout to prevent infinite hang on unstable mobile network
+      const remoteFetch = async (): Promise<SpecialtyData> => {
+        const { data: specialty, error: specError } = await supabase
+          .from('specialties')
+          .select('*')
+          .eq('id', specialtyId)
+          .single();
 
-      if (specError || !specialty) {
-        return localSpec;
+        if (specError || !specialty) {
+          return localSpec;
+        }
+
+        const { data: categories, error: catError } = await supabase
+          .from('categories')
+          .select(`
+            *,
+            topics(id, title, subtitle, type, ai_scope_description, clinical_content)
+          `)
+          .eq('specialty_id', specialtyId);
+
+        if (catError || !categories || categories.length === 0) {
+          return localSpec;
+        }
+
+        // Map categories and merge remote + local topics
+        const mappedCategories = categories.map((cat: any) => {
+          const localCat = localSpec?.categories?.find((c) => c.id === cat.id);
+          const remoteTopics: TopicItem[] = (cat.topics || []).map((t: any) => ({
+            id: t.id,
+            title: t.title,
+            subtitle: t.subtitle,
+            type: t.type,
+            aiScopeDescription: t.ai_scope_description,
+            clinicalContent: t.clinical_content,
+          }));
+
+          const topicMap = new Map<string, TopicItem>();
+          // Add local curated topics first
+          localCat?.topics?.forEach((t) => topicMap.set(t.id, t));
+          // Overwrite or add remote topics
+          remoteTopics.forEach((t) => topicMap.set(t.id, t));
+
+          const mappedCat: SpecialtyCategory = {
+            id: cat.id,
+            title: cat.title || localCat?.title || '',
+            description: cat.description || localCat?.description || '',
+            icon: (cat.icon as any) || localCat?.icon || 'book',
+            topics: Array.from(topicMap.values()),
+          };
+
+          categoryMemoryCache.set(`${specialtyId}:${cat.id}`, mappedCat);
+          return mappedCat;
+        });
+
+        // Also ensure any categories in localSpec that aren't in Supabase are included
+        if (localSpec?.categories) {
+          for (const lCat of localSpec.categories) {
+            if (!mappedCategories.some((mc: SpecialtyCategory) => mc.id === lCat.id)) {
+              mappedCategories.push(lCat);
+            }
+          }
+        }
+
+        const result: SpecialtyData = {
+          id: specialty.id,
+          name: specialty.name || localSpec?.name || '',
+          scientificName: specialty.scientific_name || localSpec?.scientificName || '',
+          icon: (specialty.icon as any) || localSpec?.icon || 'medical',
+          color: localSpec?.color || specialty.color || Colors.main,
+          generalScope: specialty.general_scope || localSpec?.generalScope || '',
+          illustration: localSpec?.illustration || null,
+          categories: mappedCategories,
+        };
+
+        specialtyMemoryCache.set(specialtyId, result);
+        return result;
+      };
+
+      const timeoutPromise = new Promise<SpecialtyData>((resolve) =>
+        setTimeout(() => resolve(localSpec), 10000)
+      );
+
+      const resolved = await Promise.race([remoteFetch(), timeoutPromise]);
+      if (resolved && resolved.categories && resolved.categories.length > 0) {
+        specialtyMemoryCache.set(specialtyId, resolved);
       }
+      return resolved;
+    } catch (e) {
+      console.warn(`[dbService] getSpecialty error for ${specialtyId}:`, e);
+      return localSpec;
+    }
+  },
 
-      const { data: categories, error: catError } = await supabase
-        .from('categories')
-        .select(`
-          *,
-          topics(id, title, subtitle, type, ai_scope_description, clinical_content)
-        `)
-        .eq('specialty_id', specialtyId);
+  async getCategory(specialtyId: string, categoryId: string, forceRefresh = false): Promise<SpecialtyCategory | null> {
+    const cacheKey = `${specialtyId}:${categoryId}`;
+    if (!forceRefresh && categoryMemoryCache.has(cacheKey)) {
+      return categoryMemoryCache.get(cacheKey)!;
+    }
 
-      if (catError || !categories || categories.length === 0) {
-        return localSpec;
-      }
+    const localCat = getCategoryKnowledge(specialtyId, categoryId);
 
-      // Map categories and merge remote + local topics
-      const mappedCategories = categories.map((cat: any) => {
-        const localCat = localSpec?.categories?.find((c) => c.id === cat.id);
+    try {
+      const remoteFetch = async (): Promise<SpecialtyCategory | null> => {
+        const { data: cat, error } = await supabase
+          .from('categories')
+          .select(`
+            *,
+            topics(id, title, subtitle, type, ai_scope_description, clinical_content)
+          `)
+          .eq('id', categoryId)
+          .eq('specialty_id', specialtyId)
+          .single();
+
+        if (error || !cat) {
+          return localCat;
+        }
+
         const remoteTopics: TopicItem[] = (cat.topics || []).map((t: any) => ({
           id: t.id,
           title: t.title,
@@ -97,91 +218,32 @@ export const dbService = {
         }));
 
         const topicMap = new Map<string, TopicItem>();
-        // Add local topics first
         localCat?.topics?.forEach((t) => topicMap.set(t.id, t));
-        // Overwrite or add remote topics
         remoteTopics.forEach((t) => topicMap.set(t.id, t));
 
-        return {
+        const result: SpecialtyCategory = {
           id: cat.id,
           title: cat.title || localCat?.title || '',
           description: cat.description || localCat?.description || '',
           icon: (cat.icon as any) || localCat?.icon || 'book',
           topics: Array.from(topicMap.values()),
         };
-      });
 
-      // Also ensure any categories in localSpec that aren't in Supabase are included
-      if (localSpec?.categories) {
-        for (const lCat of localSpec.categories) {
-          if (!mappedCategories.some((mc: SpecialtyCategory) => mc.id === lCat.id)) {
-            mappedCategories.push(lCat);
-          }
-        }
-      }
-
-      return {
-        id: specialty.id,
-        name: specialty.name || localSpec?.name || '',
-        scientificName: specialty.scientific_name || localSpec?.scientificName || '',
-        icon: (specialty.icon as any) || localSpec?.icon || 'medical',
-        color: localSpec?.color || specialty.color || Colors.main,
-        generalScope: specialty.general_scope || localSpec?.generalScope || '',
-        illustration: localSpec?.illustration || null,
-        categories: mappedCategories,
+        categoryMemoryCache.set(cacheKey, result);
+        return result;
       };
-    };
 
-    try {
-      return await Promise.race([remoteFetch(), timeoutPromise(1200, localSpec)]);
-    } catch {
-      return localSpec;
-    }
-  },
+      const timeoutPromise = new Promise<SpecialtyCategory | null>((resolve) =>
+        setTimeout(() => resolve(localCat), 10000)
+      );
 
-  async getCategory(specialtyId: string, categoryId: string): Promise<SpecialtyCategory | null> {
-    const localCat = getCategoryKnowledge(specialtyId, categoryId);
-
-    const remoteFetch = async (): Promise<SpecialtyCategory | null> => {
-      const { data: cat, error } = await supabase
-        .from('categories')
-        .select(`
-          *,
-          topics(id, title, subtitle, type, ai_scope_description, clinical_content)
-        `)
-        .eq('id', categoryId)
-        .eq('specialty_id', specialtyId)
-        .single();
-
-      if (error || !cat) {
-        return localCat;
+      const resolved = await Promise.race([remoteFetch(), timeoutPromise]);
+      if (resolved) {
+        categoryMemoryCache.set(cacheKey, resolved);
       }
-
-      const remoteTopics: TopicItem[] = (cat.topics || []).map((t: any) => ({
-        id: t.id,
-        title: t.title,
-        subtitle: t.subtitle,
-        type: t.type,
-        aiScopeDescription: t.ai_scope_description,
-        clinicalContent: t.clinical_content,
-      }));
-
-      const topicMap = new Map<string, TopicItem>();
-      localCat?.topics?.forEach((t) => topicMap.set(t.id, t));
-      remoteTopics.forEach((t) => topicMap.set(t.id, t));
-
-      return {
-        id: cat.id,
-        title: cat.title || localCat?.title || '',
-        description: cat.description || localCat?.description || '',
-        icon: (cat.icon as any) || localCat?.icon || 'book',
-        topics: Array.from(topicMap.values()),
-      };
-    };
-
-    try {
-      return await Promise.race([remoteFetch(), timeoutPromise(1200, localCat)]);
-    } catch {
+      return resolved;
+    } catch (e) {
+      console.warn(`[dbService] getCategory error for ${cacheKey}:`, e);
       return localCat;
     }
   },
@@ -189,30 +251,34 @@ export const dbService = {
   async getTopic(specialtyId: string, topicId: string): Promise<TopicItem> {
     const { topic: localTopic } = getTopicKnowledge(specialtyId, topicId);
 
-    const remoteFetch = async (): Promise<TopicItem> => {
-      const { data: topic, error } = await supabase
-        .from('topics')
-        .select('*')
-        .eq('id', topicId)
-        .eq('specialty_id', specialtyId)
-        .single();
-
-      if (error || !topic) {
-        return localTopic;
-      }
-
-      return {
-        id: topic.id,
-        title: topic.title || localTopic?.title || '',
-        subtitle: topic.subtitle || localTopic?.subtitle || '',
-        type: topic.type || localTopic?.type || '',
-        aiScopeDescription: topic.ai_scope_description || localTopic?.aiScopeDescription || '',
-        clinicalContent: topic.clinical_content || localTopic?.clinicalContent || [],
-      };
-    };
-
     try {
-      return await Promise.race([remoteFetch(), timeoutPromise(1200, localTopic)]);
+      const remoteFetch = async (): Promise<TopicItem> => {
+        const { data: topic, error } = await supabase
+          .from('topics')
+          .select('*')
+          .eq('id', topicId)
+          .eq('specialty_id', specialtyId)
+          .single();
+
+        if (error || !topic) {
+          return localTopic;
+        }
+
+        return {
+          id: topic.id,
+          title: topic.title || localTopic?.title || '',
+          subtitle: topic.subtitle || localTopic?.subtitle || '',
+          type: topic.type || localTopic?.type || '',
+          aiScopeDescription: topic.ai_scope_description || localTopic?.aiScopeDescription || '',
+          clinicalContent: topic.clinical_content || localTopic?.clinicalContent || [],
+        };
+      };
+
+      const timeoutPromise = new Promise<TopicItem>((resolve) =>
+        setTimeout(() => resolve(localTopic), 10000)
+      );
+
+      return await Promise.race([remoteFetch(), timeoutPromise]);
     } catch {
       return localTopic;
     }
@@ -222,7 +288,7 @@ export const dbService = {
     const q = queryText.toLowerCase().trim();
     if (!q) return [];
 
-    const spec = getSpecialtyKnowledge(specialtyId);
+    const spec = specialtyMemoryCache.get(specialtyId) || getSpecialtyKnowledge(specialtyId);
     const localTopics = (spec?.categories || [])
       .flatMap((c) => c.topics)
       .filter((t) =>
@@ -287,7 +353,7 @@ export const dbService = {
         for (const t of remoteTopics) {
           const specId = t.specialty_id as string | undefined;
           const catId = t.category_id as string | undefined;
-          const spec = specId ? getSpecialtyKnowledge(specId) : undefined;
+          const spec = specId ? (specialtyMemoryCache.get(specId) || getSpecialtyKnowledge(specId)) : undefined;
           const cat = spec?.categories?.find((c) => c.id === catId);
 
           // Skip remote rows that duplicate an existing local hit (same topic id)

@@ -3,7 +3,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
+  ActivityIndicator,
   Image,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Text,
@@ -106,23 +108,43 @@ const getCategoryTheme = (categoryId: string, index: number) => {
 
 export default function SpecialtyDashboard() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const specId = id || 'heart';
   const [searchText, setSearchText] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingRemote, setIsLoadingRemote] = useState(false);
   
-  // Instant synchronous initialization prevents any stuck/reloading spinners
-  const initialData = useMemo(() => getSpecialtyKnowledge(id || 'heart'), [id]);
+  // Instant cached/synchronous initialization prevents any stuck/empty states
+  const initialData = useMemo(() => {
+    const cached = dbService.getCachedSpecialty(specId);
+    return cached || getSpecialtyKnowledge(specId);
+  }, [specId]);
+
   const [specialty, setSpecialty] = useState<SpecialtyData>(initialData);
 
-  useEffect(() => {
-    // Keep in sync when id changes
-    setSpecialty(getSpecialtyKnowledge(id || 'heart'));
-
-    // Non-blocking background enhancement
-    dbService.getSpecialty(id || 'heart').then((remote) => {
+  const loadData = async (forceRefresh = false) => {
+    setIsLoadingRemote(true);
+    try {
+      const remote = await dbService.getSpecialty(specId, forceRefresh);
       if (remote) {
         setSpecialty(remote);
       }
-    });
-  }, [id]);
+    } finally {
+      setIsLoadingRemote(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    const cached = dbService.getCachedSpecialty(specId);
+    setSpecialty(cached || getSpecialtyKnowledge(specId));
+    loadData(false);
+  }, [specId]);
+
+  const onRefresh = () => {
+    setIsRefreshing(true);
+    dbService.invalidateCache(specId);
+    loadData(true);
+  };
 
   // All topics flattened for instant search
   const allTopics = useMemo(() => {
@@ -200,7 +222,18 @@ export default function SpecialtyDashboard() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={specialty.color}
+            colors={[specialty.color]}
+          />
+        }
+      >
         {/* Dynamic Hero */}
         <View className="w-full h-52 relative bg-teal-dark">
           {illustration && (
